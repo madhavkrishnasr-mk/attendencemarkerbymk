@@ -3,95 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0056b3">
-    
-    <title>Attendance App</title>
+    <title>Attendance Pro</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .card {
-            background-color: #ffffff;
-            width: 100%;
-            max-width: 480px;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
-        }
-
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background-color: #ffffff; width: 100%; max-width: 480px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
         .hidden { display: none !important; }
-
-        h3 {
-            color: #1a1a1a;
-            margin-top: 0;
-            border-bottom: 2px solid #e4e6eb;
-            padding-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 20px;
-        }
-
-        input[type="text"], input[type="number"], input[type="date"] {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-
+        h3 { color: #1a1a1a; margin-top: 0; border-bottom: 2px solid #e4e6eb; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .row-flex { display: flex; gap: 8px; align-items: center; }
-
-        button {
-            background-color: #0056b3;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
+        button { background-color: #0056b3; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 15px; }
         .btn-edit { background-color: #6c757d; font-size: 11px; padding: 5px 10px; }
         .btn-delete { background-color: #dc3545; padding: 6px 10px; }
-
-        /* Student Row Styling for Mobile */
-        .student-row {
-            background-color: #f8f9fa;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: 1px solid #e4e6eb;
-        }
-
+        .student-row { background-color: #f8f9fa; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #e4e6eb; }
         .student-main { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; }
-        
         .student-box { transform: scale(1.5); margin-right: 15px; }
-
-        /* The Reason Box - Styled specifically for Android */
-        .reason-box {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            background-color: #fff;
-        }
+        .reason-box { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        #status-msg { text-align: center; margin-top: 10px; font-weight: bold; color: #28a745; }
     </style>
 </head>
 <body>
@@ -102,42 +33,32 @@
             <span id="display-class-name">Loading...</span>
             <button class="btn-edit" onclick="toggleEditMode()">Settings ⚙️</button>
         </h3>
-        
         <input type="date" id="class-date">
         <div id="student-container"></div>
-        <button class="btn-full" onclick="calculateAttendance()">Save & Download Ledger</button>
+        <button id="submit-btn" class="btn-full" onclick="submitToCloud()">Submit to Institution & Parents</button>
+        <div id="status-msg"></div>
     </div>
 
     <div id="edit-view" class="hidden">
-        <h3>
-            Edit Roster
-            <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button>
-        </h3>
-        
+        <h3>Edit Roster <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button></h3>
         <label><strong>Class Name:</strong></label>
-        <div class="row-flex">
-            <input type="text" id="class-name" placeholder="B.Com Sem 3">
-            <button onclick="saveClassDetails()">Save</button>
-        </div>
-
+        <div class="row-flex"><input type="text" id="class-name"><button onclick="saveDetails()">Save</button></div>
         <label><strong>New Student:</strong></label>
         <div class="row-flex">
             <input type="number" id="new-roll" placeholder="Roll" min="1" style="width: 30%;">
             <input type="text" id="new-name" placeholder="Name" style="width: 70%;">
         </div>
         <button class="btn-full" onclick="addStudent()" style="margin-top:0">+ Add Student</button>
-
         <div id="management-list" style="margin-top:20px;"></div>
     </div>
 </div>
 
 <script>
-    let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [
-        {rollNo: 1, name: "Madhav"},
-        {rollNo: 2, name: "Krishnanand"},
-        {rollNo: 3, name: "Jobin"}
-    ];
-    let currentClass = localStorage.getItem("class_details") || "My Class";
+    // REPLACE THIS WITH YOUR WEB APP URL FROM GOOGLE
+    const scriptURL = 'PASTE_YOUR_URL_HERE';
+
+    let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [];
+    let currentClass = localStorage.getItem("class_details") || "B.Com Semester 3";
 
     document.getElementById('class-date').valueAsDate = new Date();
 
@@ -150,38 +71,29 @@
     function updateScreen() {
         document.getElementById("class-name").value = currentClass;
         document.getElementById("display-class-name").innerText = currentClass;
-
         const attContainer = document.getElementById("student-container");
         const magContainer = document.getElementById("management-list");
-        
-        attContainer.innerHTML = "";
-        magContainer.innerHTML = "";
-
+        attContainer.innerHTML = ""; magContainer.innerHTML = "";
         myClass.sort((a, b) => a.rollNo - b.rollNo);
 
-        for (let i = 0; i < myClass.length; i++) {
-            // Attendance View with Reason Box
+        myClass.forEach((s, i) => {
             attContainer.innerHTML += `
                 <div class="student-row">
                     <div class="student-main">
                         <input type="checkbox" class="student-box" id="check-${i}" checked>
-                        <label for="check-${i}">Roll ${myClass[i].rollNo}: ${myClass[i].name}</label>
+                        <label for="check-${i}">Roll ${s.rollNo}: ${s.name}</label>
                     </div>
-                    <input type="text" class="reason-box" id="reason-${i}" placeholder="Reason for absence (optional)">
-                </div>
-            `;
-
-            // Management View
+                    <input type="text" class="reason-box" id="reason-${i}" placeholder="Notes (Late, Medical, etc.)">
+                </div>`;
             magContainer.innerHTML += `
-                <div class="student-row" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>Roll ${myClass[i].rollNo}: ${myClass[i].name}</span>
+                <div class="student-row" style="display:flex; justify-content:space-between;">
+                    <span>Roll ${s.rollNo}: ${s.name}</span>
                     <button class="btn-delete" onclick="deleteStudent(${i})">Del</button>
-                </div>
-            `;
-        }
+                </div>`;
+        });
     }
 
-    function saveClassDetails() {
+    function saveDetails() {
         currentClass = document.getElementById("class-name").value;
         localStorage.setItem("class_details", currentClass);
         updateScreen();
@@ -192,11 +104,8 @@
         const n = document.getElementById("new-name").value;
         if (!r || !n) return alert("Fill all fields");
         if (myClass.some(s => s.rollNo == r)) return alert("Roll number exists!");
-
         myClass.push({ rollNo: parseInt(r), name: n });
         localStorage.setItem("attendance_roster", JSON.stringify(myClass));
-        document.getElementById("new-roll").value = "";
-        document.getElementById("new-name").value = "";
         updateScreen();
     }
 
@@ -208,28 +117,40 @@
         }
     }
 
-    function calculateAttendance() {
-        const selectedDate = document.getElementById("class-date").value;
+    function submitToCloud() {
+        const btn = document.getElementById('submit-btn');
+        const msg = document.getElementById('status-msg');
+        btn.disabled = true;
+        btn.innerText = "Sending...";
         
-        // Added "Reason" column to CSV
-        let fileContent = "Class,Roll No,Name,Status,Reason/Remarks\n";
+        const attendanceList = myClass.map((s, i) => ({
+            rollNo: s.rollNo,
+            name: s.name,
+            status: document.getElementById(`check-${i}`).checked ? "Present" : "Absent",
+            reason: document.getElementById(`reason-${i}`).value
+        }));
 
-        for (let i = 0; i < myClass.length; i++) {
-            const isChecked = document.getElementById(`check-${i}`).checked;
-            const reason = document.getElementById(`reason-${i}`).value.replace(/,/g, " "); // Remove commas so CSV doesn't break
-            
-            let status = isChecked ? "Present" : "Absent";
+        const payload = {
+            className: currentClass,
+            attendanceList: attendanceList
+        };
 
-            // If present, we usually leave reason blank, but the user can type "Late" or something else
-            fileContent += `${currentClass},${myClass[i].rollNo},${myClass[i].name},${status},${reason}\n`;
-        }
-
-        const blob = new Blob([fileContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${currentClass.replace(/ /g, "_")}_${selectedDate}.csv`;
-        a.click();
+        fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors', // Critical for Google Scripts
+            cache: 'no-cache',
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            msg.innerText = "Sent Successfully! Parent emails triggered.";
+            btn.disabled = false;
+            btn.innerText = "Submit to Institution & Parents";
+            setTimeout(() => { msg.innerText = ""; }, 5000);
+        })
+        .catch(err => {
+            alert("Error sending: " + err.message);
+            btn.disabled = false;
+        });
     }
 
     updateScreen();
