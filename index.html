@@ -12,7 +12,7 @@
         .card { background-color: #ffffff; width: 100%; max-width: 480px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
         .hidden { display: none !important; }
         h3 { color: #1a1a1a; margin-top: 0; border-bottom: 2px solid #e4e6eb; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        input[type="text"], input[type="number"], input[type="date"], input[type="url"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .row-flex { display: flex; gap: 8px; align-items: center; }
         button { background-color: #0056b3; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 15px; }
@@ -40,10 +40,17 @@
     </div>
 
     <div id="edit-view" class="hidden">
-        <h3>Edit Roster <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button></h3>
+        <h3>Settings <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button></h3>
+        
+        <label><strong>Teacher's Script URL:</strong></label>
+        <input type="url" id="script-url" placeholder="Paste your /exec URL here">
+        
         <label><strong>Class Name:</strong></label>
-        <div class="row-flex"><input type="text" id="class-name"><button onclick="saveDetails()">Save</button></div>
-        <label><strong>New Student:</strong></label>
+        <div class="row-flex"><input type="text" id="class-name"><button onclick="saveSettings()">Save Settings</button></div>
+        
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+        
+        <label><strong>Add Student to Roster:</strong></label>
         <div class="row-flex">
             <input type="number" id="new-roll" placeholder="Roll" min="1" style="width: 30%;">
             <input type="text" id="new-name" placeholder="Name" style="width: 70%;">
@@ -54,11 +61,9 @@
 </div>
 
 <script>
-    // REPLACE THIS WITH YOUR WEB APP URL FROM GOOGLE
-    const scriptURL = 'PASTE_YOUR_URL_HERE';
-
     let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [];
-    let currentClass = localStorage.getItem("class_details") || "B.Com Semester 3";
+    let currentClass = localStorage.getItem("class_details") || "New Class";
+    let scriptURL = localStorage.getItem("teacher_script_url") || "";
 
     document.getElementById('class-date').valueAsDate = new Date();
 
@@ -70,6 +75,7 @@
 
     function updateScreen() {
         document.getElementById("class-name").value = currentClass;
+        document.getElementById("script-url").value = scriptURL;
         document.getElementById("display-class-name").innerText = currentClass;
         const attContainer = document.getElementById("student-container");
         const magContainer = document.getElementById("management-list");
@@ -93,9 +99,12 @@
         });
     }
 
-    function saveDetails() {
+    function saveSettings() {
         currentClass = document.getElementById("class-name").value;
+        scriptURL = document.getElementById("script-url").value;
         localStorage.setItem("class_details", currentClass);
+        localStorage.setItem("teacher_script_url", scriptURL);
+        alert("Settings saved!");
         updateScreen();
     }
 
@@ -103,7 +112,6 @@
         const r = document.getElementById("new-roll").value;
         const n = document.getElementById("new-name").value;
         if (!r || !n) return alert("Fill all fields");
-        if (myClass.some(s => s.rollNo == r)) return alert("Roll number exists!");
         myClass.push({ rollNo: parseInt(r), name: n });
         localStorage.setItem("attendance_roster", JSON.stringify(myClass));
         updateScreen();
@@ -118,6 +126,8 @@
     }
 
     function submitToCloud() {
+        if (!scriptURL) return alert("Please go to Settings and paste your Script URL first!");
+        
         const btn = document.getElementById('submit-btn');
         const msg = document.getElementById('status-msg');
         btn.disabled = true;
@@ -130,25 +140,19 @@
             reason: document.getElementById(`reason-${i}`).value
         }));
 
-        const payload = {
-            className: currentClass,
-            attendanceList: attendanceList
-        };
-
         fetch(scriptURL, {
             method: 'POST',
-            mode: 'no-cors', // Critical for Google Scripts
-            cache: 'no-cache',
-            body: JSON.stringify(payload)
+            mode: 'no-cors',
+            body: JSON.stringify({ className: currentClass, attendanceList: attendanceList })
         })
         .then(() => {
-            msg.innerText = "Sent Successfully! Parent emails triggered.";
+            msg.innerText = "Success! Logged and emails sent.";
             btn.disabled = false;
             btn.innerText = "Submit to Institution & Parents";
             setTimeout(() => { msg.innerText = ""; }, 5000);
         })
         .catch(err => {
-            alert("Error sending: " + err.message);
+            alert("Error: " + err.message);
             btn.disabled = false;
         });
     }
