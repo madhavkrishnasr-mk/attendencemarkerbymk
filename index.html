@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Attendance Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 450px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .hidden { display: none !important; }
+
+        h3 {
+            color: #1a1a1a;
+            margin-top: 0;
+            border-bottom: 2px solid #e4e6eb;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .row-flex { display: flex; gap: 10px; }
+
+        button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #004494; }
+        
+        .btn-full { width: 100%; font-size: 16px; margin-top: 15px; }
+        .btn-edit { background-color: #6c757d; font-size: 12px; padding: 6px 12px; }
+        .btn-edit:hover { background-color: #5a6268; }
+        .btn-delete { background-color: #dc3545; padding: 6px 12px; font-size: 12px;}
+        .btn-delete:hover { background-color: #c82333; }
+
+        .student-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #e4e6eb;
+            font-size: 16px;
+        }
+        .student-box { transform: scale(1.4); margin-right: 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="attendance-view">
+        <h3>
+            <span id="display-class-name">Class Attendance</span>
+            <button class="btn-edit" onclick="toggleEditMode()">Edit Roster ⚙️</button>
+        </h3>
+        
+        <input type="date" id="class-date">
+        <div id="student-container"></div>
+        <button class="btn-full" onclick="calculateAttendance()">Save & Download Record</button>
+    </div>
+
+    <div id="edit-view" class="hidden">
+        <h3>
+            Manage Roster
+            <button class="btn-edit" onclick="toggleEditMode()">Done Editing ✔️</button>
+        </h3>
+        
+        <label><strong>Class Name:</strong></label>
+        <div class="row-flex">
+            <input type="text" id="class-name" placeholder="e.g., Semester 3">
+            <button onclick="saveClassDetails()" style="margin-bottom: 15px;">Save</button>
+        </div>
+
+        <label><strong>Add New Student:</strong></label>
+        <div class="row-flex">
+            <input type="number" id="new-roll" placeholder="Roll No" min="1" step="1" style="width: 30%;">
+            <input type="text" id="new-name" placeholder="Name" style="width: 70%;">
+        </div>
+        <button class="btn-full" onclick="addStudent()" style="margin-top: 0; margin-bottom: 20px;">+ Add Student</button>
+
+        <label><strong>Current Students:</strong></label>
+        <div id="management-list"></div>
+    </div>
+</div>
+
+<script>
+    // 1. Memory Loading
+    let myClass = [];
+    let currentClass = localStorage.getItem("class_details") || "My Class";
+
+    try {
+        let storedData = localStorage.getItem("attendance_roster");
+        if (storedData) {
+            myClass = JSON.parse(storedData);
+        } else {
+            myClass = [
+                {rollNo: 1, name: "Madhav"},
+                {rollNo: 2, name: "Krishnanand"},
+                {rollNo: 3, name: "Jobin"}
+            ];
+        }
+    } catch(e) {
+        myClass = [
+            {rollNo: 1, name: "Madhav"},
+            {rollNo: 2, name: "Krishnanand"},
+            {rollNo: 3, name: "Jobin"}
+        ];
+    }
+
+    document.getElementById('class-date').valueAsDate = new Date();
+
+    // 2. Toggling Logic
+    function toggleEditMode() {
+        const attView = document.getElementById('attendance-view');
+        const editView = document.getElementById('edit-view');
+        
+        if (attView.classList.contains('hidden')) {
+            attView.classList.remove('hidden');
+            editView.classList.add('hidden');
+            updateScreen(); 
+        } else {
+            attView.classList.add('hidden');
+            editView.classList.remove('hidden');
+        }
+    }
+
+    // 3. Screen Redraw Logic
+    function updateScreen() {
+        document.getElementById("class-name").value = currentClass;
+        document.getElementById("display-class-name").innerText = currentClass;
+
+        const attContainer = document.getElementById("student-container");
+        const magContainer = document.getElementById("management-list");
+        
+        attContainer.innerHTML = "";
+        magContainer.innerHTML = "";
+
+        myClass.sort((a, b) => a.rollNo - b.rollNo);
+
+        for (let i = 0; i < myClass.length; i++) {
+            attContainer.innerHTML += `
+                <div class="student-row">
+                    <label style="cursor:pointer; display:flex; align-items:center; width: 100%;">
+                        <input type="checkbox" class="student-box" value="${myClass[i].rollNo}" checked>
+                        Roll ${myClass[i].rollNo}: ${myClass[i].name}
+                    </label>
+                </div>
+            `;
+
+            magContainer.innerHTML += `
+                <div class="student-row" style="padding: 8px 12px;">
+                    <span>Roll ${myClass[i].rollNo}: ${myClass[i].name}</span>
+                    <button class="btn-delete" onclick="deleteStudent(${i})">Delete</button>
+                </div>
+            `;
+        }
+    }
+
+    // 4. Data Management (With Smart Validation)
+    function saveClassDetails() {
+        currentClass = document.getElementById("class-name").value;
+        localStorage.setItem("class_details", currentClass);
+        updateScreen();
+    }
+
+    function addStudent() {
+        const rollInput = document.getElementById("new-roll").value;
+        const nameInput = document.getElementById("new-name").value;
+
+        // Rule 0: Don't leave blanks
+        if (rollInput === "" || nameInput === "") {
+            alert("Please enter both Roll Number and Name.");
+            return;
+        }
+
+        const parsedRoll = parseInt(rollInput);
+
+        // Rule 1: No negative numbers or zero
+        if (parsedRoll <= 0) {
+            alert("Roll Number must be a positive number (1, 2, 3, etc.).");
+            return; 
+        }
+
+        // Rule 2: No duplicate roll numbers
+        const isDuplicate = myClass.some(student => student.rollNo === parsedRoll);
+        if (isDuplicate) {
+            alert("Wait! Roll Number " + parsedRoll + " is already assigned to another student.");
+            return;
+        }
+
+        // If it passes all rules, save it!
+        myClass.push({ rollNo: parsedRoll, name: nameInput });
+        localStorage.setItem("attendance_roster", JSON.stringify(myClass));
+        
+        document.getElementById("new-roll").value = "";
+        document.getElementById("new-name").value = "";
+        updateScreen();
+    }
+
+    function deleteStudent(index) {
+        if (confirm("Are you sure you want to remove this student?")) {
+            myClass.splice(index, 1);
+            localStorage.setItem("attendance_roster", JSON.stringify(myClass));
+            updateScreen();
+        }
+    }
+
+    // 5. Save and Download
+    function calculateAttendance() {
+        const allBoxes = document.querySelectorAll(".student-box");
+        const selectedDate = document.getElementById("class-date").value;
+        
+        let fileContent = "Class,Roll No,Name,Status\n";
+
+        for (let i = 0; i < myClass.length; i++) {
+            let status = "";
+            if (allBoxes[i].checked === true) {
+                status = "Present";
+            } else {
+                status = "Absent";
+            }
+            fileContent += `${currentClass},${myClass[i].rollNo},${myClass[i].name},${status}\n`;
+        }
+
+        const blob = new Blob([fileContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        downloadLink.setAttribute('href', url);
+        downloadLink.setAttribute('download', currentClass.replace(/ /g, "_") + '_Ledger_' + selectedDate + '.csv');
+        downloadLink.click();
+    }
+
+    updateScreen();
+</script>
+</body>
+</html>
