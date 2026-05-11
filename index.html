@@ -23,6 +23,8 @@
         .student-box { transform: scale(1.5); margin-right: 15px; }
         .reason-box { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
         #status-msg { text-align: center; margin-top: 10px; font-weight: bold; color: #28a745; }
+        .help-box { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; border: 1px solid #bbdefb; }
+        .help-box a { color: #0056b3; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -42,11 +44,20 @@
     <div id="edit-view" class="hidden">
         <h3>Settings <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button></h3>
         
+        <div class="help-box">
+            <strong>👨‍🏫 For New Teachers (First Time Setup):</strong><br>
+            1. <a href="https://docs.google.com/spreadsheets/d/1QZ_XnSodjFC5ARU6hjxmBLZ2cw0eKTLImZfm2KqBkwc/copy" target="_blank">Click here to Copy the Database Sheet</a><br>
+            2. In your copied sheet, go to <i>Extensions > Apps Script</i>.<br>
+            3. Click <i>Deploy > New Deployment</i>.<br>
+            4. Set access to "Anyone", Deploy, and copy your /exec URL.<br>
+            5. Paste that URL in the box below.
+        </div>
+        
         <label><strong>Teacher's Script URL:</strong></label>
         <input type="url" id="script-url" placeholder="Paste your /exec URL here">
         
         <label><strong>Class Name:</strong></label>
-        <div class="row-flex"><input type="text" id="class-name"><button onclick="saveSettings()">Save Settings</button></div>
+        <div class="row-flex"><input type="text" id="class-name"><button onclick="saveSettings()">Save</button></div>
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         
