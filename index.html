@@ -18,6 +18,7 @@
         .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 15px; }
         .btn-edit { background-color: #6c757d; font-size: 11px; padding: 5px 10px; }
         .btn-delete { background-color: #dc3545; padding: 6px 10px; }
+        .btn-copy { background-color: #28a745; color: white; padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px; }
         .student-row { background-color: #f8f9fa; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #e4e6eb; }
         .student-main { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; }
         .student-box { transform: scale(1.5); margin-right: 15px; }
@@ -46,11 +47,13 @@
         
         <div class="help-box">
             <strong>👨‍🏫 For New Teachers (First Time Setup):</strong><br>
-            1. <a href="https://docs.google.com/spreadsheets/d/1QZ_XnSodjFC5ARU6hjxmBLZ2cw0eKTLImZfm2KqBkwc/copy" target="_blank">Click here to Copy the Database Sheet</a><br>
-            2. In your copied sheet, go to <i>Extensions > Apps Script</i>.<br>
-            3. Click <i>Deploy > New Deployment</i>.<br>
-            4. Set access to "Anyone", Deploy, and copy your /exec URL.<br>
-            5. Paste that URL in the box below.
+            1. Go to <a href="https://sheets.new" target="_blank">sheets.new</a> to open a blank sheet.<br>
+            2. Rename Tab 1 to <b>Attendance</b> and Tab 2 to <b>Students</b>.<br>
+            3. Go to <i>Extensions > Apps Script</i> and delete the default code.<br>
+            4. Click this button to copy the App Script code:<br>
+            <button class="btn-copy" onclick="copyAppScript()">📋 Copy Required Code</button><br>
+            5. Paste it in the Script Editor and click <i>Deploy > New Deployment</i>.<br>
+            6. Set access to "Anyone", copy your new /exec URL, and paste it below.
         </div>
         
         <label><strong>Teacher's Script URL:</strong></label>
@@ -77,6 +80,53 @@
     let scriptURL = localStorage.getItem("teacher_script_url") || "";
 
     document.getElementById('class-date').valueAsDate = new Date();
+
+    // The Google Apps Script Code stored securely inside your app
+    const appScriptCodeToCopy = `function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const attendanceSheet = ss.getSheetByName('Attendance');
+    const studentSheet = ss.getSheetByName('Students');
+    
+    const studentData = studentSheet.getDataRange().getValues();
+    const timestamp = new Date();
+
+    data.attendanceList.forEach(record => {
+      attendanceSheet.appendRow([data.className, record.rollNo, record.name, record.status, record.reason, timestamp]);
+      if (record.status === "Absent") {
+        sendParentNotification(record, data.className, studentData);
+      }
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function sendParentNotification(record, className, studentDirectory) {
+  let parentEmail = "";
+  for (let i = 1; i < studentDirectory.length; i++) {
+    if (studentDirectory[i][0] == record.rollNo) {
+      parentEmail = studentDirectory[i][2];
+      break;
+    }
+  }
+  if (parentEmail !== "") {
+    const subject = "Absence Notification: " + record.name;
+    const body = "Dear Parent,\\n\\nThis is to inform you that " + record.name + " (Roll No: " + record.rollNo + ") was marked ABSENT from " + className + " today.\\n\\nReason recorded: " + (record.reason || "Not specified") + ".\\n\\nThis is an automated system notification.";
+    MailApp.sendEmail(parentEmail, subject, body);
+  }
+}`;
+
+    function copyAppScript() {
+        navigator.clipboard.writeText(appScriptCodeToCopy).then(() => {
+            alert("Code copied successfully! Now paste it in your Apps Script.");
+        }).catch(err => {
+            alert("Failed to copy code. Please try again.");
+        });
+    }
 
     function toggleEditMode() {
         document.getElementById('attendance-view').classList.toggle('hidden');
