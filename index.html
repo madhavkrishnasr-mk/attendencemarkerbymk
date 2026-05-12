@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Ultimate Teacher Edition</title>
+    <title>Attendance Taker Pro - Ultimate Teacher Edition</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
@@ -103,6 +105,9 @@
         .sub-btn { font-size: 10px; padding: 5px 10px; border-radius: 4px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); }
         .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
 
+        /* --- QR REPORT DISPLAY --- */
+        #report-qr-display { background: white; padding: 15px; display: flex; flex-direction: column; align-items: center; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+
         /* --- REPORT UI --- */
         .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
         .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; font-size: 11px; text-align: center; }
@@ -128,7 +133,7 @@
 
     <div class="main-card">
         <div class="header-section" id="main-header">
-            <h2 id="app-title">Attendance Pro</h2>
+            <h2 id="app-title">Attendance Taker Pro</h2>
             <div id="header-buttons">
                 <button onclick="toggleDarkMode()" style="background:none; font-size:22px;">🌓</button>
                 <button onclick="showPage('settings-page')" class="btn-info">⚙️</button>
@@ -143,12 +148,12 @@
             
             <div id="setup-welcome-text">
                 <span class="welcome-icon">🎓</span>
-                <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Pro</h3>
+                <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Taker Pro</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your institution details to get started.</p>
             </div>
             
             <label>Institution / School Name:</label>
-            <input type="text" id="setup-school-name" placeholder="e.g. GVHSS Madikai">
+            <input type="text" id="setup-school-name" placeholder="Institution Name">
             
             <label>Preferred Message Language:</label>
             <select id="setup-msg-language">
@@ -218,6 +223,13 @@
             <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
             <p class="csv-reminder">⚠️ Ensure filename ends with .csv before clicking Save</p>
             
+            <button class="btn-success btn-full" onclick="generateReportQR()">📢 Generate QR Report</button>
+            <div id="report-qr-display" class="hidden">
+                <div id="qrcode"></div>
+                <p style="font-size: 10px; margin-top: 10px; color: var(--text-secondary);">Scan this to view percentages</p>
+                <button class="btn-danger" style="padding: 5px 15px; font-size: 11px;" onclick="document.getElementById('report-qr-display').classList.add('hidden')">Close QR</button>
+            </div>
+
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
 
@@ -236,7 +248,7 @@
                 isSetupComplete: true, 
                 classes: oc || [], 
                 activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), 
-                schoolName: os || "GVHSS Madikai", 
+                schoolName: os || "", 
                 language: ol || "en", 
                 history: oh || [] 
             };
@@ -322,6 +334,8 @@
             if(!appData.isSetupComplete) return;
             const cls = appData.classes.find(c => c.id == appData.activeClassId) || appData.classes[0];
             document.getElementById('app-title').innerText = cls.name;
+            document.getElementById('setup-school-name').value = appData.schoolName;
+            document.getElementById('select-msg-language').value = appData.language;
             document.querySelectorAll('.class-dropdown').forEach(s => { s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join(''); });
             
             const cont = document.getElementById('attendance-list-container');
@@ -366,6 +380,32 @@
                 document.getElementById(`opt-l-${idx}`).className = (s === 'Leave') ? 'sub-btn l-active' : 'sub-btn';
                 document.getElementById(`opt-normal-a-${idx}`).style.background = (s === 'Absent') ? '#ddd' : 'transparent';
             }
+        }
+
+        // --- REPORT QR GENERATION ---
+        function generateReportQR() {
+            const m = document.getElementById('report-month-picker').value;
+            const stats = getStats(m);
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            
+            let summaryText = `${cls.name} (${m})\n`;
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => {
+                const s = stats[r];
+                const active = s.present + s.leave;
+                const per = s.total ? Math.round((active/s.total)*100) : 0;
+                summaryText += `${r}:${per}% `;
+            });
+
+            document.getElementById('report-qr-display').classList.remove('hidden');
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), {
+                text: summaryText,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.L
+            });
         }
 
         function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
@@ -520,7 +560,7 @@
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let csv = "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
             const stats = getStats(m);
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.total},${s.total?Math.round(((s.present+s.leave)/s.total)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
         }
