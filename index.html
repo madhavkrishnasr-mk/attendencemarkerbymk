@@ -21,7 +21,7 @@
         .student-photo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid var(--primary); }
         .history-card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 12px; border-left: 6px solid var(--primary); }
         details { border: 1px solid var(--border); border-radius: 8px; padding: 5px; margin-top: 10px; }
-        summary { padding: 10px; cursor: pointer; font-weight: bold; }
+        summary { padding: 10px; cursor: pointer; font-weight: bold; outline: none; }
         .line-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border); }
         
         /* Toggle Button Styles */
@@ -91,7 +91,7 @@
     <div id="history-view" class="hidden">
         <div style="display:flex; justify-content:space-between; align-items:center;"><b>History Logs</b><button onclick="showView('attendance-view')">Back</button></div>
         <div id="history-container" style="margin-top:15px;"></div>
-        <button class="btn-full btn-red" onclick="clearHistory()">Clear History</button>
+        <button class="btn-full btn-red" onclick="clearHistory()">Clear All History</button>
     </div>
 </div>
 
@@ -115,6 +115,7 @@
         document.querySelectorAll('.card > div').forEach(v => v.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
         renderAll();
+        if(id === 'history-view') renderHistory();
     }
 
     // Toggle button logic
@@ -132,7 +133,7 @@
         selector.innerHTML = classes.map(c => `<option value="${c.id}" ${c.id == currentClassId ? 'selected' : ''}>${c.name}</option>`).join('');
 
         const container = document.getElementById("student-container");
-        container.innerHTML = cls.roster.length ? "" : "<p>No students. Add them in settings.</p>";
+        container.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; color:#666;'>No students added yet.</p>";
         
         cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, i) => {
             container.innerHTML += `
@@ -182,11 +183,14 @@
         const file = document.getElementById("new-photo").files[0];
         const cls = classes.find(c => c.id == currentClassId);
         
+        if (!r || !n) return alert("Roll number and Name are required.");
+
         const saveS = (img) => {
             cls.roster.push({ roll: parseInt(r), name: n, phone: p, email: email, photo: img });
             save(); renderAll();
             document.getElementById("new-roll").value = ""; document.getElementById("new-name").value = "";
             document.getElementById("new-phone").value = ""; document.getElementById("new-email").value = "";
+            document.getElementById("new-photo").value = "";
         };
 
         if(file) { 
@@ -218,13 +222,18 @@
         
         historyData.unshift({ date, className: cls.name, total: cls.roster.length, present: pCount, absent: cls.roster.length - pCount, records });
         localStorage.setItem("attendance_history", JSON.stringify(historyData));
-        alert("Attendance Saved!");
+        alert("Attendance Saved Successfully!");
     }
 
     function renderHistory() {
         const container = document.getElementById("history-container");
-        container.innerHTML = historyData.length ? "" : "<p>No history.</p>";
-        historyData.forEach(day => {
+        
+        // Safety Check: Filter out old, broken data from previous versions of the app
+        let safeHistory = historyData.filter(day => day.records && Array.isArray(day.records));
+        
+        container.innerHTML = safeHistory.length ? "" : "<p style='text-align:center;'>No history available yet.</p>";
+        
+        safeHistory.forEach(day => {
             let list = day.records.map(r => `
                 <div class="line-item" style="flex-direction:column; align-items:flex-start;">
                     <div style="display:flex; justify-content:space-between; width:100%;">
@@ -254,7 +263,13 @@
         window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
 
-    function clearHistory() { if(confirm("Clear all?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
+    function clearHistory() { 
+        if(confirm("Are you sure you want to delete ALL history?")) { 
+            historyData = []; 
+            localStorage.setItem("attendance_history", "[]"); 
+            renderHistory(); 
+        } 
+    }
 
     showView('attendance-view');
 </script>
