@@ -3,130 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro Elite</title>
+    <title>Attendance Pro Multi-Class</title>
     <style>
-        :root {
-            --bg-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-color: #1a1a1a;
-            --border-color: #e4e6eb;
-            --btn-primary: #0056b3;
-            --btn-secondary: #6c757d;
-        }
-
-        .dark-mode {
-            --bg-color: #18191a;
-            --card-bg: #242526;
-            --text-color: #e4e6eb;
-            --border-color: #3e4042;
-            --btn-primary: #2d88ff;
-            --btn-secondary: #4e4f50;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-color);
-            margin: 0; padding: 15px; 
-            display: flex; flex-direction: column; align-items: center;
-            transition: 0.3s;
-        }
-
-        .card { 
-            background-color: var(--card-bg); 
-            width: 100%; max-width: 480px; padding: 20px; 
-            border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
-            box-sizing: border-box; 
-        }
-
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #1a1a1a; --border: #e4e6eb; --primary: #0056b3; --secondary: #6c757d; }
+        .dark-mode { --bg: #18191a; --card: #242526; --text: #e4e6eb; --border: #3e4042; --primary: #2d88ff; --secondary: #4e4f50; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
+        .card { background: var(--card); width: 100%; max-width: 480px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
         .hidden { display: none !important; }
-        
-        h3 { 
-            margin-top: 0; border-bottom: 2px solid var(--border-color); 
-            padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; 
-        }
-
-        .header-btns { display: flex; gap: 5px; }
-
-        input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="file"], input[type="tel"] { 
-            width: 100%; padding: 12px; margin-bottom: 10px; 
-            border: 1px solid var(--border-color); border-radius: 8px; 
-            box-sizing: border-box; font-size: 16px;
-            background: var(--bg-color); color: var(--text-color);
-        }
-
-        button { 
-            background-color: var(--btn-primary); color: white; border: none; 
-            padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; 
-        }
-
-        .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 15px; }
-        .btn-small { font-size: 12px; padding: 6px 10px; }
-        .theme-btn { background: none; font-size: 20px; color: var(--text-color); }
-
-        .student-row { 
-            background-color: var(--bg-color); padding: 12px; margin: 10px 0; 
-            border-radius: 10px; border: 1px solid var(--border-color); 
-        }
-
-        .student-main { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; }
-        .student-photo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid var(--btn-primary); }
-        .reason-box { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--card-bg); color: var(--text-color); }
-
-        /* History Card Styles */
-        .history-card { 
-            background-color: var(--card-bg); padding: 15px; margin-bottom: 15px; 
-            border-radius: 12px; border-left: 6px solid var(--btn-primary);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .summary-box { 
-            display: flex; justify-content: space-around; 
-            background: var(--bg-color); padding: 10px; border-radius: 8px; margin: 10px 0;
-            font-weight: bold; font-size: 13px;
-        }
-
-        /* Dropdown Styling */
-        details {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 5px;
-            margin-top: 10px;
-        }
-        summary {
-            padding: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            outline: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        summary::marker { content: ""; }
-        summary::after { content: "▼"; font-size: 12px; transition: 0.3s; }
-        details[open] summary::after { transform: rotate(180deg); }
-
-        .line-item { 
-            display: flex; justify-content: space-between; padding: 10px 5px; 
-            border-bottom: 1px solid var(--border-color); font-size: 14px;
-        }
-        .status-p { color: #28a745; font-weight: bold; }
-        .status-a { color: #dc3545; font-weight: bold; }
-
-        .btn-wa { background-color: #25d366; font-size: 11px; padding: 4px 8px; margin-top: 5px; }
+        h3 { border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: var(--bg); color: var(--text); }
+        button { background: var(--primary); color: white; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .btn-full { width: 100%; font-size: 16px; margin-top: 10px; padding: 15px; }
+        .btn-red { background: #dc3545; }
+        .student-row { background: var(--bg); padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid var(--border); }
+        .student-photo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid var(--primary); }
+        .history-card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 12px; border-left: 6px solid var(--primary); }
+        details { border: 1px solid var(--border); border-radius: 8px; padding: 5px; margin-top: 10px; }
+        summary { padding: 10px; cursor: pointer; font-weight: bold; }
+        .line-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border); }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>
-        <span id="display-class-name">Loading...</span>
-        <div class="header-btns">
-            <button class="theme-btn" onclick="toggleTheme()" id="theme-icon">🌓</button>
-            <button class="btn-small" style="background:var(--btn-secondary)" onclick="showView('edit-view')">⚙️</button>
+    <h3 id="class-title">
+        <span>Attendance Pro</span>
+        <div>
+            <button onclick="toggleTheme()" style="background:none; font-size:20px; color:var(--text)">🌓</button>
+            <button onclick="showView('settings-view')">⚙️</button>
         </div>
     </h3>
 
     <div id="attendance-view">
+        <label>Select Class:</label>
+        <select id="class-selector" onchange="switchClass(this.value)"></select>
         <div style="display:flex; gap:10px;">
             <input type="date" id="class-date">
             <button style="background:#28a745; margin-bottom:10px;" onclick="showView('history-view')">📁 History</button>
@@ -135,38 +45,38 @@
         <button class="btn-full" onclick="submitAttendance()">Save Attendance</button>
     </div>
 
-    <div id="edit-view" class="hidden">
-        <label>Class Name:</label>
-        <div style="display:flex; gap:5px;"><input type="text" id="class-name"><button onclick="saveSettings()">Save</button></div>
+    <div id="settings-view" class="hidden">
+        <h4>Manage Classes</h4>
+        <div style="display:flex; gap:5px;"><input type="text" id="new-class-name" placeholder="Class Name (e.g. 10A)"><button onclick="addClass()">Add</button></div>
+        <div id="class-management-list"></div>
         <hr>
-        <label>Add Student:</label>
+        <h4>Students in Current Class</h4>
         <div style="display:flex; gap:5px;">
-            <input type="number" id="new-roll" placeholder="Roll" style="width:30%">
-            <input type="text" id="new-name" placeholder="Name">
+            <input type="number" id="new-roll" placeholder="Roll" style="width:30%"><input type="text" id="new-name" placeholder="Name">
         </div>
         <input type="tel" id="new-phone" placeholder="WhatsApp Number">
         <input type="file" id="new-photo" accept="image/*">
         <button class="btn-full" onclick="handleAddStudent()">+ Add Student</button>
-        <button class="btn-full" style="background:var(--btn-secondary)" onclick="showView('attendance-view')">Back to Home</button>
-        <div id="management-list"></div>
+        <div id="student-management-list" style="margin-top:15px;"></div>
+        <button class="btn-full" style="background:var(--secondary)" onclick="showView('attendance-view')">Back</button>
     </div>
 
     <div id="history-view" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <b>History Logs</b>
-            <button class="btn-small" style="background:var(--btn-secondary)" onclick="showView('attendance-view')">Back</button>
-        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><b>History Logs</b><button onclick="showView('attendance-view')">Back</button></div>
         <div id="history-container" style="margin-top:15px;"></div>
-        <button class="btn-full" style="background:#dc3545" onclick="clearHistory()">Clear History</button>
+        <button class="btn-full btn-red" onclick="clearHistory()">Clear History</button>
     </div>
 </div>
 
 <script>
-    let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [];
-    let currentClass = localStorage.getItem("class_details") || "New Class";
+    let classes = JSON.parse(localStorage.getItem("all_classes")) || [{ id: Date.now(), name: "Class 1", roster: [] }];
+    let currentClassId = localStorage.getItem("active_class_id") || classes[0].id;
     let historyData = JSON.parse(localStorage.getItem("attendance_history")) || [];
 
-    document.getElementById('class-date').valueAsDate = new Date();
+    function save() {
+        localStorage.setItem("all_classes", JSON.stringify(classes));
+        localStorage.setItem("active_class_id", currentClassId);
+    }
 
     function toggleTheme() {
         document.body.classList.toggle('dark-mode');
@@ -177,101 +87,103 @@
     function showView(id) {
         document.querySelectorAll('.card > div').forEach(v => v.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
-        if(id === 'attendance-view') updateScreen();
-        if(id === 'history-view') renderHistory();
+        renderAll();
     }
 
-    function updateScreen() {
-        document.getElementById("display-class-name").innerText = currentClass;
+    function renderAll() {
+        const cls = classes.find(c => c.id == currentClassId) || classes[0];
+        document.getElementById("class-title").querySelector('span').innerText = cls.name;
+        
+        // Render Selectors
+        const selector = document.getElementById("class-selector");
+        selector.innerHTML = classes.map(c => `<option value="${c.id}" ${c.id == currentClassId ? 'selected' : ''}>${c.name}</option>`).join('');
+
+        // Attendance View
         const container = document.getElementById("student-container");
-        container.innerHTML = "";
-        myClass.sort((a, b) => a.rollNo - b.rollNo);
-        myClass.forEach((s, i) => {
-            container.innerHTML += `
-                <div class="student-row">
-                    <div class="student-main">
-                        <input type="checkbox" style="transform:scale(1.5); margin-right:15px;" id="check-${i}" checked>
-                        <img src="${s.photo || defaultAvatar}" class="student-photo">
-                        <label>Roll ${s.rollNo}: ${s.name}</label>
-                    </div>
-                    <input type="text" class="reason-box" id="reason-${i}" placeholder="Remarks">
-                </div>`;
+        container.innerHTML = cls.roster.length ? "" : "<p>No students. Add them in settings.</p>";
+        cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, i) => {
+            container.innerHTML += `<div class="student-row"><div style="display:flex; align-items:center;"><input type="checkbox" style="transform:scale(1.5); margin-right:15px;" id="check-${i}" checked><img src="${s.photo || ''}" class="student-photo" onerror="this.style.display='none'"><label>Roll ${s.roll}: ${s.name}</label></div><input type="text" id="reason-${i}" placeholder="Remarks"></div>`;
         });
+
+        // Settings: Classes
+        document.getElementById("class-management-list").innerHTML = classes.map(c => `<div class="line-item"><span>${c.name}</span><button class="btn-red" onclick="deleteClass(${c.id})">Delete</button></div>`).join('');
+
+        // Settings: Students
+        document.getElementById("student-management-list").innerHTML = cls.roster.map((s, i) => `<div class="line-item"><span>Roll ${s.roll}: ${s.name}</span><button class="btn-red" onclick="deleteStudent(${i})">Delete</button></div>`).join('');
     }
+
+    function addClass() {
+        const name = document.getElementById("new-class-name").value;
+        if(!name) return;
+        const newCls = { id: Date.now(), name, roster: [] };
+        classes.push(newCls);
+        currentClassId = newCls.id;
+        save(); renderAll();
+    }
+
+    function deleteClass(id) {
+        if(classes.length <= 1) return alert("At least one class must remain.");
+        if(confirm("Delete this class and all its students?")) {
+            classes = classes.filter(c => c.id != id);
+            currentClassId = classes[0].id;
+            save(); renderAll();
+        }
+    }
+
+    function switchClass(id) { currentClassId = id; save(); renderAll(); }
 
     function handleAddStudent() {
         const r = document.getElementById("new-roll").value;
         const n = document.getElementById("new-name").value;
         const p = document.getElementById("new-phone").value;
         const file = document.getElementById("new-photo").files[0];
+        const cls = classes.find(c => c.id == currentClassId);
+        
+        const saveS = (img) => {
+            cls.roster.push({ roll: parseInt(r), name: n, phone: p, photo: img });
+            save(); renderAll();
+            document.getElementById("new-roll").value = ""; document.getElementById("new-name").value = "";
+        };
 
-        if (r && n) {
-            const save = (img) => {
-                myClass.push({ rollNo: parseInt(r), name: n, phone: p, photo: img });
-                localStorage.setItem("attendance_roster", JSON.stringify(myClass));
-                showView('attendance-view');
-            };
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = (e) => save(e.target.result);
-                reader.readAsDataURL(file);
-            } else save("");
+        if(file) { 
+            const reader = new FileReader(); 
+            reader.onload = (e) => saveS(e.target.result); 
+            reader.readAsDataURL(file); 
+        } else saveS("");
+    }
+
+    function deleteStudent(index) {
+        const cls = classes.find(c => c.id == currentClassId);
+        if(confirm("Delete this student?")) {
+            cls.roster.splice(index, 1);
+            save(); renderAll();
         }
     }
 
     function submitAttendance() {
+        const cls = classes.find(c => c.id == currentClassId);
         const date = document.getElementById('class-date').value;
         let pCount = 0;
-        let records = myClass.map((s, i) => {
+        let records = cls.roster.map((s, i) => {
             const isP = document.getElementById(`check-${i}`).checked;
             if(isP) pCount++;
-            return { roll: s.rollNo, name: s.name, status: isP ? "Present" : "Absent", reason: document.getElementById(`reason-${i}`).value || "", phone: s.phone };
+            return { roll: s.roll, name: s.name, status: isP ? "Present" : "Absent", phone: s.phone };
         });
-        historyData.unshift({ date, total: myClass.length, present: pCount, absent: myClass.length - pCount, records });
+        historyData.unshift({ date, className: cls.name, total: cls.roster.length, present: pCount, absent: cls.roster.length - pCount, records });
         localStorage.setItem("attendance_history", JSON.stringify(historyData));
-        alert("Success!");
+        alert("Attendance Saved!");
     }
 
     function renderHistory() {
         const container = document.getElementById("history-container");
-        container.innerHTML = "";
+        container.innerHTML = historyData.length ? "" : "<p>No history.</p>";
         historyData.forEach(day => {
-            let recordsHTML = day.records.map(r => `
-                <div class="line-item">
-                    <span>${r.roll}. ${r.name}</span>
-                    <div style="text-align:right">
-                        <span class="${r.status === 'Present' ? 'status-p' : 'status-a'}">${r.status}</span>
-                        ${r.status === 'Absent' && r.phone ? `<br><button class="btn-wa" onclick="sendWA('${r.phone}','${r.name}','${day.date}')">WA</button>` : ''}
-                    </div>
-                </div>`).join('');
-
-            container.innerHTML += `
-                <div class="history-card">
-                    <div style="font-weight:bold;">📅 ${day.date}</div>
-                    <div class="summary-box">
-                        <span>Present: ${day.present}</span>
-                        <span>Absent: ${day.absent}</span>
-                    </div>
-                    <details>
-                        <summary>View Detailed List</summary>
-                        <div style="margin-top:10px;">${recordsHTML}</div>
-                    </details>
-                </div>`;
+            let list = day.records.map(r => `<div class="line-item"><span>${r.roll}. ${r.name}</span><span style="color:${r.status=='Present'?'#28a745':'#dc3545'}">${r.status}</span></div>`).join('');
+            container.innerHTML += `<div class="history-card"><b>📅 ${day.date} - ${day.className}</b><div style="font-size:12px">Present: ${day.present} | Absent: ${day.absent}</div><details><summary>View Details</summary>${list}</details></div>`;
         });
     }
 
-    function sendWA(num, name, date) {
-        window.open(`https://wa.me/${num}?text=${encodeURIComponent(`Absence Note: ${name} was absent on ${date}.`)}`, '_blank');
-    }
-
-    function saveSettings() {
-        currentClass = document.getElementById("class-name").value;
-        localStorage.setItem("class_details", currentClass);
-        alert("Saved");
-        updateScreen();
-    }
-
-    function clearHistory() { if(confirm("Clear?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
+    function clearHistory() { if(confirm("Clear all?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
 
     showView('attendance-view');
 </script>
