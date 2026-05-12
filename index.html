@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Master Teacher Edition 2026</title>
+    <title>Attendance Pro - Ultimate Teacher Edition 2026</title>
     
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
         :root {
@@ -102,6 +104,9 @@
         .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
         .sub-btn.d-active { background: var(--duty-purple); color: white; border-color: var(--duty-purple); }
 
+        /* --- QR SCANNER MODAL --- */
+        #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; }
+
         /* --- REPORT UI --- */
         .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
         .report-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; font-size: 11px; text-align: center; }
@@ -120,6 +125,7 @@
         .tab-btn.active { background-color: var(--primary-blue); color: white; border-color: var(--primary-blue); }
         
         .trend-box { background: #e8f4fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid var(--primary-blue); }
+        .csv-reminder { font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -143,6 +149,11 @@
                 <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1;">📊 Reports</button>
             </div>
 
+            <div style="margin-bottom: 15px;">
+                <button onclick="toggleQRScanner()" id="qr-toggle-btn" class="btn-primary" style="width: 100%; padding: 12px;">📷 Start QR Scanner Mode</button>
+                <div id="qr-reader" class="hidden"></div>
+            </div>
+
             <div id="attendance-list-container"></div>
             <button class="btn-primary btn-full" onclick="saveAttendanceData()">Save Attendance Record</button>
         </div>
@@ -162,7 +173,7 @@
                 <label>Manage Students for:</label>
                 <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
                 <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll"><input type="text" id="input-student-name" placeholder="Name"></div>
-                <input type="tel" id="input-student-phone" placeholder="WhatsApp No (e.g. 919876543210)">
+                <input type="tel" id="input-student-phone" placeholder="WhatsApp No">
                 <input type="email" id="input-student-email" placeholder="Parent Email">
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
@@ -175,7 +186,7 @@
             </div>
 
             <div id="tab-school-section" class="hidden">
-                <input type="text" id="input-school-name" placeholder="Institution Name">
+                <input type="text" id="input-school-name" placeholder="School Name">
                 <select id="select-msg-language"><option value="en">English</option><option value="ml">Malayalam</option></select>
                 <button class="btn-primary btn-full" onclick="updateGlobalSettings()">Save Settings</button>
             </div>
@@ -186,7 +197,10 @@
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshReportsView();"></select>
             <select id="report-month-picker" onchange="refreshReportsView()"></select>
             <div id="trend-analysis" class="trend-box"></div>
+            
             <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
+            <p class="csv-reminder">⚠️ Important: Ensure filename ends with .csv before clicking Save</p>
+            
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
 
@@ -199,6 +213,7 @@
     </div>
 
     <script>
+        // MIGRATION & DATA CORE
         function migrateOldData() {
             const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
             if (oc || oh) return { classes: oc || [], activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), schoolName: os || "School", language: ol || "en", history: oh || [] };
@@ -208,12 +223,14 @@
         let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || { classes: [{ id: Date.now(), name: "Class 1", roster: [] }], activeClassId: null, schoolName: "GVHSS Madikai", language: "en", history: [] };
         if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
         let editingIdx = -1;
+        let html5QrCode = null;
 
         function persistData() { localStorage.setItem("pro_attendance_data", JSON.stringify(appData)); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem("pro_theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
         if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
         function showPage(pId) {
+            if (html5QrCode) stopScanner();
             document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
             document.getElementById(pId).classList.remove('hidden');
             refreshViews();
@@ -235,7 +252,7 @@
             cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add in Settings.</p>";
             cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, idx) => {
                 cont.innerHTML += `
-                <div class="student-item">
+                <div class="student-item" id="student-item-${s.roll}">
                     <div class="student-top-row">
                         <div class="student-meta">
                             <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
@@ -277,6 +294,46 @@
             }
         }
 
+        // --- QR SCANNER LOGIC ---
+        function toggleQRScanner() {
+            const readerDiv = document.getElementById('qr-reader');
+            const btn = document.getElementById('qr-toggle-btn');
+            if (readerDiv.classList.contains('hidden')) {
+                readerDiv.classList.remove('hidden');
+                btn.innerText = "🛑 Stop QR Scanner";
+                startScanner();
+            } else {
+                stopScanner();
+                readerDiv.classList.add('hidden');
+                btn.innerText = "📷 Start QR Scanner Mode";
+            }
+        }
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("qr-reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    // Try to mark student by scanned Roll Number
+                    const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                    const idx = cls.roster.findIndex(s => s.roll == decodedText.trim());
+                    if (idx !== -1) {
+                        markStatus(idx, 'Present');
+                        const item = document.getElementById(`student-item-${decodedText.trim()}`);
+                        item.style.backgroundColor = "#e6fffa";
+                        setTimeout(() => item.style.backgroundColor = "var(--bg-color)", 1000);
+                    }
+                }
+            ).catch(err => console.log(err));
+        }
+
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => { html5QrCode = null; }).catch(err => console.log(err));
+            }
+        }
+
         function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
 
         function createNewClass() {
@@ -310,11 +367,15 @@
             const d = document.getElementById('attendance-date-input').value;
             if (!d) return alert("Select Date!");
             
-            // CHECK FOR DUPLICATE: One entry per class per day
             const exists = appData.history.find(h => h.classId == cls.id && h.date == d);
-            if (exists) return alert("Attendance for " + cls.name + " on " + d + " has already been saved!");
+            if (exists) return alert("Record already exists for this date!");
 
-            if (new Date(d).getDay() === 0) if(!confirm("Sunday detected. Save anyway?")) return;
+            // SATURDAY & SUNDAY CHECK
+            const dayNum = new Date(d).getDay();
+            if (dayNum === 0 || dayNum === 6) {
+                if(!confirm(`Today is ${dayNum === 0 ? 'Sunday' : 'Saturday'}. Are you sure you want to save attendance for a weekend?`)) return;
+            }
+
             let p = 0;
             const recs = cls.roster.map((s, idx) => {
                 const st = document.getElementById(`status-val-${idx}`).value;
@@ -351,7 +412,7 @@
             const student = cls.roster.find(s => s.roll == roll);
             if (!student) return alert("Student not found!");
             let target = (type === 'wa') ? student.phone : student.email;
-            if (!target || target.trim() === "") return alert(`No contact saved for Roll ${roll}!`);
+            if (!target || target.trim() === "") return alert("No contact saved!");
             let ct = target.replace(/\D/g, ''); 
             if (type === 'wa' && ct.length === 10) ct = "91" + ct;
             let msg = appData.language === 'ml' ? `പ്രിയ രക്ഷിതാവേ,\n\n${appData.schoolName}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${student.name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ` : `Dear Parent,\n\nThis is to inform you that your child, ${student.name} (Roll No: ${roll}), was marked absent today (${date}) from ${appData.schoolName}.\n\nRegards,\nClass Teacher`;
@@ -362,7 +423,6 @@
         function bulkWhatsApp(hId) {
             const entry = appData.history.find(h => h.id === hId);
             const absents = entry.students.filter(s => s.status === 'Absent');
-            if (!absents.length) return alert("No absentees found!");
             absents.forEach((s, idx) => setTimeout(() => smartMessage(s.roll, entry.date, 'wa'), idx * 1200));
         }
 
@@ -387,7 +447,7 @@
             let dayCounts = [0,0,0,0,0,0,0];
             history.forEach(h => { dayCounts[new Date(h.date).getDay()] += h.absent; });
             const peakDay = dayMap[dayCounts.indexOf(Math.max(...dayCounts))];
-            document.getElementById('trend-analysis').innerText = history.length ? `Trend: Most Absences on ${peakDay}s` : "No trends yet.";
+            document.getElementById('trend-analysis').innerText = history.length ? `Trend: Peak Absences on ${peakDay}s` : "No trends available.";
 
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
@@ -402,23 +462,23 @@
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let csv = "Roll No,Name,Present,Absent,Leave,Duty,Total Days,Percentage\n";
             const stats = getStats(m);
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.d},${s.t},${s.t?Math.round(((s.p+s.l+s.d)/s.t)*100):0}%\n`; });
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.duty},${s.total},${s.total?Math.round(((s.present+s.leave+s.duty)/s.total)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Report_${cls.name}_${m}.csv`; link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
         }
 
         function getStats(month) {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, p: 0, a:0, l:0, d:0, t: 0 });
+            let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, present: 0, absent:0, leave:0, duty:0, total: 0 });
             appData.history.filter(h => h.classId == cls.id && h.date.startsWith(month)).forEach(day => {
-                day.students.forEach(r => { if (s[r.roll]) { s[r.roll].t++; if (r.status === 'Present') s[r.roll].p++; else if (r.status === 'Absent') s[r.roll].a++; else if (r.status === 'Leave') s[r.roll].l++; else s[r.roll].d++; }});
+                day.students.forEach(r => { if (s[r.roll]) { s[r.roll].total++; if (r.status === 'Present') s[r.roll].present++; else if (r.status === 'Absent') s[r.roll].absent++; else if (r.status === 'Leave') s[r.roll].leave++; else s[r.roll].duty++; }});
             });
             return s;
         }
 
         function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
         function removeClass(id) { if(appData.classes.length>1 && confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes[0].id; persistData(); refreshViews(); } }
-        function wipeHistoryForCurrentClass() { if(confirm("Delete history?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+        function wipeHistoryForCurrentClass() { if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
         function updateGlobalSettings() { appData.schoolName = document.getElementById('input-school-name').value; appData.language = document.getElementById('select-msg-language').value; persistData(); alert("Saved!"); }
 
         refreshViews();
