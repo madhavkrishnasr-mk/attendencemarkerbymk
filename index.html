@@ -3,29 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0056b3">
-    <title>Attendance Pro</title>
+    <title>Attendance Pro (Offline)</title>
     <style>
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .card { background-color: #ffffff; width: 100%; max-width: 480px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
         .hidden { display: none !important; }
         h3 { color: #1a1a1a; margin-top: 0; border-bottom: 2px solid #e4e6eb; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        input[type="text"], input[type="number"], input[type="date"], input[type="url"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .row-flex { display: flex; gap: 8px; align-items: center; }
-        button { background-color: #0056b3; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        button { background-color: #0056b3; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 15px; }
-        .btn-edit { background-color: #6c757d; font-size: 11px; padding: 5px 10px; }
+        .btn-edit { background-color: #6c757d; font-size: 12px; padding: 6px 10px; margin-left: 5px; }
+        .btn-history { background-color: #28a745; font-size: 12px; padding: 6px 10px; }
         .btn-delete { background-color: #dc3545; padding: 6px 10px; }
-        .btn-copy { background-color: #28a745; color: white; padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px; }
         .student-row { background-color: #f8f9fa; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #e4e6eb; }
         .student-main { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; }
         .student-box { transform: scale(1.5); margin-right: 15px; }
         .reason-box { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .history-card { background-color: #e9ecef; padding: 10px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #0056b3; }
+        .history-absent { color: #dc3545; font-size: 14px; margin-top: 5px; }
         #status-msg { text-align: center; margin-top: 10px; font-weight: bold; color: #28a745; }
-        .help-box { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; border: 1px solid #bbdefb; }
-        .help-box a { color: #0056b3; font-weight: bold; }
+        .nav-buttons { display: flex; justify-content: flex-end; gap: 5px; }
     </style>
 </head>
 <body>
@@ -34,36 +32,22 @@
     <div id="attendance-view">
         <h3>
             <span id="display-class-name">Loading...</span>
-            <button class="btn-edit" onclick="toggleEditMode()">Settings ⚙️</button>
+            <div class="nav-buttons">
+                <button class="btn-history" onclick="showView('history-view')">History 📁</button>
+                <button class="btn-edit" onclick="showView('edit-view')">⚙️</button>
+            </div>
         </h3>
         <input type="date" id="class-date">
         <div id="student-container"></div>
-        <button id="submit-btn" class="btn-full" onclick="submitToCloud()">Submit to Institution & Parents</button>
+        <button id="submit-btn" class="btn-full" onclick="saveAttendanceLocally()">Save Attendance in App</button>
         <div id="status-msg"></div>
     </div>
 
     <div id="edit-view" class="hidden">
-        <h3>Settings <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button></h3>
-        
-        <div class="help-box">
-            <strong>👨‍🏫 For New Teachers (First Time Setup):</strong><br>
-            1. Go to <a href="https://sheets.new" target="_blank">sheets.new</a> to open a blank sheet.<br>
-            2. Rename Tab 1 to <b>Attendance</b> and Tab 2 to <b>Students</b>.<br>
-            3. Go to <i>Extensions > Apps Script</i> and delete the default code.<br>
-            4. Click this button to copy the App Script code:<br>
-            <button class="btn-copy" onclick="copyAppScript()">📋 Copy Required Code</button><br>
-            5. Paste it in the Script Editor and click <i>Deploy > New Deployment</i>.<br>
-            6. Set access to "Anyone", copy your new /exec URL, and paste it below.
-        </div>
-        
-        <label><strong>Teacher's Script URL:</strong></label>
-        <input type="url" id="script-url" placeholder="Paste your /exec URL here">
-        
+        <h3>Settings <button class="btn-edit" onclick="showView('attendance-view')">Back ✔️</button></h3>
         <label><strong>Class Name:</strong></label>
         <div class="row-flex"><input type="text" id="class-name"><button onclick="saveSettings()">Save</button></div>
-        
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-        
         <label><strong>Add Student to Roster:</strong></label>
         <div class="row-flex">
             <input type="number" id="new-roll" placeholder="Roll" min="1" style="width: 30%;">
@@ -72,76 +56,42 @@
         <button class="btn-full" onclick="addStudent()" style="margin-top:0">+ Add Student</button>
         <div id="management-list" style="margin-top:20px;"></div>
     </div>
+
+    <div id="history-view" class="hidden">
+        <h3>Saved Records <button class="btn-edit" onclick="showView('attendance-view')">Back ✔️</button></h3>
+        <div id="history-container"></div>
+        <button class="btn-full" style="background-color: #dc3545;" onclick="clearHistory()">Clear All History</button>
+    </div>
 </div>
 
 <script>
     let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [];
     let currentClass = localStorage.getItem("class_details") || "New Class";
-    let scriptURL = localStorage.getItem("teacher_script_url") || "";
+    let attendanceHistory = JSON.parse(localStorage.getItem("attendance_history")) || [];
 
     document.getElementById('class-date').valueAsDate = new Date();
 
-    // The Google Apps Script Code stored securely inside your app
-    const appScriptCodeToCopy = `function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const attendanceSheet = ss.getSheetByName('Attendance');
-    const studentSheet = ss.getSheetByName('Students');
-    
-    const studentData = studentSheet.getDataRange().getValues();
-    const timestamp = new Date();
-
-    data.attendanceList.forEach(record => {
-      attendanceSheet.appendRow([data.className, record.rollNo, record.name, record.status, record.reason, timestamp]);
-      if (record.status === "Absent") {
-        sendParentNotification(record, data.className, studentData);
-      }
-    });
-
-    return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function sendParentNotification(record, className, studentDirectory) {
-  let parentEmail = "";
-  for (let i = 1; i < studentDirectory.length; i++) {
-    if (studentDirectory[i][0] == record.rollNo) {
-      parentEmail = studentDirectory[i][2];
-      break;
-    }
-  }
-  if (parentEmail !== "") {
-    const subject = "Absence Notification: " + record.name;
-    const body = "Dear Parent,\\n\\nThis is to inform you that " + record.name + " (Roll No: " + record.rollNo + ") was marked ABSENT from " + className + " today.\\n\\nReason recorded: " + (record.reason || "Not specified") + ".\\n\\nThis is an automated system notification.";
-    MailApp.sendEmail(parentEmail, subject, body);
-  }
-}`;
-
-    function copyAppScript() {
-        navigator.clipboard.writeText(appScriptCodeToCopy).then(() => {
-            alert("Code copied successfully! Now paste it in your Apps Script.");
-        }).catch(err => {
-            alert("Failed to copy code. Please try again.");
-        });
-    }
-
-    function toggleEditMode() {
-        document.getElementById('attendance-view').classList.toggle('hidden');
-        document.getElementById('edit-view').classList.toggle('hidden');
-        updateScreen();
+    function showView(viewId) {
+        document.getElementById('attendance-view').classList.add('hidden');
+        document.getElementById('edit-view').classList.add('hidden');
+        document.getElementById('history-view').classList.add('hidden');
+        document.getElementById(viewId).classList.remove('hidden');
+        
+        if(viewId === 'attendance-view') updateScreen();
+        if(viewId === 'history-view') renderHistory();
     }
 
     function updateScreen() {
         document.getElementById("class-name").value = currentClass;
-        document.getElementById("script-url").value = scriptURL;
         document.getElementById("display-class-name").innerText = currentClass;
         const attContainer = document.getElementById("student-container");
         const magContainer = document.getElementById("management-list");
         attContainer.innerHTML = ""; magContainer.innerHTML = "";
         myClass.sort((a, b) => a.rollNo - b.rollNo);
+
+        if(myClass.length === 0) {
+            attContainer.innerHTML = "<p style='text-align:center; color:#666;'>No students added yet. Go to Settings ⚙️ to add students.</p>";
+        }
 
         myClass.forEach((s, i) => {
             attContainer.innerHTML += `
@@ -162,10 +112,8 @@ function sendParentNotification(record, className, studentDirectory) {
 
     function saveSettings() {
         currentClass = document.getElementById("class-name").value;
-        scriptURL = document.getElementById("script-url").value;
         localStorage.setItem("class_details", currentClass);
-        localStorage.setItem("teacher_script_url", scriptURL);
-        alert("Settings saved!");
+        alert("Class name saved!");
         updateScreen();
     }
 
@@ -186,39 +134,68 @@ function sendParentNotification(record, className, studentDirectory) {
         }
     }
 
-    function submitToCloud() {
-        if (!scriptURL) return alert("Please go to Settings and paste your Script URL first!");
+    function saveAttendanceLocally() {
+        if(myClass.length === 0) return alert("No students to save!");
         
-        const btn = document.getElementById('submit-btn');
+        const dateStr = document.getElementById('class-date').value;
         const msg = document.getElementById('status-msg');
-        btn.disabled = true;
-        btn.innerText = "Sending...";
         
-        const attendanceList = myClass.map((s, i) => ({
-            rollNo: s.rollNo,
-            name: s.name,
-            status: document.getElementById(`check-${i}`).checked ? "Present" : "Absent",
-            reason: document.getElementById(`reason-${i}`).value
-        }));
+        // Create a record for the day
+        let dailyRecord = {
+            date: dateStr,
+            className: currentClass,
+            absentees: []
+        };
 
-        fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({ className: currentClass, attendanceList: attendanceList })
-        })
-        .then(() => {
-            msg.innerText = "Success! Logged and emails sent.";
-            btn.disabled = false;
-            btn.innerText = "Submit to Institution & Parents";
-            setTimeout(() => { msg.innerText = ""; }, 5000);
-        })
-        .catch(err => {
-            alert("Error: " + err.message);
-            btn.disabled = false;
+        // Find who is absent
+        myClass.forEach((s, i) => {
+            const isPresent = document.getElementById(`check-${i}`).checked;
+            if (!isPresent) {
+                const reason = document.getElementById(`reason-${i}`).value || "No reason";
+                dailyRecord.absentees.push(`Roll ${s.rollNo} (${s.name}) - ${reason}`);
+            }
+        });
+
+        // Save to history
+        attendanceHistory.unshift(dailyRecord); // Add to the top of the list
+        localStorage.setItem("attendance_history", JSON.stringify(attendanceHistory));
+
+        msg.innerText = "Saved securely in the app!";
+        setTimeout(() => { msg.innerText = ""; }, 3000);
+    }
+
+    function renderHistory() {
+        const container = document.getElementById("history-container");
+        container.innerHTML = "";
+        
+        if (attendanceHistory.length === 0) {
+            container.innerHTML = "<p>No attendance saved yet.</p>";
+            return;
+        }
+
+        attendanceHistory.forEach(record => {
+            let absentText = record.absentees.length > 0 
+                ? "<strong>Absentees:</strong><br>" + record.absentees.join("<br>") 
+                : "<strong style='color:#28a745;'>Everyone was Present</strong>";
+
+            container.innerHTML += `
+                <div class="history-card">
+                    <strong>📅 ${record.date}</strong> | ${record.className}
+                    <div class="history-absent">${absentText}</div>
+                </div>`;
         });
     }
 
-    updateScreen();
+    function clearHistory() {
+        if(confirm("Are you sure you want to delete all saved attendance records? This cannot be undone.")) {
+            attendanceHistory = [];
+            localStorage.setItem("attendance_history", JSON.stringify(attendanceHistory));
+            renderHistory();
+        }
+    }
+
+    // Load initial screen
+    showView('attendance-view');
 </script>
 </body>
 </html>
