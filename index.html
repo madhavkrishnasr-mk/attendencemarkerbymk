@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Ultimate Edition 2026</title>
+    <title>Attendance Pro - Master Teacher Edition 2026</title>
     
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
@@ -85,19 +85,22 @@
         .btn-info { background-color: var(--info-cyan); color: white; }
         .btn-secondary { background-color: var(--text-secondary); color: white; }
 
-        /* --- ATTENDANCE SELECTOR (4-WAY) --- */
+        /* --- ATTENDANCE UI --- */
         .student-item { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); }
         .student-top-row { display: flex; justify-content: space-between; align-items: center; }
         .student-meta { display: flex; align-items: center; gap: 10px; }
         .student-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-blue); }
 
-        .attendance-toggle { display: flex; width: 160px; height: 35px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
-        .toggle-opt { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; background-color: var(--card-bg); color: var(--text-main); cursor: pointer; border-right: 1px solid var(--border-color); }
-        .toggle-opt:last-child { border-right: none; }
+        .attendance-toggle { display: flex; width: 100px; height: 35px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
+        .toggle-opt { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; background-color: var(--card-bg); color: var(--text-main); cursor: pointer; }
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
         .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
-        .toggle-opt.l-active { background-color: var(--warning-orange); color: white; }
-        .toggle-opt.d-active { background-color: var(--duty-purple); color: white; }
+
+        /* Sub-options for L/D */
+        .extra-opts { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; padding-top: 8px; border-top: 1px dashed var(--border-color); }
+        .sub-btn { font-size: 10px; padding: 5px 10px; border-radius: 4px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); }
+        .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
+        .sub-btn.d-active { background: var(--duty-purple); color: white; border-color: var(--duty-purple); }
 
         /* --- REPORT UI --- */
         .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
@@ -115,7 +118,6 @@
         .settings-tabs { display: flex; gap: 5px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; font-size: 12px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
         .tab-btn.active { background-color: var(--primary-blue); color: white; }
-        
         .trend-box { background: #e8f4fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid var(--primary-blue); }
     </style>
 </head>
@@ -159,8 +161,8 @@
                 <label>Manage Students for:</label>
                 <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
                 <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll"><input type="text" id="input-student-name" placeholder="Name"></div>
-                <input type="tel" id="input-student-phone" placeholder="WhatsApp No">
-                <input type="email" id="input-student-email" placeholder="Email">
+                <input type="tel" id="input-student-phone" placeholder="WhatsApp No (e.g. 9876543210)">
+                <input type="email" id="input-student-email" placeholder="Email Address">
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 <div id="student-list-management" style="margin-top: 15px;"></div>
@@ -182,9 +184,7 @@
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3>📊 Reports</h3><button onclick="showPage('home-page')" class="btn-secondary">Back</button></div>
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshReportsView();"></select>
             <select id="report-month-picker" onchange="refreshReportsView()"></select>
-            
             <div id="trend-analysis" class="trend-box"></div>
-            
             <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
@@ -234,7 +234,26 @@
             const cont = document.getElementById('attendance-list-container');
             cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add in Settings.</p>";
             cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, idx) => {
-                cont.innerHTML += `<div class="student-item"><div class="student-top-row"><div class="student-meta"><img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'"><span>Roll ${s.roll}: ${s.name}</span></div><div class="attendance-toggle"><input type="hidden" id="status-val-${idx}" value="Present"><div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div><div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Absent')">A</div><div id="opt-l-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Leave')">L</div><div id="opt-d-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Duty')">D</div></div></div></div>`;
+                cont.innerHTML += `
+                <div class="student-item">
+                    <div class="student-top-row">
+                        <div class="student-meta">
+                            <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
+                            <span>Roll ${s.roll}: ${s.name}</span>
+                        </div>
+                        <div class="attendance-toggle">
+                            <input type="hidden" id="status-val-${idx}" value="Present">
+                            <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div>
+                            <div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Absent')">A</div>
+                        </div>
+                    </div>
+                    <div id="sub-opts-${idx}" class="extra-opts hidden">
+                        <span style="font-size:10px; margin-right:auto; align-self:center;">Absence Type:</span>
+                        <button id="opt-l-${idx}" class="sub-btn" onclick="markStatus(${idx},'Leave')">Leave</button>
+                        <button id="opt-d-${idx}" class="sub-btn" onclick="markStatus(${idx},'Duty')">Duty</button>
+                        <button id="opt-normal-a-${idx}" class="sub-btn sub-btn-active" style="background:#ddd" onclick="markStatus(${idx},'Absent')">Normal</button>
+                    </div>
+                </div>`;
             });
 
             document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;"><span>${c.name}</span><button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button></div>`).join('');
@@ -243,9 +262,23 @@
 
         function markStatus(idx, s) {
             document.getElementById(`status-val-${idx}`).value = s;
-            ['p','a','l','d'].forEach(k => document.getElementById(`opt-${k}-${idx}`).className = 'toggle-opt');
-            const key = s === 'Present' ? 'p' : s === 'Absent' ? 'a' : s === 'Leave' ? 'l' : 'd';
-            document.getElementById(`opt-${key}-${idx}`).classList.add(`${key}-active`);
+            const extra = document.getElementById(`sub-opts-${idx}`);
+            
+            // Toggle visibility of L/D options
+            if (s === 'Present') {
+                extra.classList.add('hidden');
+                document.getElementById(`opt-p-${idx}`).classList.add('p-active');
+                document.getElementById(`opt-a-${idx}`).classList.remove('a-active');
+            } else {
+                extra.classList.remove('hidden');
+                document.getElementById(`opt-p-${idx}`).classList.remove('p-active');
+                document.getElementById(`opt-a-${idx}`).classList.add('a-active');
+                
+                // Highlight the specific sub-type
+                document.getElementById(`opt-l-${idx}`).className = (s === 'Leave') ? 'sub-btn l-active' : 'sub-btn';
+                document.getElementById(`opt-d-${idx}`).className = (s === 'Duty') ? 'sub-btn d-active' : 'sub-btn';
+                document.getElementById(`opt-normal-a-${idx}`).style.background = (s === 'Absent') ? '#ddd' : 'transparent';
+            }
         }
 
         function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
@@ -305,27 +338,51 @@
                     <details style="margin-top:10px; font-size:12px;">
                         <summary style="cursor:pointer; color:var(--primary-blue)">View Full Details</summary>
                         <div style="font-weight:bold; margin-top:10px; color:red;">Absents:</div>
-                        ${aList.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><div><button class="msg-btn" style="background:#25D366" onclick="sendMessage('${s.phone}','${s.name}','${s.roll}','${h.date}','wa')">WA</button><button class="msg-btn" style="background:#EA4335" onclick="sendMessage('${s.email}','${s.name}','${s.roll}','${h.date}','mail')">Mail</button></div></div>`).join('')}
+                        ${aList.map(s => `
+                            <div class="student-list-row">
+                                <span>${s.roll}. ${s.name}</span>
+                                <div>
+                                    <button class="msg-btn" style="background:#25D366" onclick="smartMessage(${s.roll},'${h.date}','wa')">WA</button>
+                                    <button class="msg-btn" style="background:#EA4335" onclick="smartMessage(${s.roll},'${h.date}','mail')">Mail</button>
+                                </div>
+                            </div>`).join('')}
                         <div style="font-weight:bold; margin-top:10px; color:green;">Present/OD/Leave:</div>
                         ${pList.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>${s.status}</b></div>`).join('')}
                     </details>
                 </div>`}).join('') : "No History.";
         }
 
-        function sendMessage(t, n, r, d, type) {
-            if (!t) return alert("No contact info!");
-            let ct = t.replace(/\D/g, ''); if (type==='wa' && ct.length===10) ct = "91"+ct;
-            let msg = appData.language==='ml' ? `ഹാജരായിട്ടില്ല (${n}, Roll: ${r}, Date: ${d}) - ${appData.schoolName}` : `Marked Absent (${n}, Roll: ${r}, Date: ${d}) - ${appData.schoolName}`;
-            if (type==='wa') window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
-            else window.location.href = `mailto:${t}?subject=Absence&body=${encodeURIComponent(msg)}`;
+        // SMART MESSAGE LOGIC (Fixes the "No Number" problem)
+        function smartMessage(roll, date, type) {
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const student = cls.roster.find(s => s.roll == roll);
+            
+            if (!student) return alert("Student not found in roster!");
+            
+            let target = (type === 'wa') ? student.phone : student.email;
+            
+            if (!target || target.trim() === "") {
+                return alert(`No ${type === 'wa' ? 'WhatsApp number' : 'email'} saved for Roll ${roll} in Settings!`);
+            }
+
+            let ct = target.replace(/\D/g, ''); 
+            if (type === 'wa' && ct.length === 10) ct = "91" + ct;
+            
+            let msg = appData.language === 'ml' ? 
+                `ഹാജരായിട്ടില്ല (${student.name}, Roll: ${roll}, Date: ${date}) - ${appData.schoolName}` : 
+                `Marked Absent (${student.name}, Roll: ${roll}, Date: ${date}) - ${appData.schoolName}`;
+            
+            if (type === 'wa') window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+            else window.location.href = `mailto:${target}?subject=Absence Notification&body=${encodeURIComponent(msg)}`;
         }
 
         function bulkWhatsApp(hId) {
             const entry = appData.history.find(h => h.id === hId);
-            const absents = entry.students.filter(s => s.status === 'Absent' && s.phone);
-            if (!absents.length) return alert("No absentee phone numbers found!");
+            const absents = entry.students.filter(s => s.status === 'Absent');
+            if (!absents.length) return alert("No absentees found!");
+            
             absents.forEach((s, idx) => {
-                setTimeout(() => sendMessage(s.phone, s.name, s.roll, entry.date, 'wa'), idx * 1000);
+                setTimeout(() => smartMessage(s.roll, entry.date, 'wa'), idx * 1000);
             });
         }
 
@@ -348,12 +405,11 @@
                 });
             });
 
-            // Trend Analysis
             const dayMap = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             let dayCounts = [0,0,0,0,0,0,0];
             history.forEach(h => { dayCounts[new Date(h.date).getDay()] += h.absent; });
             const peakDay = dayMap[dayCounts.indexOf(Math.max(...dayCounts))];
-            document.getElementById('trend-analysis').innerText = history.length ? `Peak Absence Day: ${peakDay}` : "No trends available.";
+            document.getElementById('trend-analysis').innerText = history.length ? `Trend: Most Absences on ${peakDay}s` : "No trends yet.";
 
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
@@ -377,18 +433,24 @@
         function exportReportToCSV() {
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let csv = "Roll No,Name,Present,Absent,Leave,Duty,Percentage\n";
-            const stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, p: 0, a: 0, l: 0, d: 0, t: 0 });
-            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
-                day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].t++; if (r.status === 'Present') stats[r.roll].p++; else if (r.status === 'Absent') stats[r.roll].a++; else if (r.status === 'Leave') stats[r.roll].l++; else stats[r.roll].d++; }});
-            });
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.d},${s.t?Math.round(((s.p+s.l+s.d)/s.t)*100):0}%\n`; });
+            const stats = getStats(m);
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.duty},${s.total?Math.round(((s.present+s.leave+s.duty)/s.total)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Report_${cls.name}_${m}.csv`; link.click();
         }
 
+        function getStats(month) {
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, present: 0, absent:0, leave:0, duty:0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(month)).forEach(day => {
+                day.students.forEach(r => { if (s[r.roll]) { s[r.roll].total++; if (r.status === 'Present') s[r.roll].present++; else if (r.status === 'Absent') s[r.roll].absent++; else if (r.status === 'Leave') s[r.roll].leave++; else s[r.roll].duty++; }});
+            });
+            return s;
+        }
+
         function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
         function removeClass(id) { if(appData.classes.length>1 && confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes[0].id; persistData(); refreshViews(); } }
-        function wipeHistoryForCurrentClass() { if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+        function wipeHistoryForCurrentClass() { if(confirm("Delete history?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
         function updateGlobalSettings() { appData.schoolName = document.getElementById('input-school-name').value; appData.language = document.getElementById('select-msg-language').value; persistData(); alert("Saved!"); }
 
         refreshViews();
