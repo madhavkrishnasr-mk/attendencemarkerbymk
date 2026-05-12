@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0056b3">
     <title>Attendance Pro</title>
     <style>
         :root { --bg: #f0f2f5; --card: #ffffff; --text: #1a1a1a; --border: #e4e6eb; --primary: #0056b3; --secondary: #6c757d; }
@@ -23,7 +21,7 @@
         .tab-menu { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
         .tab-link { flex: 1; padding: 10px 5px; font-size: 13px; text-align: center; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
         .tab-link.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .report-stat { display:flex; justify-content:space-between; width:100%; font-size:12px; margin-top:5px; background:var(--bg); padding:8px; border-radius:5px; }
+        .report-stat { display:flex; justify-content:space-between; width:100%; font-size:12px; margin-top:5px; background:var(--bg); padding: 8px; border-radius: 5px; }
         .status-toggle { display: flex; width: 100%; border-radius: 8px; overflow: hidden; margin-top: 8px; border: 1px solid var(--border); }
         .toggle-btn { flex: 1; padding: 8px; text-align: center; font-weight: bold; cursor: pointer; background: var(--bg); color: var(--text); border: none; }
         .toggle-btn.present.active { background: #28a745; color: white; }
@@ -52,7 +50,7 @@
 
     <div id="settings-view" class="hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <b style="font-size:18px;">Settings</b><button style="background:var(--secondary);" onclick="showView('attendance-view')">Close</button>
+            <b>Settings</b><button style="background:var(--secondary);" onclick="showView('attendance-view')">Close</button>
         </div>
         <div class="tab-menu">
             <button id="tab-btn-global" class="tab-link active" onclick="switchSettingsTab('global')">🏫 School</button>
@@ -60,7 +58,7 @@
             <button id="tab-btn-student" class="tab-link" onclick="switchSettingsTab('student')">🧑‍🎓 Students</button>
         </div>
         <div id="tab-global">
-            <label>School Name:</label><input type="text" id="school-name">
+            <label>School Name:</label><input type="text" id="school-name" placeholder="GVHSS Madikai">
             <label>Language:</label><select id="msg-lang"><option value="en">English</option><option value="ml">Malayalam</option></select>
             <button class="btn-full" onclick="saveGlobalSettings()">Save Settings</button>
         </div>
@@ -69,23 +67,23 @@
             <div id="class-management-list" style="margin-top:10px;"></div>
         </div>
         <div id="tab-student" class="hidden">
-            <input type="number" id="new-roll" placeholder="Roll No"><input type="text" id="new-name" placeholder="Name">
+            <input type="number" id="new-roll" placeholder="Roll No"><input type="text" id="new-name" placeholder="Full Name">
             <input type="tel" id="new-phone" placeholder="WhatsApp Number"><input type="file" id="new-photo">
-            <button class="btn-full" id="add-student-btn" onclick="handleAddStudent()">Add Student</button>
+            <button class="btn-full" id="add-student-btn" onclick="handleAddStudent()">+ Add Student</button>
             <div id="student-management-list" style="margin-top:15px;"></div>
         </div>
     </div>
 
     <div id="report-view" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><b>📊 Attendance Summary</b><button onclick="showView('attendance-view')">Back</button></div>
-        <button class="btn-full" style="background:#007bff; margin-top:15px;" onclick="downloadCSV()">📥 Download Full Class Report (CSV)</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><b>📊 Reports</b><button onclick="showView('attendance-view')">Back</button></div>
+        <button class="btn-full" style="background:#007bff; margin-top:15px;" onclick="downloadCSV()">📥 Download Report (.CSV)</button>
         <div id="report-container" style="margin-top:15px;"></div>
     </div>
 
     <div id="history-view" class="hidden">
         <div style="display:flex; justify-content:space-between; align-items:center;"><b>📁 History</b><button onclick="showView('attendance-view')">Back</button></div>
         <div id="history-container" style="margin-top:15px;"></div>
-        <button class="btn-full btn-red" onclick="clearHistory()">Clear All History</button>
+        <button class="btn-full btn-red" onclick="clearHistory()">Clear History</button>
     </div>
 </div>
 
@@ -93,12 +91,12 @@
     let classes = JSON.parse(localStorage.getItem("all_classes")) || [{ id: Date.now(), name: "Class 1", roster: [] }];
     let currentClassId = localStorage.getItem("active_class_id") || classes[0].id;
     let historyData = JSON.parse(localStorage.getItem("attendance_history")) || [];
-    let schoolName = localStorage.getItem("school_name") || "Our School";
+    let schoolName = localStorage.getItem("school_name") || "School";
     let msgLang = localStorage.getItem("msg_lang") || "en";
     let editingStudentIndex = -1;
 
     function save() { localStorage.setItem("all_classes", JSON.stringify(classes)); localStorage.setItem("active_class_id", currentClassId); }
-    function saveGlobalSettings() { schoolName = document.getElementById("school-name").value || "Our School"; msgLang = document.getElementById("msg-lang").value; localStorage.setItem("school_name", schoolName); localStorage.setItem("msg_lang", msgLang); alert("Saved!"); }
+    function saveGlobalSettings() { schoolName = document.getElementById("school-name").value || "School"; msgLang = document.getElementById("msg-lang").value; localStorage.setItem("school_name", schoolName); localStorage.setItem("msg_lang", msgLang); alert("Saved!"); }
     function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem("theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
     if(localStorage.getItem("theme") === "dark") document.body.classList.add('dark-mode');
 
@@ -111,10 +109,9 @@
         const cls = classes.find(c => c.id == currentClassId) || classes[0];
         document.getElementById("class-title").querySelector('span').innerText = cls.name;
         document.getElementById("school-name").value = schoolName;
-        document.getElementById("msg-lang").value = msgLang;
         document.getElementById("class-selector").innerHTML = classes.map(c => `<option value="${c.id}" ${c.id == currentClassId ? 'selected' : ''}>${c.name}</option>`).join('');
         const cont = document.getElementById("student-container");
-        cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center;'>No students. Go to Settings.</p>";
+        cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center;'>Settings-il poyi student-e add cheyyuka.</p>";
         cls.roster.sort((a,b)=>a.roll-b.roll).forEach((s,i) => {
             cont.innerHTML += `<div class="student-row"><div style="display:flex; align-items:center;"><img src="${s.photo||''}" class="student-photo" onerror="this.style.display='none'"><label>Roll ${s.roll}: ${s.name}</label></div><div class="status-toggle"><input type="hidden" id="status-val-${i}" value="Present"><button class="toggle-btn present active" id="btn-p-${i}" onclick="setStatus(${i},'Present')">P</button><button class="toggle-btn absent" id="btn-a-${i}" onclick="setStatus(${i},'Absent')">A</button></div><input type="text" id="reason-${i}" placeholder="Remarks" style="margin-top:5px;"></div>`;
         });
@@ -128,7 +125,7 @@
 
     function handleAddStudent() {
         const r = document.getElementById("new-roll").value, n = document.getElementById("new-name").value, p = document.getElementById("new-phone").value, f = document.getElementById("new-photo").files[0], cls = classes.find(c=>c.id==currentClassId);
-        if(!r || !n) return alert("Required!");
+        if(!r || !n) return alert("Fill details!");
         const saveS = (img) => { if(editingStudentIndex > -1) { cls.roster[editingStudentIndex] = {roll:parseInt(r), name:n, phone:p, photo:img||cls.roster[editingStudentIndex].photo}; editingStudentIndex = -1; } else cls.roster.push({roll:parseInt(r), name:n, phone:p, photo:img}); save(); renderAll(); };
         if(f) { const reader = new FileReader(); reader.onload=(e)=>saveS(e.target.result); reader.readAsDataURL(f); } else saveS("");
     }
@@ -151,25 +148,29 @@
     function renderReport() {
         const s = getStats(), cont = document.getElementById("report-container");
         cont.innerHTML = Object.keys(s).map(r => {
-            const d = s[r]; if(d.total===0) return `<div class="line-item">${r}. ${d.name} - No records</div>`;
-            const p = Math.round((d.present/d.total)*100);
+            const d = s[r]; const p = d.total ? Math.round((d.present/d.total)*100) : 0;
             return `<div class="line-item" style="flex-direction:column; align-items:flex-start;"><b>${r}. ${d.name}</b><div class="report-stat"><span>P: ${d.present}</span><span>A: ${d.absent}</span><span>T: ${d.total}</span><b>${p}%</b></div></div>`;
         }).join('');
     }
 
     function downloadCSV() {
         const s = getStats(), cls = classes.find(c=>c.id==currentClassId);
-        let csv = "Roll No,Student Name,Present Days,Absent Days,Total Days,Percentage(%)\n";
+        const now = new Date();
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const fileName = `${schoolName.replace(/\s+/g, '_')}_${cls.name.replace(/\s+/g, '_')}_${monthNames[now.getMonth()]}_${now.getDate()}_Report.csv`;
+
+        let csv = "Roll No,Student Name,Present Days,Absent Days,Total Working Days,Percentage(%)\n";
         Object.keys(s).sort((a,b)=>a-b).forEach(r => { const d = s[r]; csv += `${r},${d.name},${d.present},${d.absent},${d.total},${d.total?Math.round((d.present/d.total)*100):0}%\n`; });
-        const blob = new Blob([csv], {type: 'text/csv'}), url = window.URL.createObjectURL(blob), a = document.createElement('a');
-        a.href = url; a.download = `Attendance_Report_${cls.name}.csv`; a.click();
+        
+        const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'}), url = window.URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = fileName; a.click();
     }
 
     function renderHistory() {
         document.getElementById("history-container").innerHTML = historyData.map(day => `<div class="history-card"><b>${day.date} - ${day.className}</b><details><summary>Details (P:${day.present} A:${day.absent})</summary>${day.records.map(r => `<div class="line-item"><span>${r.name}</span><span style="color:${r.status==='Present'?'green':'red'}">${r.status}</span></div>`).join('')}</details></div>`).join('');
     }
 
-    function clearHistory() { if(confirm("Clear All?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
+    function clearHistory() { if(confirm("Clear?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
     showView('attendance-view');
 </script>
 </body>
