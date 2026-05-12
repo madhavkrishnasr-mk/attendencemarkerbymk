@@ -268,19 +268,13 @@
         } else saveS("");
     }
 
-    function deleteStudent(index) {
-        const cls = classes.find(c => c.id == currentClassId);
-        if(confirm("Delete this student?")) {
-            cls.roster.splice(index, 1);
-            save(); renderAll();
-        }
-    }
-
     function submitAttendance() {
         const cls = classes.find(c => c.id == currentClassId);
         if(cls.roster.length === 0) return alert("No students in this class.");
         
         const date = document.getElementById('class-date').value;
+        if(!date) return alert("Please select a date before saving attendance.");
+        
         let pCount = 0;
         let records = cls.roster.map((s, i) => {
             const status = document.getElementById(`status-val-${i}`).value;
@@ -300,7 +294,7 @@
             return `പ്രിയ രക്ഷിതാവേ,\n\n${safeSchool}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ${clsName} ക്ലാസ്സിൽ ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nരേഖപ്പെടുത്തിയ കാരണം: ${rText}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ`;
         } else {
             let rText = reason ? reason : "Not specified";
-            return `Dear Parent,\n\nThis is to inform you that your ward, ${name} (Roll No: ${roll}), was marked absent today (${date}) from class ${clsName} at ${safeSchool}.\n\nReason for absence: ${rText}\n\nRegards,\nClass Teacher`;
+            return `Dear Parent,\n\nThis is to inform you that your child, ${name} (Roll No: ${roll}), was marked absent today (${date}) from class ${clsName} at ${safeSchool}.\n\nReason for absence: ${rText}\n\nRegards,\nClass Teacher`;
         }
     }
 
