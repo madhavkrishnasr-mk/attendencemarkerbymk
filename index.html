@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Professional Teacher Assistant</title>
+    <title>Attendance Pro - Teacher Edition</title>
     
     <style>
-        /* --- PROFESSIONAL COLOR PALETTE --- */
+        /* --- PROFESSIONAL COLOR PALETTE (REVERTED) --- */
         :root {
             --bg-color: #f0f2f5;
             --card-bg: #ffffff;
@@ -28,7 +28,7 @@
             --primary-blue: #2d88ff;
         }
 
-        /* --- LAYOUT & STRUCTURE --- */
+        /* --- LAYOUT STRUCTURE --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
@@ -61,7 +61,7 @@
             margin-bottom: 20px;
         }
 
-        /* --- INPUT FIELDS --- */
+        /* --- INPUTS --- */
         input, select {
             width: 100%;
             padding: 12px;
@@ -81,7 +81,6 @@
             border-radius: 8px;
             font-weight: 600;
             padding: 10px;
-            transition: 0.2s ease;
         }
 
         .btn-full { width: 100%; padding: 15px; font-size: 16px; margin-top: 10px; color: white; }
@@ -90,7 +89,7 @@
         .btn-danger { background-color: var(--danger-red); color: white; }
         .btn-info { background-color: var(--info-cyan); color: white; }
 
-        /* --- STUDENT LIST ITEMS --- */
+        /* --- STUDENT ROWS --- */
         .student-item {
             background-color: var(--bg-color);
             padding: 12px;
@@ -126,14 +125,12 @@
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
         .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
 
-        /* --- SETTINGS TABS --- */
+        /* --- TABS --- */
         .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
         .tab-btn.active { background-color: var(--primary-blue); color: white; }
-        
-        /* --- REPORT STATS --- */
-        .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; font-size: 12px; text-align: center; }
-        .stat-box { background: var(--card-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); }
+
+        .stat-box { background: var(--card-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); text-align: center; font-size: 12px;}
     </style>
 </head>
 <body>
@@ -170,11 +167,11 @@
             <div class="settings-tabs">
                 <button id="btn-tab-school" class="tab-btn active" onclick="switchSettingsTab('school')">School</button>
                 <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
-                <button id="tab-btn-student" class="tab-btn" onclick="switchSettingsTab('students')">Students</button>
+                <button id="btn-tab-students" class="tab-btn" onclick="switchSettingsTab('students')">Students</button>
             </div>
 
             <div id="tab-school-section">
-                <input type="text" id="input-school-name" placeholder="School Name (e.g. GVHSS Madikai)">
+                <input type="text" id="input-school-name" placeholder="School Name (GVHSS Madikai)">
                 <select id="select-msg-language">
                     <option value="en">English</option>
                     <option value="ml">Malayalam</option>
@@ -218,12 +215,33 @@
                 <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
             </div>
             <div id="history-display-container"></div>
-            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete This Class History</button>
+            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete Class History</button>
         </div>
     </div>
 
     <script>
-        let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || {
+        // --- DATA MIGRATION LOGIC ---
+        // This looks for your old data and brings it into the new format automatically.
+        function migrateOldData() {
+            const oldClasses = JSON.parse(localStorage.getItem("all_classes"));
+            const oldHistory = JSON.parse(localStorage.getItem("attendance_history"));
+            const oldSchool = localStorage.getItem("school_name");
+            const oldLang = localStorage.getItem("msg_lang");
+
+            if (oldClasses || oldHistory) {
+                console.log("Old data found. Migrating to Pro version...");
+                return {
+                    classes: oldClasses || [{ id: Date.now(), name: "Class 1", roster: [] }],
+                    activeClassId: localStorage.getItem("active_class_id") || (oldClasses ? oldClasses[0].id : null),
+                    schoolName: oldSchool || "School",
+                    language: oldLang || "en",
+                    history: oldHistory || []
+                };
+            }
+            return null;
+        }
+
+        let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || {
             classes: [{ id: Date.now(), name: "Class 1", roster: [] }],
             activeClassId: null,
             schoolName: "Our School",
@@ -243,10 +261,7 @@
         if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
         function showPage(pageId) {
-            document.getElementById('home-page').classList.add('hidden');
-            document.getElementById('settings-page').classList.add('hidden');
-            document.getElementById('reports-page').classList.add('hidden');
-            document.getElementById('history-page').classList.add('hidden');
+            document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
             refreshViews();
             if (pageId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
@@ -256,10 +271,10 @@
         function switchSettingsTab(tabName) {
             ['school', 'classes', 'students'].forEach(t => {
                 document.getElementById(`tab-${t}-section`).classList.add('hidden');
-                document.getElementById(`btn-tab-${t === 'students' ? 'student' : t}`).classList.remove('active');
+                document.getElementById(`btn-tab-${t === 'students' ? 'students' : t}`).classList.remove('active');
             });
             document.getElementById(`tab-${tabName}-section`).classList.remove('hidden');
-            document.getElementById(`btn-tab-${tabName === 'students' ? 'student' : tabName}`).classList.add('active');
+            document.getElementById(`btn-tab-${tabName}`).classList.add('active');
         }
 
         function refreshViews() {
@@ -291,7 +306,7 @@
             });
 
             document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;">
                     <span>${c.name}</span>
                     <button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button>
                 </div>`).join('');
@@ -332,28 +347,22 @@
 
         function saveStudentObject() {
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
-            const roll = document.getElementById('input-student-roll').value;
-            const name = document.getElementById('input-student-name').value;
-            const photoFile = document.getElementById('input-student-photo').files[0];
+            const r = document.getElementById('input-student-roll').value;
+            const n = document.getElementById('input-student-name').value;
+            const f = document.getElementById('input-student-photo').files[0];
 
-            if (!roll || !name) return alert("Fill roll & name!");
+            if (!r || !n) return alert("Enter Roll and Name!");
 
-            const finalize = (imgData) => {
-                const sPayload = { roll: parseInt(roll), name: name, photo: imgData || (editingStudentIndex > -1 ? currentClass.roster[editingStudentIndex].photo : null) };
-                if (editingStudentIndex > -1) {
-                    currentClass.roster[editingStudentIndex] = sPayload;
-                    editingStudentIndex = -1;
-                    document.getElementById('submit-student-btn').innerText = "+ Add Student";
-                } else { currentClass.roster.push(sPayload); }
+            const done = (img) => {
+                const s = { roll: parseInt(r), name: n, photo: img || (editingStudentIndex > -1 ? currentClass.roster[editingStudentIndex].photo : null) };
+                if (editingStudentIndex > -1) { currentClass.roster[editingStudentIndex] = s; editingStudentIndex = -1; }
+                else { currentClass.roster.push(s); }
                 persistData(); refreshViews();
                 document.getElementById('input-student-roll').value = ""; document.getElementById('input-student-name').value = "";
             };
 
-            if (photoFile) {
-                const reader = new FileReader();
-                reader.onload = (e) => finalize(e.target.result);
-                reader.readAsDataURL(photoFile);
-            } else { finalize(null); }
+            if (f) { const rd = new FileReader(); rd.onload = (e) => done(e.target.result); rd.readAsDataURL(f); }
+            else { done(null); }
         }
 
         function loadStudentForEdit(idx) {
@@ -361,6 +370,7 @@
             const s = currentClass.roster[idx];
             document.getElementById('input-student-roll').value = s.roll;
             document.getElementById('input-student-name').value = s.name;
+            document.getElementById('student-editor-title').innerText = "Edit: " + s.name;
             document.getElementById('submit-student-btn').innerText = "Update Student";
             editingStudentIndex = idx;
         }
@@ -385,15 +395,15 @@
 
         function saveAttendanceData() {
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
-            const date = document.getElementById('attendance-date-input').value;
-            if (!date) return alert("Select Date!");
-            let pCount = 0;
-            const records = currentClass.roster.map((s, idx) => {
-                const status = document.getElementById(`status-val-${idx}`).value;
-                if (status === 'Present') pCount++;
-                return { roll: s.roll, name: s.name, status: status };
+            const d = document.getElementById('attendance-date-input').value;
+            if (!d) return alert("Select Date!");
+            let p = 0;
+            const recs = currentClass.roster.map((s, idx) => {
+                const st = document.getElementById(`status-val-${idx}`).value;
+                if (st === 'Present') p++;
+                return { roll: s.roll, name: s.name, status: st };
             });
-            appData.history.unshift({ id: Date.now(), date: date, className: currentClass.name, classId: currentClass.id, total: currentClass.roster.length, present: pCount, absent: currentClass.roster.length - pCount, students: records });
+            appData.history.unshift({ id: Date.now(), date: d, className: currentClass.name, classId: currentClass.id, total: currentClass.roster.length, present: p, absent: currentClass.roster.length - p, students: recs });
             persistData(); alert("Attendance Saved!");
         }
 
@@ -401,11 +411,7 @@
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             const filtered = appData.history.filter(h => h.classId == currentClass.id);
             document.getElementById('history-class-label').innerText = currentClass.name;
-            const container = document.getElementById('history-display-container');
-            container.innerHTML = filtered.length ? filtered.map(item => `
-                <div class="history-entry" style="padding: 10px; border-bottom: 1px solid var(--border-color); background:var(--bg-color); margin-bottom:10px; border-radius:8px;">
-                    <b>📅 ${item.date}</b> - P: ${item.present} | A: ${item.absent}
-                </div>`).join('') : "No History.";
+            document.getElementById('history-display-container').innerHTML = filtered.length ? filtered.map(h => `<div style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No Records.";
         }
 
         function wipeHistoryForCurrentClass() {
@@ -416,55 +422,45 @@
         }
 
         function setupMonthPicker() {
-            const picker = document.getElementById('report-month-picker');
+            const p = document.getElementById('report-month-picker');
             const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse();
-            picker.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
+            p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
         }
 
         function refreshReportsView() {
-            const month = document.getElementById('report-month-picker').value;
-            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+            const m = document.getElementById('report-month-picker').value;
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
+            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
                 day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
             });
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
-                const per = s.total ? Math.round((s.present / s.total) * 100) : 0;
-                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)"><b>${roll}. ${s.name}</b>: ${per}% (${s.present}/${s.total})</div>`;
+                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)">${roll}. ${s.name}: ${s.total ? Math.round((s.present/s.total)*100) : 0}%</div>`;
             }).join('');
         }
 
         function exportReportToCSV() {
-            const month = document.getElementById('report-month-picker').value;
-            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+            const m = document.getElementById('report-month-picker').value;
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
+            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
                 day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
             });
-            
             let csv = "Roll No,Name,Present,Total,Percentage\n";
             Object.keys(stats).forEach(r => {
                 const s = stats[r];
                 csv += `${r},${s.name},${s.present},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`;
             });
-
-            // --- SUPER FORCED BLOB DOWNLOAD ---
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const fileName = "Report_" + currentClass.name + "_" + month + ".csv";
-            
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.href = url;
-            link.download = fileName;
+            link.href = URL.createObjectURL(blob);
+            link.download = "Report_" + cls.name + "_" + m + ".csv";
             document.body.appendChild(link);
             link.click();
-            setTimeout(function() {
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);  
-            }, 0); 
+            document.body.removeChild(link);
         }
 
         refreshViews();
