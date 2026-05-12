@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro (Direct Email)</title>
+    <title>Attendance Pro (WhatsApp + History)</title>
     <style>
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .card { background-color: #ffffff; width: 100%; max-width: 480px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
         .hidden { display: none !important; }
         h3 { color: #1a1a1a; margin-top: 0; border-bottom: 2px solid #e4e6eb; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        input[type="text"], input[type="number"], input[type="date"], input[type="email"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="file"], input[type="tel"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
         .row-flex { display: flex; gap: 8px; align-items: center; }
         button { background-color: #0056b3; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 12px; }
         .btn-edit { background-color: #6c757d; font-size: 12px; padding: 6px 10px; margin-left: 5px; }
         .btn-history { background-color: #28a745; font-size: 12px; padding: 6px 10px; }
         .btn-delete { background-color: #dc3545; padding: 6px 10px; font-size: 11px; }
-        .btn-email { background-color: #ea4335; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px; font-size: 12px; display: inline-block; margin-top: 5px; }
+        .btn-wa { background-color: #25d366; color: white; padding: 8px 12px; border: none; border-radius: 5px; font-size: 13px; margin-top: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-mail-small { background-color: #ea4335; color: white; padding: 8px 12px; border: none; border-radius: 5px; font-size: 13px; margin-top: 5px; cursor: pointer; font-weight: bold; margin-left: 5px; }
         .student-row { background-color: #f8f9fa; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #e4e6eb; }
         .student-main { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; }
         .student-box { transform: scale(1.5); margin-right: 15px; }
+        .student-photo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid #0056b3; background-color: #e4e6eb; }
         .reason-box { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
         .history-card { background-color: #e9ecef; padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #0056b3; font-size: 14px; }
-        .absentee-item { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
+        .absentee-item { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; display: flex; align-items: center; }
         #status-msg { text-align: center; margin-top: 10px; font-weight: bold; color: #28a745; }
+        .disclaimer-text { font-size: 11px; color: #777; margin-top: 10px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -51,20 +54,27 @@
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         
-        <label><strong>Add Student:</strong></label>
+        <label><strong>Add New Student:</strong></label>
         <div class="row-flex">
             <input type="number" id="new-roll" placeholder="Roll" style="width: 25%;">
-            <input type="text" id="new-name" placeholder="Name" style="width: 75%;">
+            <input type="text" id="new-name" placeholder="Full Name" style="width: 75%;">
         </div>
-        <input type="email" id="new-email" placeholder="Parent Email Address (Optional)" style="margin-top:5px;">
-        <button class="btn-full" onclick="addStudent()" style="margin-top:0">+ Add Student</button>
+        <input type="tel" id="new-phone" placeholder="Parent WhatsApp Number (Required)">
+        <input type="email" id="new-email" placeholder="Parent Email Address (Optional)">
+        
+        <label style="font-size: 13px; color: #666; margin-top: 5px; display: block;">Student Photo:</label>
+        <input type="file" id="new-photo" accept="image/*">
+        
+        <button class="btn-full" onclick="handleAddStudent()" style="margin-top:0">+ Add Student</button>
+        
+        <div class="disclaimer-text">Note: WhatsApp messages will include a disclaimer.</div>
         <div id="management-list" style="margin-top:20px;"></div>
     </div>
 
     <div id="history-view" class="hidden">
-        <h3>History & Emails <button class="btn-edit" onclick="showView('attendance-view')">Back ✔️</button></h3>
+        <h3>Attendance History <button class="btn-edit" onclick="showView('attendance-view')">Back ✔️</button></h3>
         <div id="history-container"></div>
-        <button class="btn-full" style="background-color: #dc3545;" onclick="clearHistory()">Clear All History</button>
+        <button class="btn-full" style="background-color: #dc3545;" onclick="clearHistory()">Clear All Records</button>
     </div>
 </div>
 
@@ -72,6 +82,7 @@
     let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [];
     let currentClass = localStorage.getItem("class_details") || "New Class";
     let historyData = JSON.parse(localStorage.getItem("attendance_history")) || [];
+    const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
 
     document.getElementById('class-date').valueAsDate = new Date();
 
@@ -90,26 +101,24 @@
         attContainer.innerHTML = ""; magContainer.innerHTML = "";
         myClass.sort((a, b) => a.rollNo - b.rollNo);
 
-        if(myClass.length === 0) {
-            attContainer.innerHTML = "<p style='text-align:center; color:#666;'>No students added yet. Go to Settings ⚙️ to add students.</p>";
-        }
-
         myClass.forEach((s, i) => {
-            // Attendance List
+            let imgSrc = s.photo ? s.photo : defaultAvatar;
             attContainer.innerHTML += `
                 <div class="student-row">
                     <div class="student-main">
                         <input type="checkbox" class="student-box" id="check-${i}" checked>
+                        <img src="${imgSrc}" class="student-photo" alt="Photo">
                         <label>Roll ${s.rollNo}: ${s.name}</label>
                     </div>
-                    <input type="text" class="reason-box" id="reason-${i}" placeholder="Reason (If absent)">
+                    <input type="text" class="reason-box" id="reason-${i}" placeholder="Reason if absent">
                 </div>`;
             
-            // Settings List
-            let emailText = s.email ? s.email : "No Email";
             magContainer.innerHTML += `
                 <div class="student-row" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:13px;"><b>Roll ${s.rollNo}: ${s.name}</b><br><span style="color:#666;">${emailText}</span></div>
+                    <div style="display:flex; align-items:center;">
+                        <img src="${imgSrc}" class="student-photo" style="width:35px; height:35px;" alt="Photo">
+                        <div style="font-size:13px;"><b>Roll ${s.rollNo}: ${s.name}</b><br><span style="color:#666;">WA: ${s.phone || 'N/A'}</span></div>
+                    </div>
                     <button class="btn-delete" onclick="deleteStudent(${i})">Delete</button>
                 </div>`;
         });
@@ -118,109 +127,110 @@
     function saveSettings() {
         currentClass = document.getElementById("class-name").value;
         localStorage.setItem("class_details", currentClass);
-        alert("Class name saved!");
+        alert("Settings Saved!");
         updateScreen();
     }
 
-    function addStudent() {
+    function processImage(file, callback) {
+        if (!file) { callback(""); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 150;
+                let width = img.width, height = img.height;
+                if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
+                else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.6));
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+
+    function handleAddStudent() {
         const r = document.getElementById("new-roll").value;
         const n = document.getElementById("new-name").value;
+        const p = document.getElementById("new-phone").value;
         const e = document.getElementById("new-email").value;
-        
-        if (r && n) {
-            myClass.push({ rollNo: parseInt(r), name: n, email: e });
-            localStorage.setItem("attendance_roster", JSON.stringify(myClass));
-            
-            document.getElementById("new-roll").value = "";
-            document.getElementById("new-name").value = "";
-            document.getElementById("new-email").value = "";
-            updateScreen();
-        } else {
-            alert("Please enter at least Roll No and Name.");
-        }
+        const fileInput = document.getElementById("new-photo");
+
+        if (r && n && p) {
+            if (fileInput.files && fileInput.files[0]) {
+                processImage(fileInput.files[0], (base64) => saveStudent(r, n, p, e, base64));
+            } else { saveStudent(r, n, p, e, ""); }
+        } else { alert("Please fill Roll No, Name, and WhatsApp Number."); }
+    }
+
+    function saveStudent(r, n, p, e, photo) {
+        myClass.push({ rollNo: parseInt(r), name: n, phone: p, email: e, photo: photo });
+        localStorage.setItem("attendance_roster", JSON.stringify(myClass));
+        document.getElementById("new-roll").value = "";
+        document.getElementById("new-name").value = "";
+        document.getElementById("new-phone").value = "";
+        document.getElementById("new-email").value = "";
+        document.getElementById("new-photo").value = "";
+        updateScreen();
     }
 
     function deleteStudent(idx) {
-        if(confirm("Are you sure?")) {
-            myClass.splice(idx, 1);
-            localStorage.setItem("attendance_roster", JSON.stringify(myClass));
-            updateScreen();
-        }
+        if(confirm("Delete student?")) { myClass.splice(idx, 1); localStorage.setItem("attendance_roster", JSON.stringify(myClass)); updateScreen(); }
     }
 
     function submitAttendance() {
-        if(myClass.length === 0) return alert("Please add students first!");
-        
         const date = document.getElementById('class-date').value;
-        const msg = document.getElementById('status-msg');
-
-        let absenteesList = [];
-
+        let absentees = [];
         myClass.forEach((s, i) => {
-            const isPresent = document.getElementById(`check-${i}`).checked;
-            if (!isPresent) {
-                const reasonText = document.getElementById(`reason-${i}`).value || "Not Specified";
-                absenteesList.push({
-                    roll: s.rollNo,
-                    name: s.name,
-                    reason: reasonText,
-                    email: s.email
-                });
+            if (!document.getElementById(`check-${i}`).checked) {
+                absentees.push({ roll: s.rollNo, name: s.name, reason: document.getElementById(`reason-${i}`).value || "Not specified", phone: s.phone, email: s.email, photo: s.photo || defaultAvatar });
             }
         });
-
-        // Save to History
-        historyData.unshift({ date: date, className: currentClass, absentees: absenteesList });
+        historyData.unshift({ date: date, className: currentClass, absentees: absentees });
         localStorage.setItem("attendance_history", JSON.stringify(historyData));
-
-        msg.innerText = "Saved successfully!";
-        setTimeout(() => msg.innerText = "", 3000);
+        document.getElementById('status-msg').innerText = "Attendance Saved!";
+        setTimeout(() => document.getElementById('status-msg').innerText = "", 3000);
     }
+
+    window.openWhatsApp = function(phone, name, roll, date, reason) {
+        const disclaimer = "\n\n---\n*Disclaimer:* Ithu oru automated attendance notification aanu. Dayavayi ee messaginu thirichu marupadi nalkaruthu.";
+        const text = `Dear Parent, \n\nIthu inform cheyyunnathu ${name} (Roll No: ${roll}) innu (${date}) ${currentClass}-il ABSENT aanu. \n\nRecorded Reason: ${reason}.${disclaimer}`;
+        window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    window.openEmail = function(email, name, roll, date, reason) {
+        const subject = encodeURIComponent(`Absence Notification: ${name}`);
+        const body = encodeURIComponent(`Dear Parent,\n\nThis is to inform you that ${name} (Roll No: ${roll}) was marked ABSENT today (${date}) from ${currentClass}.\n\nReason: ${reason}.\n\nRegards,\nClass Teacher`);
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    };
 
     function renderHistory() {
         const container = document.getElementById("history-container");
-        container.innerHTML = historyData.length ? "" : "<p style='text-align:center;'>No records found.</p>";
-        
+        container.innerHTML = historyData.length ? "" : "<p style='text-align:center;'>No history records.</p>";
         historyData.forEach(record => {
-            let absentHTML = "";
-            
-            if (record.absentees.length === 0) {
-                absentHTML = "<div style='color:#28a745; margin-top:5px; font-weight:bold;'>Everyone was Present ✅</div>";
-            } else {
-                record.absentees.forEach(a => {
-                    // Create the email content
-                    let subject = encodeURIComponent(`Absence Notification: ${a.name}`);
-                    let body = encodeURIComponent(`Dear Parent,\n\nThis is to inform you that ${a.name} (Roll No: ${a.roll}) was marked ABSENT today (${record.date}).\n\nReason recorded: ${a.reason}.\n\nRegards,\nClass Teacher`);
-                    
-                    let emailButton = a.email 
-                        ? `<a href="mailto:${a.email}?subject=${subject}&body=${body}" class="btn-email">📧 Send Email</a>` 
-                        : `<span style="font-size:12px; color:#888;">(No Email Added)</span>`;
-
-                    absentHTML += `
-                        <div class="absentee-item">
+            let absentHTML = record.absentees.length === 0 ? "<div style='color:#28a745; margin-top:5px; font-weight:bold;'>Full Present ✅</div>" : "";
+            record.absentees.forEach(a => {
+                let safeName = a.name.replace(/'/g, "\\'");
+                let safeReason = a.reason.replace(/'/g, "\\'");
+                absentHTML += `
+                    <div class="absentee-item">
+                        <img src="${a.photo}" class="student-photo" style="width:40px; height:40px;" alt="Photo">
+                        <div>
                             🔴 <b>Roll ${a.roll}: ${a.name}</b><br>
                             📝 <span style="color:#555;">Reason: ${a.reason}</span><br>
-                            ${emailButton}
-                        </div>`;
-                });
-            }
-
-            container.innerHTML += `
-                <div class="history-card">
-                    <strong>📅 ${record.date}</strong> | ${record.className}
-                    ${absentHTML}
-                </div>`;
+                            <button class="btn-wa" onclick="openWhatsApp('${a.phone}', '${safeName}', '${a.roll}', '${record.date}', '${safeReason}')">💬 WhatsApp</button>
+                            ${a.email ? `<button class="btn-mail-small" onclick="openEmail('${a.email}', '${safeName}', '${a.roll}', '${record.date}', '${safeReason}')">📧 Email</button>` : ""}
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML += `<div class="history-card"><strong>📅 ${record.date}</strong> | ${record.className}${absentHTML}</div>`;
         });
     }
 
-    function clearHistory() { 
-        if(confirm("Delete all history?")) { 
-            historyData = []; 
-            localStorage.setItem("attendance_history", "[]"); 
-            renderHistory(); 
-        } 
-    }
-
+    function clearHistory() { if(confirm("Clear all history?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
     showView('attendance-view');
 </script>
 </body>
