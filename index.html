@@ -148,4 +148,95 @@
                 cls.roster[editingIdx] = {roll:parseInt(r), name:n, phone:p, photo:img||cls.roster[editingIdx].photo}; 
                 editingIdx = -1;
                 document.getElementById("add-student-btn").innerText = "+ Add Student";
-                document.getElementById("student
+                document.getElementById("student-form-label").innerText = "Add Student";
+            } else cls.roster.push({roll:parseInt(r), name:n, phone:p, photo:img}); 
+            save(); renderAll(); 
+            document.getElementById("new-roll").value=""; document.getElementById("new-name").value=""; document.getElementById("new-phone").value=""; document.getElementById("new-photo").value="";
+        };
+        if(f) { const reader = new FileReader(); reader.onload=(e)=>saveS(e.target.result); reader.readAsDataURL(f); } else saveS("");
+    }
+
+    function setupMonthFilter() {
+        const filter = document.getElementById('report-month-filter');
+        const months = [...new Set(historyData.map(h => h.date.substring(0, 7)))].sort().reverse();
+        const now = new Date().toISOString().substring(0, 7);
+        if(!months.includes(now)) months.unshift(now);
+        filter.innerHTML = months.map(m => `<option value="${m}">${new Date(m + "-01").toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`).join('');
+    }
+
+    function getStats(month) {
+        const cls = classes.find(c=>c.id==currentClassId);
+        let s = {}; cls.roster.forEach(st => s[st.roll] = {name:st.name, present:0, absent:0, total:0});
+        historyData.filter(h => h.className === cls.name && h.date.startsWith(month)).forEach(day => {
+            day.records.forEach(r => { if(s[r.roll]){ s[r.roll].total++; if(r.status==='Present') s[r.roll].present++; else s[r.roll].absent++; }});
+        });
+        return s;
+    }
+
+    function renderReport() {
+        const s = getStats(document.getElementById('report-month-filter').value), cont = document.getElementById("report-container");
+        cont.innerHTML = Object.keys(s).map(r => {
+            const d = s[r], p = d.total ? Math.round((d.present/d.total)*100) : 0;
+            return `<div class="line-item" style="flex-direction:column; align-items:flex-start;"><b>${r}. ${d.name}</b><div class="report-stat"><span>P: ${d.present}</span><span>A: ${d.absent}</span><span>T: ${d.total}</span><b>${p}%</b></div></div>`;
+        }).join('');
+    }
+
+    function downloadCSV() {
+        const m = document.getElementById('report-month-filter').value, s = getStats(m), cls = classes.find(c=>c.id==currentClassId);
+        let csv = "Roll No,Name,Present,Absent,Total,Percentage\n";
+        Object.keys(s).sort((a,b)=>a-b).forEach(r => { const d = s[r]; csv += `${r},${d.name},${d.present},${d.absent},${d.total},${d.total?Math.round((d.present/d.total)*100):0}%\n`; });
+        const blob = new Blob([csv], {type: 'application/octet-stream'}), url = window.URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = `Report_${cls.name}_${m}.csv`; a.click();
+    }
+
+    function addClass() { const n = document.getElementById("new-class-name").value; if(!n) return; classes.push({id:Date.now(), name:n, roster:[]}); document.getElementById("new-class-name").value=""; save(); renderAll(); }
+    function deleteClass(id) { if(classes.length>1 && confirm("Delete class?")) { classes = classes.filter(c=>c.id!=id); currentClassId = classes[0].id; save(); renderAll(); } }
+    function switchClass(id) { currentClassId = id; save(); renderAll(); }
+
+    function submitAttendance() {
+        const cls = classes.find(c=>c.id==currentClassId), d = document.getElementById('class-date').value;
+        if(!d) return alert("Select Date!");
+        let p=0, recs = cls.roster.map((s,i)=>{ const st = document.getElementById(`status-val-${i}`).value; if(st==='Present') p++; return {roll:s.roll, name:s.name, status:st, phone:s.phone, reason:document.getElementById(`reason-${i}`).value}; });
+        historyData.unshift({date:d, className:cls.name, total:cls.roster.length, present:p, absent:cls.roster.length-p, records:recs});
+        localStorage.setItem("attendance_history", JSON.stringify(historyData)); alert("Saved!");
+    }
+
+    function renderHistory() {
+        const cls = classes.find(c => c.id == currentClassId);
+        document.getElementById("history-class-name").innerText = cls.name;
+        const filteredHistory = historyData.filter(h => h.className === cls.name);
+        
+        const cont = document.getElementById("history-container");
+        if (filteredHistory.length === 0) {
+            cont.innerHTML = "<p style='text-align:center; font-size:12px; margin-top:20px;'>No history for this class yet.</p>";
+            return;
+        }
+
+        cont.innerHTML = filteredHistory.map(day => `
+            <div class="history-card">
+                <b>📅 ${day.date}</b>
+                <details>
+                    <summary>View Details (P:${day.present} A:${day.absent})</summary>
+                    ${day.records.map(r => `
+                        <div class="line-item">
+                            <span>${r.roll}. ${r.name}</span>
+                            <span style="color:${r.status==='Present'?'#28a745':'#dc3545'}">${r.status}</span>
+                        </div>
+                    `).join('')}
+                </details>
+            </div>
+        `).join('');
+    }
+
+    function clearHistory() { 
+        const cls = classes.find(c => c.id == currentClassId);
+        if(confirm(`Delete ALL history for ${cls.name}?`)) { 
+            historyData = historyData.filter(h => h.className !== cls.name); 
+            localStorage.setItem("attendance_history", JSON.stringify(historyData)); 
+            renderHistory(); 
+        } 
+    }
+    showView('attendance-view');
+</script>
+</body>
+</html>
