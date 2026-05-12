@@ -89,7 +89,7 @@
         .btn-danger { background-color: var(--danger-red); color: white; }
         .btn-info { background-color: var(--info-cyan); color: white; }
 
-        /* --- STUDENT ROWS --- */
+        /* --- STUDENT ROWS (MAIN PAGE) --- */
         .student-item {
             background-color: var(--bg-color);
             padding: 12px;
@@ -124,6 +124,32 @@
 
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
         .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
+
+        /* --- REPORT DESIGN (OLD BOX STYLE) --- */
+        .report-card {
+            background-color: var(--bg-color);
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-weight: bold;
+        }
 
         /* --- TABS --- */
         .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -169,7 +195,7 @@
             </div>
 
             <div id="tab-school-section">
-                <input type="text" id="input-school-name" placeholder="School Name (GVHSS Madikai)">
+                <input type="text" id="input-school-name" placeholder="School Name (e.g. GVHSS Madikai)">
                 <select id="select-msg-language">
                     <option value="en">English</option>
                     <option value="ml">Malayalam</option>
@@ -193,8 +219,8 @@
                 </div>
                 <input type="tel" id="input-student-phone" placeholder="Parent WhatsApp Number">
                 <input type="email" id="input-student-email" placeholder="Parent Email (Optional)">
-                
                 <input type="file" id="input-student-photo" accept="image/*">
+                
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 <div id="student-list-management" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;"></div>
             </div>
@@ -202,11 +228,11 @@
 
         <div id="reports-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h3>📊 Reports</h3>
+                <h3>📊 Monthly Reports</h3>
                 <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
             </div>
             <select id="report-month-picker" onchange="refreshReportsView()"></select>
-            <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv File</button>
+            <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
 
@@ -216,12 +242,11 @@
                 <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
             </div>
             <div id="history-display-container"></div>
-            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete Class History</button>
+            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History</button>
         </div>
     </div>
 
     <script>
-        // MIGRATION LOGIC
         function migrateOldData() {
             const oldClasses = JSON.parse(localStorage.getItem("all_classes"));
             const oldHistory = JSON.parse(localStorage.getItem("attendance_history"));
@@ -270,7 +295,7 @@
         function switchSettingsTab(tabName) {
             ['school', 'classes', 'students'].forEach(t => {
                 document.getElementById(`tab-${t}-section`).classList.add('hidden');
-                document.getElementById(`btn-tab-${t === 'students' ? 'students' : t}`).classList.remove('active');
+                document.getElementById(`btn-tab-${t}`).classList.remove('active');
             });
             document.getElementById(`tab-${tabName}-section`).classList.remove('hidden');
             document.getElementById(`btn-tab-${tabName}`).classList.add('active');
@@ -346,34 +371,26 @@
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             const r = document.getElementById('input-student-roll').value;
             const n = document.getElementById('input-student-name').value;
-            const phone = document.getElementById('input-student-phone').value;
-            const email = document.getElementById('input-student-email').value;
-            const photoFile = document.getElementById('input-student-photo').files[0];
+            const ph = document.getElementById('input-student-phone').value;
+            const em = document.getElementById('input-student-email').value;
+            const f = document.getElementById('input-student-photo').files[0];
 
             if (!r || !n) return alert("Fill roll & name!");
 
             const finalize = (img) => {
                 const s = { 
-                    roll: parseInt(r), 
-                    name: n, 
-                    phone: phone, 
-                    email: email, 
+                    roll: parseInt(r), name: n, phone: ph, email: em,
                     photo: img || (editingIdx > -1 ? currentClass.roster[editingIdx].photo : null) 
                 };
                 if (editingIdx > -1) { currentClass.roster[editingIdx] = s; editingIdx = -1; document.getElementById('submit-student-btn').innerText = "+ Add Student"; }
                 else { currentClass.roster.push(s); }
                 persistData(); refreshViews();
-                document.getElementById('input-student-roll').value = ""; 
-                document.getElementById('input-student-name').value = "";
-                document.getElementById('input-student-phone').value = "";
-                document.getElementById('input-student-email').value = "";
+                document.getElementById('input-student-roll').value = ""; document.getElementById('input-student-name').value = "";
+                document.getElementById('input-student-phone').value = ""; document.getElementById('input-student-email').value = "";
             };
 
-            if (photoFile) {
-                const reader = new FileReader();
-                reader.onload = (e) => finalize(e.target.result);
-                reader.readAsDataURL(photoFile);
-            } else { finalize(null); }
+            if (f) { const rd = new FileReader(); rd.onload = (e) => finalize(e.target.result); rd.readAsDataURL(f); }
+            else { finalize(null); }
         }
 
         function loadStudentForEdit(idx) {
@@ -440,41 +457,61 @@
             picker.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
         }
 
-        function refreshReportsView() {
-            const month = document.getElementById('report-month-picker').value;
-            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+        function getStats(month) {
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
-                day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
+            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent:0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(month)).forEach(day => {
+                day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; else stats[r.roll].absent++; }});
             });
+            return stats;
+        }
+
+        function refreshReportsView() {
+            const m = document.getElementById('report-month-picker').value;
+            const stats = getStats(m);
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
                 const per = s.total ? Math.round((s.present / s.total) * 100) : 0;
-                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)"><b>${roll}. ${s.name}</b>: ${per}% (${s.present}/${s.total})</div>`;
+                return `
+                    <div class="report-card">
+                        <b>${roll}. ${s.name}</b>
+                        <div class="report-grid">
+                            <div class="stat-box">P: <span style="color:green">${s.present}</span></div>
+                            <div class="stat-box">A: <span style="color:red">${s.absent}</span></div>
+                            <div class="stat-box">T: ${s.total}</div>
+                            <div class="stat-box">${per}%</div>
+                        </div>
+                    </div>`;
             }).join('');
         }
 
         function exportReportToCSV() {
-            const month = document.getElementById('report-month-picker').value;
-            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
-            let stats = {};
-            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
-                day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
-            });
-            let csv = "Roll No,Name,Present,Total,Percentage\n";
+            const m = document.getElementById('report-month-picker').value;
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const stats = getStats(m);
+            
+            let csv = "Roll No,Name,Present,Absent,Total,Percentage\n";
             Object.keys(stats).forEach(r => {
                 const s = stats[r];
-                csv += `${r},${s.name},${s.present},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`;
+                csv += `${r},${s.name},${s.present},${s.absent},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`;
             });
+
+            // --- RE-IMPLEMENTED STRONG DOWNLOAD LOGIC ---
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const fileName = "Report_" + cls.name + "_" + m + ".csv";
+            
             const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "Report_" + currentClass.name + "_" + month + ".csv";
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
         }
 
         refreshViews();
