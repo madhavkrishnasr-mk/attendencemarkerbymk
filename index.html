@@ -61,10 +61,26 @@
     </div>
 
     <div id="settings-view" class="hidden">
+        
+        <h4>Global Settings</h4>
+        <label style="font-size:13px; color:var(--secondary)">School/Institution Name:</label>
+        <input type="text" id="school-name" placeholder="Enter School Name">
+        
+        <label style="font-size:13px; color:var(--secondary)">Message Language:</label>
+        <div style="display:flex; gap:5px;">
+            <select id="msg-lang">
+                <option value="en">English</option>
+                <option value="ml">Malayalam (മലയാളം)</option>
+            </select>
+            <button onclick="saveGlobalSettings()">Save</button>
+        </div>
+        <hr>
+
         <h4>Manage Classes</h4>
         <div style="display:flex; gap:5px;"><input type="text" id="new-class-name" placeholder="Class Name (e.g. 10A)"><button onclick="addClass()">Add</button></div>
         <div id="class-management-list"></div>
         <hr>
+        
         <h4 id="student-form-title">Add New Student</h4>
         <div style="display:flex; gap:5px;">
             <input type="number" id="new-roll" placeholder="Roll" style="width:30%"><input type="text" id="new-name" placeholder="Name">
@@ -90,11 +106,23 @@
     let classes = JSON.parse(localStorage.getItem("all_classes")) || [{ id: Date.now(), name: "Class 1", roster: [] }];
     let currentClassId = localStorage.getItem("active_class_id") || classes[0].id;
     let historyData = JSON.parse(localStorage.getItem("attendance_history")) || [];
-    let editingStudentIndex = -1; // -1 means we are adding a new student, not editing
+    let editingStudentIndex = -1; 
+    
+    // Global Settings
+    let schoolName = localStorage.getItem("school_name") || "Our School";
+    let msgLang = localStorage.getItem("msg_lang") || "en";
 
     function save() {
         localStorage.setItem("all_classes", JSON.stringify(classes));
         localStorage.setItem("active_class_id", currentClassId);
+    }
+
+    function saveGlobalSettings() {
+        schoolName = document.getElementById("school-name").value || "Our School";
+        msgLang = document.getElementById("msg-lang").value;
+        localStorage.setItem("school_name", schoolName);
+        localStorage.setItem("msg_lang", msgLang);
+        alert("School Name and Language Saved!");
     }
 
     function toggleTheme() {
@@ -120,13 +148,16 @@
         const cls = classes.find(c => c.id == currentClassId) || classes[0];
         document.getElementById("class-title").querySelector('span').innerText = cls.name;
         
+        // Load settings into inputs
+        document.getElementById("school-name").value = schoolName === "Our School" ? "" : schoolName;
+        document.getElementById("msg-lang").value = msgLang;
+
         const selector = document.getElementById("class-selector");
         selector.innerHTML = classes.map(c => `<option value="${c.id}" ${c.id == currentClassId ? 'selected' : ''}>${c.name}</option>`).join('');
 
         const container = document.getElementById("student-container");
         container.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; color:#666;'>No students added yet.</p>";
         
-        // Sort roster by roll number before displaying
         cls.roster.sort((a,b) => a.roll - b.roll);
         
         cls.roster.forEach((s, i) => {
@@ -191,7 +222,7 @@
         document.getElementById("add-student-btn").style.background = "#28a745";
         
         editingStudentIndex = index;
-        window.scrollTo(0, 0); // Scroll to top to see the form
+        window.scrollTo(0, 0); 
     }
 
     function handleAddStudent() {
@@ -206,18 +237,22 @@
 
         const saveS = (img) => {
             if (editingStudentIndex > -1) {
-                // Update existing student
                 cls.roster[editingStudentIndex] = { 
                     roll: parseInt(r), name: n, phone: p, email: email, 
-                    photo: img || cls.roster[editingStudentIndex].photo // keep old photo if no new one uploaded
+                    photo: img || cls.roster[editingStudentIndex].photo 
                 };
-                editingStudentIndex = -1; // Reset editing mode
+                editingStudentIndex = -1; 
                 document.getElementById("student-form-title").innerText = "Add New Student";
                 document.getElementById("add-student-btn").innerText = "+ Add Student";
                 document.getElementById("add-student-btn").style.background = "var(--primary)";
+                alert("Student updated successfully!");
             } else {
-                // Add new student
                 cls.roster.push({ roll: parseInt(r), name: n, phone: p, email: email, photo: img });
+                if(img) {
+                    alert("Student and photo saved successfully!");
+                } else {
+                    alert("Student saved successfully!");
+                }
             }
             
             save(); renderAll();
@@ -258,13 +293,28 @@
         alert("Attendance Saved Successfully!");
     }
 
+    function generateMessage(name, roll, date, clsName, reason) {
+        let safeSchool = schoolName || "our school";
+        if (msgLang === 'ml') {
+            let rText = reason ? reason : "വ്യക്തമാക്കിയിട്ടില്ല";
+            return `പ്രിയ രക്ഷിതാവേ,\n\n${safeSchool}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ${clsName} ക്ലാസ്സിൽ ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nരേഖപ്പെടുത്തിയ കാരണം: ${rText}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ`;
+        } else {
+            let rText = reason ? reason : "Not specified";
+            return `Dear Parent,\n\nThis is to inform you that your ward, ${name} (Roll No: ${roll}), was marked absent today (${date}) from class ${clsName} at ${safeSchool}.\n\nReason for absence: ${rText}\n\nRegards,\nClass Teacher`;
+        }
+    }
+
     function renderHistory() {
         const container = document.getElementById("history-container");
         let safeHistory = historyData.filter(day => day.records && Array.isArray(day.records));
         container.innerHTML = safeHistory.length ? "" : "<p style='text-align:center;'>No history available yet.</p>";
         
         safeHistory.forEach(day => {
-            let list = day.records.map(r => `
+            let list = day.records.map(r => {
+                let safeName = r.name.replace(/'/g, "\\'");
+                let safeReason = r.reason ? r.reason.replace(/'/g, "\\'") : "";
+                
+                return `
                 <div class="line-item" style="flex-direction:column; align-items:flex-start;">
                     <div style="display:flex; justify-content:space-between; width:100%;">
                         <span>${r.roll}. ${r.name}</span>
@@ -273,23 +323,24 @@
                     ${r.status === 'Absent' ? `
                         <div style="font-size:12px; color:#666; margin-top:4px;">Reason: ${r.reason || 'None'}</div>
                         <div style="margin-top:5px;">
-                            ${r.phone ? `<button class="btn-wa" onclick="sendWA('${r.phone}','${r.name}','${day.date}','${day.className}')">💬 WhatsApp</button>` : ''}
-                            ${r.email ? `<button class="btn-mail" onclick="sendEmail('${r.email}','${r.name}','${day.date}','${day.className}')">📧 Email</button>` : ''}
+                            ${r.phone ? `<button class="btn-wa" onclick="sendWA('${r.phone}','${safeName}','${r.roll}','${day.date}','${day.className}', '${safeReason}')">💬 WhatsApp</button>` : ''}
+                            ${r.email ? `<button class="btn-mail" onclick="sendEmail('${r.email}','${safeName}','${r.roll}','${day.date}','${day.className}', '${safeReason}')">📧 Email</button>` : ''}
                         </div>
                     ` : ''}
-                </div>`).join('');
+                </div>`;
+            }).join('');
             container.innerHTML += `<div class="history-card"><b>📅 ${day.date} - ${day.className}</b><div style="font-size:12px">Present: ${day.present} | Absent: ${day.absent}</div><details><summary>View Details</summary>${list}</details></div>`;
         });
     }
 
-    function sendWA(num, name, date, clsName) {
-        const msg = `Dear Parent, your child ${name} was ABSENT for class (${clsName}) on ${date}.`;
+    function sendWA(num, name, roll, date, clsName, reason) {
+        const msg = generateMessage(name, roll, date, clsName, reason);
         window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
-    function sendEmail(email, name, date, clsName) {
+    function sendEmail(email, name, roll, date, clsName, reason) {
         const subject = encodeURIComponent(`Absence Notification: ${name}`);
-        const body = encodeURIComponent(`Dear Parent,\n\nThis is to inform you that ${name} is marked ABSENT today (${date}) from ${clsName}.\n\nRegards,\nClass Teacher`);
+        const body = encodeURIComponent(generateMessage(name, roll, date, clsName, reason));
         window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
 
