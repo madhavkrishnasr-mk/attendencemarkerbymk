@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Master Teacher Edition</title>
+    <title>Attendance Pro - Master Edition</title>
     
     <style>
+        /* --- PROFESSIONAL COLOR PALETTE --- */
         :root {
             --bg-color: #f0f2f5;
             --card-bg: #ffffff;
@@ -97,8 +98,10 @@
         .stat-box { background: var(--card-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); font-weight: bold; }
 
         .history-card { background: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid var(--primary-blue); border: 1px solid var(--border-color); }
-        .message-menu { margin-top: 10px; display: flex; gap: 5px; }
-        .msg-btn { font-size: 11px; padding: 5px 10px; border-radius: 4px; color: white; }
+        .list-section-header { font-size: 13px; font-weight: bold; margin-top: 10px; color: var(--primary-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 3px; }
+        .student-list-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px dashed var(--border-color); }
+        .message-menu { display: flex; gap: 5px; margin-top: 5px; }
+        .msg-btn { font-size: 10px; padding: 4px 8px; border-radius: 4px; color: white; }
 
         .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
@@ -135,33 +138,37 @@
                 <h3>Settings</h3>
                 <button onclick="showPage('home-page')" class="btn-secondary" style="padding: 5px 15px;">Back</button>
             </div>
+
             <div class="settings-tabs">
-                <button id="btn-tab-school" class="tab-btn active" onclick="switchSettingsTab('school')">School</button>
+                <button id="btn-tab-students" class="tab-btn active" onclick="switchSettingsTab('students')">Students</button>
                 <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
-                <button id="btn-tab-students" class="tab-btn" onclick="switchSettingsTab('students')">Students</button>
+                <button id="btn-tab-school" class="tab-btn" onclick="switchSettingsTab('school')">School</button>
             </div>
-            <div id="tab-school-section">
+
+            <div id="tab-students-section">
+                <label>Select Class for Student Entry:</label>
+                <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
+                <h4 id="student-editor-title">Add Student</h4>
+                <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll" style="width: 80px;"><input type="text" id="input-student-name" placeholder="Name"></div>
+                <input type="tel" id="input-student-phone" placeholder="WhatsApp Number">
+                <input type="email" id="input-student-email" placeholder="Email Address">
+                <input type="file" id="input-student-photo" accept="image/*">
+                <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
+                <div id="student-list-management" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;"></div>
+            </div>
+
+            <div id="tab-classes-section" class="hidden">
+                <label>Add New Class:</label>
+                <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="e.g. 10A"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
+                <div id="class-list-management" style="margin-top:20px;"></div>
+            </div>
+
+            <div id="tab-school-section" class="hidden">
                 <label>School Name:</label>
                 <input type="text" id="input-school-name" placeholder="GVHSS Madikai">
                 <label>Message Language:</label>
                 <select id="select-msg-language"><option value="en">English</option><option value="ml">Malayalam</option></select>
                 <button class="btn-primary btn-full" onclick="updateGlobalSettings()">Save School Settings</button>
-            </div>
-            <div id="tab-classes-section" class="hidden">
-                <label>New Class:</label>
-                <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="10A"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
-                <div id="class-list-management" style="margin-top:20px;"></div>
-            </div>
-            <div id="tab-students-section" class="hidden">
-                <label>Select Class:</label>
-                <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
-                <h4 id="student-editor-title">Add Student</h4>
-                <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll" style="width: 80px;"><input type="text" id="input-student-name" placeholder="Name"></div>
-                <input type="tel" id="input-student-phone" placeholder="WhatsApp No">
-                <input type="email" id="input-student-email" placeholder="Email">
-                <input type="file" id="input-student-photo" accept="image/*">
-                <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
-                <div id="student-list-management" style="margin-top: 20px;"></div>
             </div>
         </div>
 
@@ -177,7 +184,7 @@
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3>📁 History</h3><button onclick="showPage('home-page')" class="btn-secondary">Back</button></div>
             <label>Filter Class:</label><select class="class-dropdown" onchange="handleClassChange(this.value); renderHistoryView();"></select>
             <div id="history-display-container"></div>
-            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History</button>
+            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History for Current Class</button>
         </div>
     </div>
 
@@ -205,7 +212,10 @@
         }
 
         function switchSettingsTab(tabName) {
-            ['school', 'classes', 'students'].forEach(t => { document.getElementById(`tab-${t}-section`).classList.add('hidden'); document.getElementById(`btn-tab-${t}`).classList.remove('active'); });
+            ['school', 'classes', 'students'].forEach(t => { 
+                document.getElementById(`tab-${t}-section`).classList.add('hidden'); 
+                document.getElementById(`btn-tab-${t}`).classList.remove('active'); 
+            });
             document.getElementById(`tab-${tabName}-section`).classList.remove('hidden');
             document.getElementById(`btn-tab-${tabName}`).classList.add('active');
         }
@@ -218,7 +228,7 @@
             document.querySelectorAll('.class-dropdown').forEach(s => { s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join(''); });
             
             const cont = document.getElementById('attendance-list-container');
-            cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add in Settings.</p>";
+            cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add them in Settings.</p>";
             cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, idx) => {
                 cont.innerHTML += `<div class="student-item"><div class="student-top-row"><div class="student-meta"><img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'"><span>Roll ${s.roll}: ${s.name}</span></div><div class="attendance-toggle"><input type="hidden" id="status-val-${idx}" value="Present"><div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx}, 'Present')">P</div><div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx}, 'Absent')">A</div></div></div></div>`;
             });
@@ -285,22 +295,36 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const filtered = appData.history.filter(h => h.classId == cls.id);
             const cont = document.getElementById('history-display-container');
-            cont.innerHTML = filtered.length ? filtered.map(h => `
+            cont.innerHTML = filtered.length ? filtered.map(h => {
+                const presentList = h.students.filter(s => s.status === 'Present');
+                const absentList = h.students.filter(s => s.status === 'Absent');
+                
+                return `
                 <div class="history-card">
                     <b>📅 ${h.date}</b> - P: ${h.present} A: ${h.absent}
-                    <details style="margin-top:5px; font-size:13px;">
-                        <summary style="cursor:pointer; color:var(--primary-blue)">Absent List & Send Message</summary>
-                        ${h.students.filter(s => s.status === 'Absent').map(s => `
-                            <div style="margin-top:8px; border-top:1px dashed var(--border-color); padding-top:5px;">
+                    <details style="margin-top:10px; font-size:13px;">
+                        <summary style="cursor:pointer; color:var(--primary-blue)">View Full Attendance List</summary>
+                        
+                        <div class="list-section-header">Absent Students (${absentList.length})</div>
+                        ${absentList.length ? absentList.map(s => `
+                            <div class="student-list-row">
                                 <span>${s.roll}. ${s.name}</span>
                                 <div class="message-menu">
-                                    <button class="msg-btn" style="background:#25D366" onclick="sendMessage('${s.phone}', '${s.name}', '${s.roll}', '${h.date}', 'wa')">WhatsApp</button>
-                                    <button class="msg-btn" style="background:#EA4335" onclick="sendMessage('${s.email}', '${s.name}', '${s.roll}', '${h.date}', 'mail')">Email</button>
+                                    <button class="msg-btn" style="background:#25D366" onclick="sendMessage('${s.phone}', '${s.name}', '${s.roll}', '${h.date}', 'wa')">WA</button>
+                                    <button class="msg-btn" style="background:#EA4335" onclick="sendMessage('${s.email}', '${s.name}', '${s.roll}', '${h.date}', 'mail')">Mail</button>
                                 </div>
                             </div>
-                        `).join('')}
+                        `).join('') : '<div style="font-size:11px; color:gray">No absentees</div>'}
+
+                        <div class="list-section-header">Present Students (${presentList.length})</div>
+                        ${presentList.length ? presentList.map(s => `
+                            <div class="student-list-row">
+                                <span>${s.roll}. ${s.name}</span>
+                                <span style="color:green; font-weight:bold;">Present</span>
+                            </div>
+                        `).join('') : '<div style="font-size:11px; color:gray">No present students</div>'}
                     </details>
-                </div>`).join('') : "No History.";
+                </div>`}).join('') : "No History for this class.";
         }
 
         function sendMessage(target, name, roll, date, type) {
@@ -327,10 +351,10 @@
 
         function exportReportToCSV() {
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
-            let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => { day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }}); });
-            let csv = "Roll No,Name,Present,Total,Percentage\n";
-            Object.keys(stats).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`; });
+            const stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent:0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => { day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; else stats[r.roll].absent++; }}); });
+            let csv = "Roll No,Name,Present,Absent,Total,Percentage\n";
+            Object.keys(stats).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "Report_" + cls.name + "_" + m + ".csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
