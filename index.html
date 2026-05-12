@@ -6,7 +6,7 @@
     <title>Attendance Pro - Teacher Edition</title>
     
     <style>
-        /* --- PROFESSIONAL COLOR PALETTE (REVERTED) --- */
+        /* --- PROFESSIONAL COLOR PALETTE --- */
         :root {
             --bg-color: #f0f2f5;
             --card-bg: #ffffff;
@@ -129,8 +129,6 @@
         .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
         .tab-btn.active { background-color: var(--primary-blue); color: white; }
-
-        .stat-box { background: var(--card-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); text-align: center; font-size: 12px;}
     </style>
 </head>
 <body>
@@ -193,6 +191,9 @@
                     <input type="number" id="input-student-roll" placeholder="Roll" style="width: 80px;">
                     <input type="text" id="input-student-name" placeholder="Student Name">
                 </div>
+                <input type="tel" id="input-student-phone" placeholder="Parent WhatsApp Number">
+                <input type="email" id="input-student-email" placeholder="Parent Email (Optional)">
+                
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 <div id="student-list-management" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;"></div>
@@ -220,8 +221,7 @@
     </div>
 
     <script>
-        // --- DATA MIGRATION LOGIC ---
-        // This looks for your old data and brings it into the new format automatically.
+        // MIGRATION LOGIC
         function migrateOldData() {
             const oldClasses = JSON.parse(localStorage.getItem("all_classes"));
             const oldHistory = JSON.parse(localStorage.getItem("attendance_history"));
@@ -229,7 +229,6 @@
             const oldLang = localStorage.getItem("msg_lang");
 
             if (oldClasses || oldHistory) {
-                console.log("Old data found. Migrating to Pro version...");
                 return {
                     classes: oldClasses || [{ id: Date.now(), name: "Class 1", roster: [] }],
                     activeClassId: localStorage.getItem("active_class_id") || (oldClasses ? oldClasses[0].id : null),
@@ -250,7 +249,7 @@
         };
 
         if (!appData.activeClassId) appData.activeClassId = appData.classes[0].id;
-        let editingStudentIndex = -1;
+        let editingIdx = -1;
 
         function persistData() { localStorage.setItem("pro_attendance_data", JSON.stringify(appData)); }
 
@@ -332,9 +331,7 @@
         function createNewClass() {
             const name = document.getElementById('input-new-class-name').value;
             if (!name) return;
-            const newObj = { id: Date.now(), name: name, roster: [] };
-            appData.classes.push(newObj);
-            appData.activeClassId = newObj.id;
+            appData.classes.push({ id: Date.now(), name: name, roster: [] });
             document.getElementById('input-new-class-name').value = "";
             persistData(); refreshViews();
         }
@@ -349,20 +346,34 @@
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             const r = document.getElementById('input-student-roll').value;
             const n = document.getElementById('input-student-name').value;
-            const f = document.getElementById('input-student-photo').files[0];
+            const phone = document.getElementById('input-student-phone').value;
+            const email = document.getElementById('input-student-email').value;
+            const photoFile = document.getElementById('input-student-photo').files[0];
 
-            if (!r || !n) return alert("Enter Roll and Name!");
+            if (!r || !n) return alert("Fill roll & name!");
 
-            const done = (img) => {
-                const s = { roll: parseInt(r), name: n, photo: img || (editingStudentIndex > -1 ? currentClass.roster[editingStudentIndex].photo : null) };
-                if (editingStudentIndex > -1) { currentClass.roster[editingStudentIndex] = s; editingStudentIndex = -1; }
+            const finalize = (img) => {
+                const s = { 
+                    roll: parseInt(r), 
+                    name: n, 
+                    phone: phone, 
+                    email: email, 
+                    photo: img || (editingIdx > -1 ? currentClass.roster[editingIdx].photo : null) 
+                };
+                if (editingIdx > -1) { currentClass.roster[editingIdx] = s; editingIdx = -1; document.getElementById('submit-student-btn').innerText = "+ Add Student"; }
                 else { currentClass.roster.push(s); }
                 persistData(); refreshViews();
-                document.getElementById('input-student-roll').value = ""; document.getElementById('input-student-name').value = "";
+                document.getElementById('input-student-roll').value = ""; 
+                document.getElementById('input-student-name').value = "";
+                document.getElementById('input-student-phone').value = "";
+                document.getElementById('input-student-email').value = "";
             };
 
-            if (f) { const rd = new FileReader(); rd.onload = (e) => done(e.target.result); rd.readAsDataURL(f); }
-            else { done(null); }
+            if (photoFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => finalize(e.target.result);
+                reader.readAsDataURL(photoFile);
+            } else { finalize(null); }
         }
 
         function loadStudentForEdit(idx) {
@@ -370,9 +381,11 @@
             const s = currentClass.roster[idx];
             document.getElementById('input-student-roll').value = s.roll;
             document.getElementById('input-student-name').value = s.name;
+            document.getElementById('input-student-phone').value = s.phone || "";
+            document.getElementById('input-student-email').value = s.email || "";
             document.getElementById('student-editor-title').innerText = "Edit: " + s.name;
             document.getElementById('submit-student-btn').innerText = "Update Student";
-            editingStudentIndex = idx;
+            editingIdx = idx;
         }
 
         function removeStudent(idx) {
@@ -411,7 +424,7 @@
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             const filtered = appData.history.filter(h => h.classId == currentClass.id);
             document.getElementById('history-class-label').innerText = currentClass.name;
-            document.getElementById('history-display-container').innerHTML = filtered.length ? filtered.map(h => `<div style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No Records.";
+            document.getElementById('history-display-container').innerHTML = filtered.length ? filtered.map(h => `<div style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No History.";
         }
 
         function wipeHistoryForCurrentClass() {
@@ -422,31 +435,32 @@
         }
 
         function setupMonthPicker() {
-            const p = document.getElementById('report-month-picker');
+            const picker = document.getElementById('report-month-picker');
             const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse();
-            p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
+            picker.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
         }
 
         function refreshReportsView() {
-            const m = document.getElementById('report-month-picker').value;
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const month = document.getElementById('report-month-picker').value;
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
+            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
                 day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
             });
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
-                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)">${roll}. ${s.name}: ${s.total ? Math.round((s.present/s.total)*100) : 0}%</div>`;
+                const per = s.total ? Math.round((s.present / s.total) * 100) : 0;
+                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)"><b>${roll}. ${s.name}</b>: ${per}% (${s.present}/${s.total})</div>`;
             }).join('');
         }
 
         function exportReportToCSV() {
-            const m = document.getElementById('report-month-picker').value;
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const month = document.getElementById('report-month-picker').value;
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
+            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
                 day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
             });
             let csv = "Roll No,Name,Present,Total,Percentage\n";
@@ -457,7 +471,7 @@
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "Report_" + cls.name + "_" + m + ".csv";
+            link.download = "Report_" + currentClass.name + "_" + month + ".csv";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
