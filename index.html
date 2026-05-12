@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0056b3">
-    <title>Attendance Pro</title>
+    <title>Attendance Pro (Email + History)</title>
     <style>
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .card { background-color: #ffffff; width: 100%; max-width: 480px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
@@ -14,18 +11,19 @@
         h3 { color: #1a1a1a; margin-top: 0; border-bottom: 2px solid #e4e6eb; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         input[type="text"], input[type="number"], input[type="date"], input[type="url"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .row-flex { display: flex; gap: 8px; align-items: center; }
-        button { background-color: #0056b3; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        button { background-color: #0056b3; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-full { width: 100%; font-size: 16px; margin-top: 15px; padding: 15px; }
-        .btn-edit { background-color: #6c757d; font-size: 11px; padding: 5px 10px; }
+        .btn-edit { background-color: #6c757d; font-size: 12px; padding: 6px 10px; margin-left: 5px; }
+        .btn-history { background-color: #28a745; font-size: 12px; padding: 6px 10px; }
         .btn-delete { background-color: #dc3545; padding: 6px 10px; }
-        .btn-copy { background-color: #28a745; color: white; padding: 8px 12px; font-size: 13px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; }
+        .btn-copy { background-color: #28a745; color: white; padding: 8px; font-size: 13px; border-radius: 5px; width: 100%; margin-top: 5px; }
         .student-row { background-color: #f8f9fa; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #e4e6eb; }
         .student-main { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; }
         .student-box { transform: scale(1.5); margin-right: 15px; }
         .reason-box { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .history-card { background-color: #e9ecef; padding: 10px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #0056b3; font-size: 14px; }
         #status-msg { text-align: center; margin-top: 10px; font-weight: bold; color: #28a745; }
-        .help-box { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.6; border: 1px solid #bbdefb; }
-        .help-box a { color: #0056b3; font-weight: bold; text-decoration: underline; }
+        .help-box { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; border: 1px solid #bbdefb; }
     </style>
 </head>
 <body>
@@ -34,43 +32,49 @@
     <div id="attendance-view">
         <h3>
             <span id="display-class-name">Loading...</span>
-            <button class="btn-edit" onclick="toggleEditMode()">Settings ⚙️</button>
+            <div style="display:flex;">
+                <button class="btn-history" onclick="showView('history-view')">History 📁</button>
+                <button class="btn-edit" onclick="showView('edit-view')">⚙️</button>
+            </div>
         </h3>
         <input type="date" id="class-date">
         <div id="student-container"></div>
-        <button id="submit-btn" class="btn-full" onclick="submitToCloud()">Submit to Institution & Parents</button>
+        <button id="submit-btn" class="btn-full" onclick="submitAttendance()">Submit to Cloud & History</button>
         <div id="status-msg"></div>
     </div>
 
     <div id="edit-view" class="hidden">
-        <h3>Settings <button class="btn-edit" onclick="toggleEditMode()">Back ✔️</button></h3>
+        <h3>Settings <button class="btn-edit" onclick="showView('attendance-view')">Back ✔️</button></h3>
         
         <div class="help-box">
-            <strong>👨‍🏫 For Teachers (First Time Setup):</strong><br><br>
-            1. Open a blank sheet: <a href="https://sheets.new" target="_blank">Click Here (sheets.new)</a><br>
-            2. Name Tab 1 as <b>Attendance</b> & Tab 2 as <b>Students</b>.<br>
-            3. Go to <i>Extensions > Apps Script</i> and delete all code.<br>
-            4. Click the button below to copy the system code:<br>
-            <button class="btn-copy" onclick="copyAppScript()">📋 Copy Required Code</button><br>
-            5. Paste it in Apps Script and click <i>Deploy > New Deployment</i>.<br>
-            6. Set access to <b>"Anyone"</b>, copy your /exec URL, and paste it below.
+            <strong>📧 Email Setup:</strong><br>
+            1. Open <a href="https://sheets.new" target="_blank">sheets.new</a>. Rename Tabs to <b>Attendance</b> and <b>Students</b>.<br>
+            2. Click button below to copy code. Paste in <i>Extensions > Apps Script</i>.<br>
+            <button class="btn-copy" onclick="copyAppScript()">📋 Copy Script Code</button><br>
+            3. Deploy as "Anyone" and paste the /exec URL below.
         </div>
-        
+
         <label><strong>Teacher's Script URL:</strong></label>
         <input type="url" id="script-url" placeholder="Paste your /exec URL here">
-        
+
         <label><strong>Class Name:</strong></label>
         <div class="row-flex"><input type="text" id="class-name"><button onclick="saveSettings()">Save</button></div>
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         
-        <label><strong>Add Student to Roster:</strong></label>
+        <label><strong>Add Student:</strong></label>
         <div class="row-flex">
-            <input type="number" id="new-roll" placeholder="Roll" min="1" style="width: 30%;">
+            <input type="number" id="new-roll" placeholder="Roll" style="width: 30%;">
             <input type="text" id="new-name" placeholder="Name" style="width: 70%;">
         </div>
         <button class="btn-full" onclick="addStudent()" style="margin-top:0">+ Add Student</button>
         <div id="management-list" style="margin-top:20px;"></div>
+    </div>
+
+    <div id="history-view" class="hidden">
+        <h3>Attendance History <button class="btn-edit" onclick="showView('attendance-view')">Back ✔️</button></h3>
+        <div id="history-container"></div>
+        <button class="btn-full" style="background-color: #dc3545;" onclick="clearHistory()">Clear History</button>
     </div>
 </div>
 
@@ -78,60 +82,36 @@
     let myClass = JSON.parse(localStorage.getItem("attendance_roster")) || [];
     let currentClass = localStorage.getItem("class_details") || "New Class";
     let scriptURL = localStorage.getItem("teacher_script_url") || "";
+    let historyData = JSON.parse(localStorage.getItem("attendance_history")) || [];
 
     document.getElementById('class-date').valueAsDate = new Date();
 
-    // The Google Apps Script Code stored securely inside your app
-    const appScriptCodeToCopy = `function doPost(e) {
+    const appScriptCode = `function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const attendanceSheet = ss.getSheetByName('Attendance');
     const studentSheet = ss.getSheetByName('Students');
-    
     const studentData = studentSheet.getDataRange().getValues();
     const timestamp = new Date();
-
     data.attendanceList.forEach(record => {
       attendanceSheet.appendRow([data.className, record.rollNo, record.name, record.status, record.reason, timestamp]);
-      if (record.status === "Absent") {
-        sendParentNotification(record, data.className, studentData);
-      }
+      if (record.status === "Absent") sendParentNotification(record, data.className, studentData);
     });
-
     return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() })).setMimeType(ContentService.MimeType.JSON);
-  }
+  } catch (f) { return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": f.toString() })).setMimeType(ContentService.MimeType.JSON); }
 }
-
-function sendParentNotification(record, className, studentDirectory) {
-  let parentEmail = "";
-  for (let i = 1; i < studentDirectory.length; i++) {
-    if (studentDirectory[i][0] == record.rollNo) {
-      parentEmail = studentDirectory[i][2];
-      break;
-    }
-  }
-  if (parentEmail !== "") {
-    const subject = "Absence Notification: " + record.name;
-    const body = "Dear Parent,\\n\\nThis is to inform you that " + record.name + " (Roll No: " + record.rollNo + ") was marked ABSENT from " + className + " today.\\n\\nReason recorded: " + (record.reason || "Not specified") + ".\\n\\nThis is an automated system notification.";
-    MailApp.sendEmail(parentEmail, subject, body);
-  }
+function sendParentNotification(r, c, d) {
+  let p = "";
+  for (let i = 1; i < d.length; i++) { if (d[i][0] == r.rollNo) { p = d[i][2]; break; } }
+  if (p !== "") MailApp.sendEmail(p, "Absence Notification: " + r.name, "Dear Parent,\\n\\n" + r.name + " (Roll " + r.rollNo + ") was ABSENT from " + c + " today.");
 }`;
 
-    function copyAppScript() {
-        navigator.clipboard.writeText(appScriptCodeToCopy).then(() => {
-            alert("Code copied successfully! \\n\\nNow paste it in your Apps Script Editor.");
-        }).catch(err => {
-            alert("Failed to copy code. Please try again.");
-        });
-    }
-
-    function toggleEditMode() {
-        document.getElementById('attendance-view').classList.toggle('hidden');
-        document.getElementById('edit-view').classList.toggle('hidden');
-        updateScreen();
+    function showView(id) {
+        ['attendance-view', 'edit-view', 'history-view'].forEach(v => document.getElementById(v).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        if(id === 'attendance-view') updateScreen();
+        if(id === 'history-view') renderHistory();
     }
 
     function updateScreen() {
@@ -144,19 +124,8 @@ function sendParentNotification(record, className, studentDirectory) {
         myClass.sort((a, b) => a.rollNo - b.rollNo);
 
         myClass.forEach((s, i) => {
-            attContainer.innerHTML += `
-                <div class="student-row">
-                    <div class="student-main">
-                        <input type="checkbox" class="student-box" id="check-${i}" checked>
-                        <label for="check-${i}">Roll ${s.rollNo}: ${s.name}</label>
-                    </div>
-                    <input type="text" class="reason-box" id="reason-${i}" placeholder="Notes (Late, Medical, etc.)">
-                </div>`;
-            magContainer.innerHTML += `
-                <div class="student-row" style="display:flex; justify-content:space-between;">
-                    <span>Roll ${s.rollNo}: ${s.name}</span>
-                    <button class="btn-delete" onclick="deleteStudent(${i})">Del</button>
-                </div>`;
+            attContainer.innerHTML += `<div class="student-row"><div class="student-main"><input type="checkbox" class="student-box" id="check-${i}" checked><label>Roll ${s.rollNo}: ${s.name}</label></div><input type="text" class="reason-box" id="reason-${i}" placeholder="Notes"></div>`;
+            magContainer.innerHTML += `<div class="student-row" style="display:flex; justify-content:space-between;"><span>Roll ${s.rollNo}: ${s.name}</span><button class="btn-delete" onclick="deleteStudent(${i})">Del</button></div>`;
         });
     }
 
@@ -165,60 +134,77 @@ function sendParentNotification(record, className, studentDirectory) {
         scriptURL = document.getElementById("script-url").value;
         localStorage.setItem("class_details", currentClass);
         localStorage.setItem("teacher_script_url", scriptURL);
-        alert("Settings saved!");
+        alert("Saved!");
         updateScreen();
     }
 
     function addStudent() {
         const r = document.getElementById("new-roll").value;
         const n = document.getElementById("new-name").value;
-        if (!r || !n) return alert("Fill all fields");
-        myClass.push({ rollNo: parseInt(r), name: n });
-        localStorage.setItem("attendance_roster", JSON.stringify(myClass));
-        updateScreen();
-    }
-
-    function deleteStudent(idx) {
-        if (confirm("Delete student?")) {
-            myClass.splice(idx, 1);
+        if (r && n) {
+            myClass.push({ rollNo: parseInt(r), name: n });
             localStorage.setItem("attendance_roster", JSON.stringify(myClass));
             updateScreen();
         }
     }
 
-    function submitToCloud() {
-        if (!scriptURL) return alert("Please go to Settings and paste your Script URL first!");
-        
+    function deleteStudent(idx) {
+        myClass.splice(idx, 1);
+        localStorage.setItem("attendance_roster", JSON.stringify(myClass));
+        updateScreen();
+    }
+
+    function copyAppScript() {
+        navigator.clipboard.writeText(appScriptCode).then(() => alert("Code Copied!"));
+    }
+
+    function submitAttendance() {
         const btn = document.getElementById('submit-btn');
-        const msg = document.getElementById('status-msg');
+        const date = document.getElementById('class-date').value;
         btn.disabled = true;
-        btn.innerText = "Sending...";
-        
-        const attendanceList = myClass.map((s, i) => ({
+        btn.innerText = "Processing...";
+
+        const list = myClass.map((s, i) => ({
             rollNo: s.rollNo,
             name: s.name,
             status: document.getElementById(`check-${i}`).checked ? "Present" : "Absent",
             reason: document.getElementById(`reason-${i}`).value
         }));
 
-        fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({ className: currentClass, attendanceList: attendanceList })
-        })
-        .then(() => {
-            msg.innerText = "Success! Logged and emails sent.";
-            btn.disabled = false;
-            btn.innerText = "Submit to Institution & Parents";
-            setTimeout(() => { msg.innerText = ""; }, 5000);
-        })
-        .catch(err => {
-            alert("Error: " + err.message);
-            btn.disabled = false;
+        // 1. SAVE TO LOCAL HISTORY
+        const absentees = list.filter(s => s.status === "Absent").map(s => `Roll ${s.rollNo} (${s.name})`);
+        historyData.unshift({ date: date, absentees: absentees });
+        localStorage.setItem("attendance_history", JSON.stringify(historyData));
+
+        // 2. SEND TO GOOGLE SHEET (If URL exists)
+        if (scriptURL) {
+            fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ className: currentClass, attendanceList: list }) })
+            .then(() => finishSubmit("Success! Saved to History & Cloud."));
+        } else {
+            finishSubmit("Saved to History (Offline)");
+        }
+    }
+
+    function finishSubmit(txt) {
+        const btn = document.getElementById('submit-btn');
+        const msg = document.getElementById('status-msg');
+        msg.innerText = txt;
+        btn.disabled = false;
+        btn.innerText = "Submit to Cloud & History";
+        setTimeout(() => msg.innerText = "", 4000);
+    }
+
+    function renderHistory() {
+        const container = document.getElementById("history-container");
+        container.innerHTML = historyData.length ? "" : "<p>No records found.</p>";
+        historyData.forEach(r => {
+            container.innerHTML += `<div class="history-card"><strong>📅 ${r.date}</strong><br>${r.absentees.length ? "Absentees: " + r.absentees.join(", ") : "All Present"}</div>`;
         });
     }
 
-    updateScreen();
+    function clearHistory() { if(confirm("Delete history?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
+
+    showView('attendance-view');
 </script>
 </body>
 </html>
