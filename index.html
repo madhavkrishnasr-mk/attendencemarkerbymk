@@ -3,240 +3,419 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro</title>
+    <title>Attendance Pro - Teacher Edition</title>
+    
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --text: #1a1a1a; --border: #e4e6eb; --primary: #0056b3; --secondary: #6c757d; }
-        .dark-mode { --bg: #18191a; --card: #242526; --text: #e4e6eb; --border: #3e4042; --primary: #2d88ff; --secondary: #4e4f50; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
-        .card { background: var(--card); width: 100%; max-width: 480px; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        /* FULL PROFESSIONAL STYLING */
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1c1e21;
+            --border-color: #dddfe2;
+            --primary-blue: #0056b3;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+            --info-cyan: #17a2b8;
+        }
+
+        .dark-mode {
+            --bg-color: #18191a;
+            --card-bg: #242526;
+            --text-main: #e4e6eb;
+            --border-color: #3e4042;
+            --primary-blue: #2d88ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-card {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
         .hidden { display: none !important; }
-        h3 { border-bottom: 1px solid var(--border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; font-size: 18px; }
-        input, select { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; background: var(--bg); color: var(--text); font-size: 14px; }
-        button { background: var(--primary); color: white; border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; }
-        .btn-full { width: 100%; font-size: 14px; margin-top: 8px; padding: 12px; }
-        .student-row { background: var(--bg); padding: 8px; margin: 6px 0; border-radius: 8px; border: 1px solid var(--border); }
-        .student-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-        .student-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid var(--primary); }
-        .student-name-label { font-size: 14px; font-weight: 500; display: flex; align-items: center; }
-        .status-toggle { display: flex; width: 100px; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
-        .toggle-btn { flex: 1; padding: 5px 0; text-align: center; font-size: 12px; font-weight: bold; cursor: pointer; background: var(--bg); color: var(--text); border: none; }
-        .toggle-btn.present.active { background: #28a745; color: white; }
-        .toggle-btn.absent.active { background: #dc3545; color: white; }
-        .remarks-input { height: 28px; font-size: 12px; padding: 4px 8px; margin-bottom: 0; margin-top: 4px; border-color: transparent; background: rgba(0,0,0,0.03); }
-        .tab-menu { display: flex; gap: 4px; margin-bottom: 12px; }
-        .tab-link { flex: 1; padding: 8px 2px; font-size: 12px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; }
-        .tab-link.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .report-stat { display:flex; justify-content:space-between; width:100%; font-size:11px; margin-top:4px; background:var(--bg); padding: 6px; border-radius: 4px; }
-        .line-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        .history-card { background: var(--card); padding: 10px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid var(--primary); font-size: 13px; border: 1px solid var(--border); }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-full { width: 100%; padding: 15px; font-size: 16px; margin-top: 10px; color: white; }
+        .btn-primary { background-color: var(--primary-blue); }
+        .btn-success { background-color: var(--success-green); }
+        .btn-danger { background-color: var(--danger-red); }
+        .btn-info { background-color: var(--info-cyan); }
+
+        .student-item {
+            background-color: var(--bg-color);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .student-top-row { display: flex; justify-content: space-between; align-items: center; }
+        .student-meta { display: flex; align-items: center; gap: 10px; }
+        .student-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-blue); }
+
+        .attendance-toggle {
+            display: flex;
+            width: 120px;
+            height: 35px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .toggle-opt {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            background-color: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        .toggle-opt.p-active { background-color: var(--success-green); color: white; }
+        .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
+
+        .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .tab-btn.active { background-color: var(--primary-blue); color: white; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h3 id="class-title"><span>Attendance Pro</span>
-        <div><button onclick="toggleTheme()" style="background:none; font-size:18px; color:var(--text)">🌓</button><button onclick="showView('settings-view')">⚙️</button></div>
-    </h3>
-
-    <div id="attendance-view">
-        <select id="class-selector" onchange="switchClass(this.value)"></select>
-        <div style="display:flex; gap:6px; margin-bottom:10px;">
-            <input type="date" id="class-date" style="margin-bottom:0; flex: 1.5;">
-            <button style="background:#28a745; flex:1; font-size: 11px;" onclick="showView('history-view')">📁 History</button>
-            <button style="background:#17a2b8; flex:1; font-size: 11px;" onclick="showView('report-view')">📊 Reports</button>
+    <div class="main-card">
+        <div class="header-section">
+            <h2 id="app-title">Attendance Pro</h2>
+            <div>
+                <button onclick="toggleDarkMode()" style="background:none; font-size:22px;">🌓</button>
+                <button onclick="showPage('settings-page')" class="btn-info" style="color:white;">⚙️</button>
+            </div>
         </div>
-        <div id="student-container"></div>
-        <button class="btn-full" onclick="submitAttendance()">Save Attendance</button>
+
+        <div id="home-page">
+            <label style="font-size: 12px; font-weight: bold;">Current Class:</label>
+            <select id="class-select-main" onchange="handleClassChange(this.value)"></select>
+
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <input type="date" id="attendance-date-input" style="margin-bottom: 0;">
+                <button onclick="showPage('history-page')" class="btn-success" style="flex: 1;">📁 History</button>
+                <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1; color: white;">📊 Reports</button>
+            </div>
+
+            <div id="attendance-list-container"></div>
+            <button class="btn-primary btn-full" onclick="saveAttendanceData()">Save Attendance Record</button>
+        </div>
+
+        <div id="settings-page" class="hidden">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>Settings</h3>
+                <button onclick="showPage('home-page')" class="btn-danger">Back</button>
+            </div>
+            <div class="settings-tabs">
+                <button id="btn-tab-school" class="tab-btn active" onclick="switchSettingsTab('school')">School</button>
+                <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
+                <button id="btn-tab-students" class="tab-btn" onclick="switchSettingsTab('students')">Students</button>
+            </div>
+            <div id="tab-school-section">
+                <input type="text" id="input-school-name" placeholder="School Name (GVHSS Madikai)">
+                <select id="select-msg-language">
+                    <option value="en">English</option>
+                    <option value="ml">Malayalam</option>
+                </select>
+                <button class="btn-primary btn-full" onclick="updateGlobalSettings()">Save School Settings</button>
+            </div>
+            <div id="tab-classes-section" class="hidden">
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="input-new-class-name" placeholder="Class Name" style="margin-bottom:0;">
+                    <button onclick="createNewClass()" class="btn-primary">Add</button>
+                </div>
+                <div id="class-list-management" style="margin-top:20px;"></div>
+            </div>
+            <div id="tab-students-section" class="hidden">
+                <h4 id="student-editor-title">Add Student</h4>
+                <div style="display: flex; gap: 8px;">
+                    <input type="number" id="input-student-roll" placeholder="Roll" style="width: 80px;">
+                    <input type="text" id="input-student-name" placeholder="Name">
+                </div>
+                <input type="tel" id="input-student-phone" placeholder="WhatsApp Number">
+                <input type="file" id="input-student-photo" accept="image/*">
+                <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
+                <div id="student-list-management" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <div id="reports-page" class="hidden">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>📊 Reports</h3>
+                <button onclick="showPage('home-page')" class="btn-danger">Back</button>
+            </div>
+            <select id="report-month-picker" onchange="refreshReportsView()"></select>
+            <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
+            <div id="reports-display-container" style="margin-top: 15px;"></div>
+        </div>
+
+        <div id="history-page" class="hidden">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>📁 History: <span id="history-class-label"></span></h3>
+                <button onclick="showPage('home-page')" class="btn-danger">Back</button>
+            </div>
+            <div id="history-display-container"></div>
+            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History</button>
+        </div>
     </div>
 
-    <div id="settings-view" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <b style="font-size:16px;">Settings</b><button style="background:var(--secondary); padding: 4px 10px;" onclick="showView('attendance-view')">✕</button>
-        </div>
-        <div class="tab-menu">
-            <button id="tab-btn-global" class="tab-link active" onclick="switchSettingsTab('global')">School</button>
-            <button id="tab-btn-class" class="tab-link" onclick="switchSettingsTab('class')">Classes</button>
-            <button id="tab-btn-student" class="tab-link" onclick="switchSettingsTab('student')">Students</button>
-        </div>
-        <div id="tab-global">
-            <input type="text" id="school-name" placeholder="GVHSS Madikai">
-            <select id="msg-lang"><option value="en">English</option><option value="ml">Malayalam</option></select>
-            <button class="btn-full" onclick="saveGlobalSettings()">Save Settings</button>
-        </div>
-        <div id="tab-class" class="hidden">
-            <input type="text" id="new-class-name" placeholder="Class Name"><button class="btn-full" onclick="addClass()">Add Class</button>
-            <div id="class-management-list" style="margin-top:10px;"></div>
-        </div>
-        <div id="tab-student" class="hidden">
-            <h4 id="student-form-label" style="font-size:13px; margin:0 0 5px 0;">Add Student</h4>
-            <div style="display:flex; gap:4px;"><input type="number" id="new-roll" placeholder="Roll" style="width:70px"><input type="text" id="new-name" placeholder="Name"></div>
-            <input type="tel" id="new-phone" placeholder="WhatsApp No">
-            <input type="file" id="new-photo" style="font-size: 11px;">
-            <button class="btn-full" id="add-student-btn" onclick="handleAddStudent()">+ Add Student</button>
-            <div id="student-management-list" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px;"></div>
-        </div>
-    </div>
-
-    <div id="report-view" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><b>📊 Reports</b><button onclick="showView('attendance-view')">Back</button></div>
-        <div style="margin-top:10px;"><select id="report-month-filter" onchange="renderReport()"></select></div>
-        <button class="btn-full" style="background:#007bff;" onclick="downloadCSV()">📥 Download Month CSV</button>
-        <div id="report-container" style="margin-top:10px;"></div>
-    </div>
-
-    <div id="history-view" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><b>📁 History: <span id="history-class-name"></span></b><button onclick="showView('attendance-view')">Back</button></div>
-        <div id="history-container" style="margin-top:10px;"></div>
-        <button class="btn-full" style="background:#dc3545;" onclick="clearHistory()">Clear This Class History</button>
-    </div>
-</div>
-
-<script>
-    let classes = JSON.parse(localStorage.getItem("all_classes")) || [{ id: Date.now(), name: "Class 1", roster: [] }];
-    let currentClassId = localStorage.getItem("active_class_id") || classes[0].id;
-    let historyData = JSON.parse(localStorage.getItem("attendance_history")) || [];
-    let schoolName = localStorage.getItem("school_name") || "School";
-    let msgLang = localStorage.getItem("msg_lang") || "en";
-    let editingIdx = -1;
-
-    function save() { localStorage.setItem("all_classes", JSON.stringify(classes)); localStorage.setItem("active_class_id", currentClassId); }
-    function saveGlobalSettings() { schoolName = document.getElementById("school-name").value || "School"; msgLang = document.getElementById("msg-lang").value; localStorage.setItem("school_name", schoolName); localStorage.setItem("msg_lang", msgLang); alert("Saved!"); }
-    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem("theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
-    if(localStorage.getItem("theme") === "dark") document.body.classList.add('dark-mode');
-
-    function showView(id) { 
-        document.querySelectorAll('.card > div').forEach(v => v.classList.add('hidden')); 
-        document.getElementById(id).classList.remove('hidden'); 
-        renderAll(); 
-        if(id==='report-view') { setupMonthFilter(); renderReport(); } 
-        if(id==='history-view') renderHistory(); 
-    }
-    
-    function switchSettingsTab(t) { ['global','class','student'].forEach(k => { document.getElementById('tab-'+k).classList.add('hidden'); document.getElementById('tab-btn-'+k).classList.remove('active'); }); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('tab-btn-' + t).classList.add('active'); }
-    function setStatus(idx, s) { document.getElementById(`status-val-${idx}`).value = s; document.getElementById(`btn-p-${idx}`).classList.toggle('active', s==='Present'); document.getElementById(`btn-a-${idx}`).classList.toggle('active', s==='Absent'); }
-
-    function renderAll() {
-        const cls = classes.find(c => c.id == currentClassId) || classes[0];
-        document.getElementById("class-title").querySelector('span').innerText = cls.name;
-        document.getElementById("school-name").value = schoolName;
-        document.getElementById("class-selector").innerHTML = classes.map(c => `<option value="${c.id}" ${c.id == currentClassId ? 'selected' : ''}>${c.name}</option>`).join('');
-        const cont = document.getElementById("student-container");
-        cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add in settings.</p>";
-        cls.roster.sort((a,b)=>a.roll-b.roll).forEach((s,i) => {
-            cont.innerHTML += `<div class="student-row"><div class="student-info"><div class="student-name-label"><img src="${s.photo||''}" class="student-photo" onerror="this.style.display='none'"><span>${s.roll}. ${s.name}</span></div><div class="status-toggle"><input type="hidden" id="status-val-${i}" value="Present"><button class="toggle-btn present active" id="btn-p-${i}" onclick="setStatus(${i},'Present')">P</button><button class="toggle-btn absent" id="btn-a-${i}" onclick="setStatus(${i},'Absent')">A</button></div></div><input type="text" class="remarks-input" id="reason-${i}" placeholder="Remarks (optional)"></div>`;
-        });
-        document.getElementById("class-management-list").innerHTML = classes.map(c => `<div class="line-item"><span>${c.name}</span><button style="background:red; padding:2px 6px; font-size:10px;" onclick="deleteClass(${c.id})">Del</button></div>`).join('');
-        document.getElementById("student-management-list").innerHTML = cls.roster.map((s,i)=>`<div class="line-item"><span>${s.roll}. ${s.name}</span><button style="font-size:10px; padding:2px 6px;" onclick="editStudent(${i})">Edit</button></div>`).join('');
-    }
-
-    function editStudent(idx) {
-        const cls = classes.find(c => c.id == currentClassId);
-        const s = cls.roster[idx];
-        document.getElementById("new-roll").value = s.roll;
-        document.getElementById("new-name").value = s.name;
-        document.getElementById("new-phone").value = s.phone || "";
-        document.getElementById("student-form-label").innerText = "Edit: " + s.name;
-        document.getElementById("add-student-btn").innerText = "Update Student";
-        editingIdx = idx;
-    }
-
-    function handleAddStudent() {
-        const r = document.getElementById("new-roll").value, n = document.getElementById("new-name").value, p = document.getElementById("new-phone").value, f = document.getElementById("new-photo").files[0], cls = classes.find(c=>c.id==currentClassId);
-        if(!r || !n) return alert("Fill roll & name!");
-        const saveS = (img) => { 
-            if(editingIdx > -1) { 
-                cls.roster[editingIdx] = {roll:parseInt(r), name:n, phone:p, photo:img||cls.roster[editingIdx].photo}; 
-                editingIdx = -1;
-                document.getElementById("add-student-btn").innerText = "+ Add Student";
-                document.getElementById("student-form-label").innerText = "Add Student";
-            } else cls.roster.push({roll:parseInt(r), name:n, phone:p, photo:img}); 
-            save(); renderAll(); 
-            document.getElementById("new-roll").value=""; document.getElementById("new-name").value=""; document.getElementById("new-phone").value=""; document.getElementById("new-photo").value="";
+    <script>
+        let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || {
+            classes: [{ id: Date.now(), name: "Class 1", roster: [] }],
+            activeClassId: null,
+            schoolName: "Our School",
+            language: "en",
+            history: []
         };
-        if(f) { const reader = new FileReader(); reader.onload=(e)=>saveS(e.target.result); reader.readAsDataURL(f); } else saveS("");
-    }
 
-    function setupMonthFilter() {
-        const filter = document.getElementById('report-month-filter');
-        const months = [...new Set(historyData.map(h => h.date.substring(0, 7)))].sort().reverse();
-        const now = new Date().toISOString().substring(0, 7);
-        if(!months.includes(now)) months.unshift(now);
-        filter.innerHTML = months.map(m => `<option value="${m}">${new Date(m + "-01").toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`).join('');
-    }
+        if (!appData.activeClassId) appData.activeClassId = appData.classes[0].id;
+        let editingStudentIndex = -1;
 
-    function getStats(month) {
-        const cls = classes.find(c=>c.id==currentClassId);
-        let s = {}; cls.roster.forEach(st => s[st.roll] = {name:st.name, present:0, absent:0, total:0});
-        historyData.filter(h => h.className === cls.name && h.date.startsWith(month)).forEach(day => {
-            day.records.forEach(r => { if(s[r.roll]){ s[r.roll].total++; if(r.status==='Present') s[r.roll].present++; else s[r.roll].absent++; }});
-        });
-        return s;
-    }
+        function persistData() { localStorage.setItem("pro_attendance_data", JSON.stringify(appData)); }
 
-    function renderReport() {
-        const s = getStats(document.getElementById('report-month-filter').value), cont = document.getElementById("report-container");
-        cont.innerHTML = Object.keys(s).map(r => {
-            const d = s[r], p = d.total ? Math.round((d.present/d.total)*100) : 0;
-            return `<div class="line-item" style="flex-direction:column; align-items:flex-start;"><b>${r}. ${d.name}</b><div class="report-stat"><span>P: ${d.present}</span><span>A: ${d.absent}</span><span>T: ${d.total}</span><b>${p}%</b></div></div>`;
-        }).join('');
-    }
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem("pro_theme", document.body.classList.contains('dark-mode') ? "dark" : "light");
+        }
+        if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
-    function downloadCSV() {
-        const m = document.getElementById('report-month-filter').value, s = getStats(m), cls = classes.find(c=>c.id==currentClassId);
-        let csv = "Roll No,Name,Present,Absent,Total,Percentage\n";
-        Object.keys(s).sort((a,b)=>a-b).forEach(r => { const d = s[r]; csv += `${r},${d.name},${d.present},${d.absent},${d.total},${d.total?Math.round((d.present/d.total)*100):0}%\n`; });
-        const blob = new Blob([csv], {type: 'application/octet-stream'}), url = window.URL.createObjectURL(blob), a = document.createElement('a');
-        a.href = url; a.download = `Report_${cls.name}_${m}.csv`; a.click();
-    }
-
-    function addClass() { const n = document.getElementById("new-class-name").value; if(!n) return; classes.push({id:Date.now(), name:n, roster:[]}); document.getElementById("new-class-name").value=""; save(); renderAll(); }
-    function deleteClass(id) { if(classes.length>1 && confirm("Delete class?")) { classes = classes.filter(c=>c.id!=id); currentClassId = classes[0].id; save(); renderAll(); } }
-    function switchClass(id) { currentClassId = id; save(); renderAll(); }
-
-    function submitAttendance() {
-        const cls = classes.find(c=>c.id==currentClassId), d = document.getElementById('class-date').value;
-        if(!d) return alert("Select Date!");
-        let p=0, recs = cls.roster.map((s,i)=>{ const st = document.getElementById(`status-val-${i}`).value; if(st==='Present') p++; return {roll:s.roll, name:s.name, status:st, phone:s.phone, reason:document.getElementById(`reason-${i}`).value}; });
-        historyData.unshift({date:d, className:cls.name, total:cls.roster.length, present:p, absent:cls.roster.length-p, records:recs});
-        localStorage.setItem("attendance_history", JSON.stringify(historyData)); alert("Saved!");
-    }
-
-    function renderHistory() {
-        const cls = classes.find(c => c.id == currentClassId);
-        document.getElementById("history-class-name").innerText = cls.name;
-        const filteredHistory = historyData.filter(h => h.className === cls.name);
-        
-        const cont = document.getElementById("history-container");
-        if (filteredHistory.length === 0) {
-            cont.innerHTML = "<p style='text-align:center; font-size:12px; margin-top:20px;'>No history for this class yet.</p>";
-            return;
+        function showPage(pageId) {
+            document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+            refreshViews();
+            if (pageId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
+            if (pageId === 'history-page') renderHistoryView();
         }
 
-        cont.innerHTML = filteredHistory.map(day => `
-            <div class="history-card">
-                <b>📅 ${day.date}</b>
-                <details>
-                    <summary>View Details (P:${day.present} A:${day.absent})</summary>
-                    ${day.records.map(r => `
-                        <div class="line-item">
-                            <span>${r.roll}. ${r.name}</span>
-                            <span style="color:${r.status==='Present'?'#28a745':'#dc3545'}">${r.status}</span>
-                        </div>
-                    `).join('')}
-                </details>
-            </div>
-        `).join('');
-    }
+        function switchSettingsTab(tabName) {
+            ['school', 'classes', 'students'].forEach(t => {
+                document.getElementById(`tab-${t}-section`).classList.add('hidden');
+                document.getElementById(`btn-tab-${t}`).classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}-section`).classList.remove('hidden');
+            document.getElementById(`btn-tab-${tabName}`).classList.add('active');
+        }
 
-    function clearHistory() { 
-        const cls = classes.find(c => c.id == currentClassId);
-        if(confirm(`Delete ALL history for ${cls.name}?`)) { 
-            historyData = historyData.filter(h => h.className !== cls.name); 
-            localStorage.setItem("attendance_history", JSON.stringify(historyData)); 
-            renderHistory(); 
-        } 
-    }
-    showView('attendance-view');
-</script>
+        function refreshViews() {
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId) || appData.classes[0];
+            document.getElementById('app-title').innerText = currentClass.name;
+            document.getElementById('input-school-name').value = appData.schoolName;
+            document.getElementById('select-msg-language').value = appData.language;
+            
+            const mainSelector = document.getElementById('class-select-main');
+            mainSelector.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join('');
+            
+            const container = document.getElementById('attendance-list-container');
+            container.innerHTML = "";
+            currentClass.roster.sort((a,b) => a.roll - b.roll).forEach((student, idx) => {
+                container.innerHTML += `
+                    <div class="student-item">
+                        <div class="student-top-row">
+                            <div class="student-meta">
+                                <img src="${student.photo || ''}" class="student-avatar" onerror="this.style.display='none'">
+                                <span>Roll ${student.roll}: ${student.name}</span>
+                            </div>
+                            <div class="attendance-toggle">
+                                <input type="hidden" id="status-val-${idx}" value="Present">
+                                <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx}, 'Present')">P</div>
+                                <div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx}, 'Absent')">A</div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;">
+                    <span>${c.name}</span>
+                    <button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button>
+                </div>`).join('');
+
+            document.getElementById('student-list-management').innerHTML = currentClass.roster.map((s, idx) => `
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom: 1px solid var(--border-color); padding: 5px;">
+                    <span>${s.roll}. ${s.name}</span>
+                    <div>
+                        <button class="btn-info" style="color:white; padding: 2px 8px;" onclick="loadStudentForEdit(${idx})">Edit</button>
+                        <button class="btn-danger" style="padding: 2px 8px;" onclick="removeStudent(${idx})">Del</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function markStatus(idx, status) {
+            document.getElementById(`status-val-${idx}`).value = status;
+            document.getElementById(`opt-p-${idx}`).classList.toggle('p-active', status === 'Present');
+            document.getElementById(`opt-a-${idx}`).classList.toggle('a-active', status === 'Absent');
+        }
+
+        function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
+
+        function createNewClass() {
+            const name = document.getElementById('input-new-class-name').value;
+            if (!name) return;
+            appData.classes.push({ id: Date.now(), name: name, roster: [] });
+            document.getElementById('input-new-class-name').value = "";
+            persistData(); refreshViews();
+        }
+
+        function updateGlobalSettings() {
+            appData.schoolName = document.getElementById('input-school-name').value || "Our School";
+            appData.language = document.getElementById('select-msg-language').value;
+            persistData(); alert("Settings Saved!");
+        }
+
+        function saveStudentObject() {
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+            const r = document.getElementById('input-student-roll').value;
+            const n = document.getElementById('input-student-name').value;
+            const f = document.getElementById('input-student-photo').files[0];
+
+            if (!r || !n) return alert("Enter Roll and Name!");
+
+            const done = (img) => {
+                const s = { roll: parseInt(r), name: n, photo: img || (editingStudentIndex > -1 ? currentClass.roster[editingStudentIndex].photo : null) };
+                if (editingStudentIndex > -1) { currentClass.roster[editingStudentIndex] = s; editingStudentIndex = -1; }
+                else { currentClass.roster.push(s); }
+                persistData(); refreshViews();
+                document.getElementById('input-student-roll').value = ""; document.getElementById('input-student-name').value = "";
+            };
+
+            if (f) { const rd = new FileReader(); rd.onload = (e) => done(e.target.result); rd.readAsDataURL(f); }
+            else { done(null); }
+        }
+
+        function loadStudentForEdit(idx) {
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+            const s = currentClass.roster[idx];
+            document.getElementById('input-student-roll').value = s.roll;
+            document.getElementById('input-student-name').value = s.name;
+            document.getElementById('student-editor-title').innerText = "Edit: " + s.name;
+            document.getElementById('submit-student-btn').innerText = "Update Student";
+            editingStudentIndex = idx;
+        }
+
+        function saveAttendanceData() {
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+            const d = document.getElementById('attendance-date-input').value;
+            if (!d) return alert("Select Date!");
+            let p = 0;
+            const recs = currentClass.roster.map((s, idx) => {
+                const st = document.getElementById(`status-val-${idx}`).value;
+                if (st === 'Present') p++;
+                return { roll: s.roll, name: s.name, status: st };
+            });
+            appData.history.unshift({ id: Date.now(), date: d, className: currentClass.name, classId: currentClass.id, total: currentClass.roster.length, present: p, absent: currentClass.roster.length - p, students: recs });
+            persistData(); alert("Attendance Saved!");
+        }
+
+        function renderHistoryView() {
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+            const filtered = appData.history.filter(h => h.classId == currentClass.id);
+            document.getElementById('history-display-container').innerHTML = filtered.length ? filtered.map(h => `<div class="history-card" style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No Records.";
+        }
+
+        function setupMonthPicker() {
+            const p = document.getElementById('report-month-picker');
+            const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse();
+            p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
+        }
+
+        function refreshReportsView() {
+            const m = document.getElementById('report-month-picker').value;
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            let stats = {};
+            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
+                day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
+            });
+            document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
+                const s = stats[roll];
+                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)">${roll}. ${s.name}: ${s.total ? Math.round((s.present/s.total)*100) : 0}%</div>`;
+            }).join('');
+        }
+
+        function exportReportToCSV() {
+            const m = document.getElementById('report-month-picker').value;
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            let stats = {};
+            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
+                day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
+            });
+            
+            let csv = "Roll No,Name,Present,Total,Percentage\n";
+            Object.keys(stats).forEach(r => {
+                const s = stats[r];
+                csv += `${r},${s.name},${s.present},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`;
+            });
+
+            // --- THE FORCE BLOB METHOD (CRITICAL FOR ANDROID) ---
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const fileName = "Attendance_" + cls.name + "_" + m + ".csv";
+            
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveBlob(blob, fileName);
+            } else {
+                const a = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                a.href = url;
+                a.download = fileName; // Force name with .csv
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);  
+                }, 0); 
+            }
+        }
+
+        refreshViews();
+    </script>
 </body>
 </html>
