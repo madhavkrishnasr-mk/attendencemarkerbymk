@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Teacher Edition</title>
+    <title>Attendance Pro - Professional Teacher Assistant</title>
     
     <style>
-        /* FULL PROFESSIONAL STYLING */
+        /* --- PROFESSIONAL COLOR PALETTE --- */
         :root {
             --bg-color: #f0f2f5;
             --card-bg: #ffffff;
             --text-main: #1c1e21;
+            --text-secondary: #606770;
             --border-color: #dddfe2;
             --primary-blue: #0056b3;
             --success-green: #28a745;
@@ -22,10 +23,12 @@
             --bg-color: #18191a;
             --card-bg: #242526;
             --text-main: #e4e6eb;
+            --text-secondary: #b0b3b8;
             --border-color: #3e4042;
             --primary-blue: #2d88ff;
         }
 
+        /* --- LAYOUT & STRUCTURE --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
@@ -44,6 +47,7 @@
             padding: 20px;
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            box-sizing: border-box;
         }
 
         .hidden { display: none !important; }
@@ -57,6 +61,7 @@
             margin-bottom: 20px;
         }
 
+        /* --- INPUT FIELDS --- */
         input, select {
             width: 100%;
             padding: 12px;
@@ -69,25 +74,27 @@
             box-sizing: border-box;
         }
 
+        /* --- BUTTONS --- */
         button {
             cursor: pointer;
             border: none;
             border-radius: 8px;
             font-weight: 600;
             padding: 10px;
-            transition: 0.2s;
+            transition: 0.2s ease;
         }
 
         .btn-full { width: 100%; padding: 15px; font-size: 16px; margin-top: 10px; color: white; }
-        .btn-primary { background-color: var(--primary-blue); }
-        .btn-success { background-color: var(--success-green); }
-        .btn-danger { background-color: var(--danger-red); }
-        .btn-info { background-color: var(--info-cyan); }
+        .btn-primary { background-color: var(--primary-blue); color: white; }
+        .btn-success { background-color: var(--success-green); color: white; }
+        .btn-danger { background-color: var(--danger-red); color: white; }
+        .btn-info { background-color: var(--info-cyan); color: white; }
 
+        /* --- STUDENT LIST ITEMS --- */
         .student-item {
             background-color: var(--bg-color);
             padding: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             border-radius: 10px;
             border: 1px solid var(--border-color);
         }
@@ -119,9 +126,14 @@
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
         .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
 
+        /* --- SETTINGS TABS --- */
         .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
         .tab-btn.active { background-color: var(--primary-blue); color: white; }
+        
+        /* --- REPORT STATS --- */
+        .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; font-size: 12px; text-align: center; }
+        .stat-box { background: var(--card-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); }
     </style>
 </head>
 <body>
@@ -131,7 +143,7 @@
             <h2 id="app-title">Attendance Pro</h2>
             <div>
                 <button onclick="toggleDarkMode()" style="background:none; font-size:22px;">🌓</button>
-                <button onclick="showPage('settings-page')" class="btn-info" style="color:white;">⚙️</button>
+                <button onclick="showPage('settings-page')" class="btn-info">⚙️</button>
             </div>
         </div>
 
@@ -142,7 +154,7 @@
             <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                 <input type="date" id="attendance-date-input" style="margin-bottom: 0;">
                 <button onclick="showPage('history-page')" class="btn-success" style="flex: 1;">📁 History</button>
-                <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1; color: white;">📊 Reports</button>
+                <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1;">📊 Reports</button>
             </div>
 
             <div id="attendance-list-container"></div>
@@ -152,21 +164,24 @@
         <div id="settings-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h3>Settings</h3>
-                <button onclick="showPage('home-page')" class="btn-danger">Back</button>
+                <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
             </div>
+
             <div class="settings-tabs">
                 <button id="btn-tab-school" class="tab-btn active" onclick="switchSettingsTab('school')">School</button>
                 <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
-                <button id="btn-tab-students" class="tab-btn" onclick="switchSettingsTab('students')">Students</button>
+                <button id="tab-btn-student" class="tab-btn" onclick="switchSettingsTab('students')">Students</button>
             </div>
+
             <div id="tab-school-section">
-                <input type="text" id="input-school-name" placeholder="School Name (GVHSS Madikai)">
+                <input type="text" id="input-school-name" placeholder="School Name (e.g. GVHSS Madikai)">
                 <select id="select-msg-language">
                     <option value="en">English</option>
                     <option value="ml">Malayalam</option>
                 </select>
                 <button class="btn-primary btn-full" onclick="updateGlobalSettings()">Save School Settings</button>
             </div>
+
             <div id="tab-classes-section" class="hidden">
                 <div style="display:flex; gap:8px;">
                     <input type="text" id="input-new-class-name" placeholder="Class Name" style="margin-bottom:0;">
@@ -174,36 +189,36 @@
                 </div>
                 <div id="class-list-management" style="margin-top:20px;"></div>
             </div>
+
             <div id="tab-students-section" class="hidden">
                 <h4 id="student-editor-title">Add Student</h4>
                 <div style="display: flex; gap: 8px;">
                     <input type="number" id="input-student-roll" placeholder="Roll" style="width: 80px;">
-                    <input type="text" id="input-student-name" placeholder="Name">
+                    <input type="text" id="input-student-name" placeholder="Student Name">
                 </div>
-                <input type="tel" id="input-student-phone" placeholder="WhatsApp Number">
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
-                <div id="student-list-management" style="margin-top: 20px;"></div>
+                <div id="student-list-management" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;"></div>
             </div>
         </div>
 
         <div id="reports-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h3>📊 Reports</h3>
-                <button onclick="showPage('home-page')" class="btn-danger">Back</button>
+                <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
             </div>
             <select id="report-month-picker" onchange="refreshReportsView()"></select>
-            <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
+            <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv File</button>
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
 
         <div id="history-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h3>📁 History: <span id="history-class-label"></span></h3>
-                <button onclick="showPage('home-page')" class="btn-danger">Back</button>
+                <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
             </div>
             <div id="history-display-container"></div>
-            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History</button>
+            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete This Class History</button>
         </div>
     </div>
 
@@ -228,7 +243,10 @@
         if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
         function showPage(pageId) {
-            document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('settings-page').classList.add('hidden');
+            document.getElementById('reports-page').classList.add('hidden');
+            document.getElementById('history-page').classList.add('hidden');
             document.getElementById(pageId).classList.remove('hidden');
             refreshViews();
             if (pageId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
@@ -238,10 +256,10 @@
         function switchSettingsTab(tabName) {
             ['school', 'classes', 'students'].forEach(t => {
                 document.getElementById(`tab-${t}-section`).classList.add('hidden');
-                document.getElementById(`btn-tab-${t}`).classList.remove('active');
+                document.getElementById(`btn-tab-${t === 'students' ? 'student' : t}`).classList.remove('active');
             });
             document.getElementById(`tab-${tabName}-section`).classList.remove('hidden');
-            document.getElementById(`btn-tab-${tabName}`).classList.add('active');
+            document.getElementById(`btn-tab-${tabName === 'students' ? 'student' : tabName}`).classList.add('active');
         }
 
         function refreshViews() {
@@ -273,7 +291,7 @@
             });
 
             document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                     <span>${c.name}</span>
                     <button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button>
                 </div>`).join('');
@@ -299,7 +317,9 @@
         function createNewClass() {
             const name = document.getElementById('input-new-class-name').value;
             if (!name) return;
-            appData.classes.push({ id: Date.now(), name: name, roster: [] });
+            const newObj = { id: Date.now(), name: name, roster: [] };
+            appData.classes.push(newObj);
+            appData.activeClassId = newObj.id;
             document.getElementById('input-new-class-name').value = "";
             persistData(); refreshViews();
         }
@@ -312,22 +332,28 @@
 
         function saveStudentObject() {
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
-            const r = document.getElementById('input-student-roll').value;
-            const n = document.getElementById('input-student-name').value;
-            const f = document.getElementById('input-student-photo').files[0];
+            const roll = document.getElementById('input-student-roll').value;
+            const name = document.getElementById('input-student-name').value;
+            const photoFile = document.getElementById('input-student-photo').files[0];
 
-            if (!r || !n) return alert("Enter Roll and Name!");
+            if (!roll || !name) return alert("Fill roll & name!");
 
-            const done = (img) => {
-                const s = { roll: parseInt(r), name: n, photo: img || (editingStudentIndex > -1 ? currentClass.roster[editingStudentIndex].photo : null) };
-                if (editingStudentIndex > -1) { currentClass.roster[editingStudentIndex] = s; editingStudentIndex = -1; }
-                else { currentClass.roster.push(s); }
+            const finalize = (imgData) => {
+                const sPayload = { roll: parseInt(roll), name: name, photo: imgData || (editingStudentIndex > -1 ? currentClass.roster[editingStudentIndex].photo : null) };
+                if (editingStudentIndex > -1) {
+                    currentClass.roster[editingStudentIndex] = sPayload;
+                    editingStudentIndex = -1;
+                    document.getElementById('submit-student-btn').innerText = "+ Add Student";
+                } else { currentClass.roster.push(sPayload); }
                 persistData(); refreshViews();
                 document.getElementById('input-student-roll').value = ""; document.getElementById('input-student-name').value = "";
             };
 
-            if (f) { const rd = new FileReader(); rd.onload = (e) => done(e.target.result); rd.readAsDataURL(f); }
-            else { done(null); }
+            if (photoFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => finalize(e.target.result);
+                reader.readAsDataURL(photoFile);
+            } else { finalize(null); }
         }
 
         function loadStudentForEdit(idx) {
@@ -335,57 +361,87 @@
             const s = currentClass.roster[idx];
             document.getElementById('input-student-roll').value = s.roll;
             document.getElementById('input-student-name').value = s.name;
-            document.getElementById('student-editor-title').innerText = "Edit: " + s.name;
             document.getElementById('submit-student-btn').innerText = "Update Student";
             editingStudentIndex = idx;
         }
 
+        function removeStudent(idx) {
+            if(confirm("Delete student?")) {
+                const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
+                currentClass.roster.splice(idx, 1);
+                persistData(); refreshViews();
+            }
+        }
+
+        function removeClass(id) {
+            if(appData.classes.length === 1) return alert("Keep one class!");
+            if(confirm("Delete class?")) {
+                appData.history = appData.history.filter(h => h.classId != id);
+                appData.classes = appData.classes.filter(c => c.id != id);
+                appData.activeClassId = appData.classes[0].id;
+                persistData(); refreshViews();
+            }
+        }
+
         function saveAttendanceData() {
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
-            const d = document.getElementById('attendance-date-input').value;
-            if (!d) return alert("Select Date!");
-            let p = 0;
-            const recs = currentClass.roster.map((s, idx) => {
-                const st = document.getElementById(`status-val-${idx}`).value;
-                if (st === 'Present') p++;
-                return { roll: s.roll, name: s.name, status: st };
+            const date = document.getElementById('attendance-date-input').value;
+            if (!date) return alert("Select Date!");
+            let pCount = 0;
+            const records = currentClass.roster.map((s, idx) => {
+                const status = document.getElementById(`status-val-${idx}`).value;
+                if (status === 'Present') pCount++;
+                return { roll: s.roll, name: s.name, status: status };
             });
-            appData.history.unshift({ id: Date.now(), date: d, className: currentClass.name, classId: currentClass.id, total: currentClass.roster.length, present: p, absent: currentClass.roster.length - p, students: recs });
+            appData.history.unshift({ id: Date.now(), date: date, className: currentClass.name, classId: currentClass.id, total: currentClass.roster.length, present: pCount, absent: currentClass.roster.length - pCount, students: records });
             persistData(); alert("Attendance Saved!");
         }
 
         function renderHistoryView() {
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             const filtered = appData.history.filter(h => h.classId == currentClass.id);
-            document.getElementById('history-display-container').innerHTML = filtered.length ? filtered.map(h => `<div class="history-card" style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No Records.";
+            document.getElementById('history-class-label').innerText = currentClass.name;
+            const container = document.getElementById('history-display-container');
+            container.innerHTML = filtered.length ? filtered.map(item => `
+                <div class="history-entry" style="padding: 10px; border-bottom: 1px solid var(--border-color); background:var(--bg-color); margin-bottom:10px; border-radius:8px;">
+                    <b>📅 ${item.date}</b> - P: ${item.present} | A: ${item.absent}
+                </div>`).join('') : "No History.";
+        }
+
+        function wipeHistoryForCurrentClass() {
+            if(confirm("Wipe this class history?")) {
+                appData.history = appData.history.filter(h => h.classId != appData.activeClassId);
+                persistData(); renderHistoryView();
+            }
         }
 
         function setupMonthPicker() {
-            const p = document.getElementById('report-month-picker');
+            const picker = document.getElementById('report-month-picker');
             const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse();
-            p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
+            picker.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
         }
 
         function refreshReportsView() {
-            const m = document.getElementById('report-month-picker').value;
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const month = document.getElementById('report-month-picker').value;
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
+            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
                 day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
             });
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
-                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)">${roll}. ${s.name}: ${s.total ? Math.round((s.present/s.total)*100) : 0}%</div>`;
+                const per = s.total ? Math.round((s.present / s.total) * 100) : 0;
+                return `<div style="padding:10px; border-bottom:1px solid var(--border-color)"><b>${roll}. ${s.name}</b>: ${per}% (${s.present}/${s.total})</div>`;
             }).join('');
         }
 
         function exportReportToCSV() {
-            const m = document.getElementById('report-month-picker').value;
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const month = document.getElementById('report-month-picker').value;
+            const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {};
-            cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
-            appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m)).forEach(day => {
+            currentClass.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, total: 0 });
+            appData.history.filter(h => h.classId == currentClass.id && h.date.startsWith(month)).forEach(day => {
                 day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; }});
             });
             
@@ -395,24 +451,20 @@
                 csv += `${r},${s.name},${s.present},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`;
             });
 
-            // --- THE FORCE BLOB METHOD (CRITICAL FOR ANDROID) ---
+            // --- SUPER FORCED BLOB DOWNLOAD ---
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const fileName = "Attendance_" + cls.name + "_" + m + ".csv";
+            const fileName = "Report_" + currentClass.name + "_" + month + ".csv";
             
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveBlob(blob, fileName);
-            } else {
-                const a = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                a.href = url;
-                a.download = fileName; // Force name with .csv
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function() {
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);  
-                }, 0); 
-            }
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(function() {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);  
+            }, 0); 
         }
 
         refreshViews();
