@@ -59,7 +59,7 @@
             <input type="number" id="new-roll" placeholder="Roll" style="width: 25%;">
             <input type="text" id="new-name" placeholder="Full Name" style="width: 75%;">
         </div>
-        <input type="tel" id="new-phone" placeholder="Parent WhatsApp Number (Required)">
+        <input type="tel" id="new-phone" placeholder="Parent WhatsApp Number (Optional)">
         <input type="email" id="new-email" placeholder="Parent Email Address (Optional)">
         
         <label style="font-size: 13px; color: #666; margin-top: 5px; display: block;">Student Photo:</label>
@@ -159,11 +159,15 @@
         const e = document.getElementById("new-email").value;
         const fileInput = document.getElementById("new-photo");
 
-        if (r && n && p) {
+        if (r && n) {
             if (fileInput.files && fileInput.files[0]) {
                 processImage(fileInput.files[0], (base64) => saveStudent(r, n, p, e, base64));
-            } else { saveStudent(r, n, p, e, ""); }
-        } else { alert("Please fill Roll No, Name, and WhatsApp Number."); }
+            } else { 
+                saveStudent(r, n, p, e, ""); 
+            }
+        } else { 
+            alert("Please fill at least Roll No and Name."); 
+        }
     }
 
     function saveStudent(r, n, p, e, photo) {
@@ -182,6 +186,11 @@
     }
 
     function submitAttendance() {
+        if(myClass.length === 0) {
+            alert("Please add students first!");
+            return;
+        }
+        
         const date = document.getElementById('class-date').value;
         let absentees = [];
         myClass.forEach((s, i) => {
@@ -196,12 +205,20 @@
     }
 
     window.openWhatsApp = function(phone, name, roll, date, reason) {
+        if(!phone) {
+            alert("WhatsApp number is not available for this student.");
+            return;
+        }
         const disclaimer = "\n\n---\n*Disclaimer:* Ithu oru automated attendance notification aanu. Dayavayi ee messaginu thirichu marupadi nalkaruthu.";
         const text = `Dear Parent, \n\nIthu inform cheyyunnathu ${name} (Roll No: ${roll}) innu (${date}) ${currentClass}-il ABSENT aanu. \n\nRecorded Reason: ${reason}.${disclaimer}`;
         window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`, '_blank');
     };
 
     window.openEmail = function(email, name, roll, date, reason) {
+        if(!email) {
+            alert("Email is not available for this student.");
+            return;
+        }
         const subject = encodeURIComponent(`Absence Notification: ${name}`);
         const body = encodeURIComponent(`Dear Parent,\n\nThis is to inform you that ${name} (Roll No: ${roll}) was marked ABSENT today (${date}) from ${currentClass}.\n\nReason: ${reason}.\n\nRegards,\nClass Teacher`);
         window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -215,14 +232,17 @@
             record.absentees.forEach(a => {
                 let safeName = a.name.replace(/'/g, "\\'");
                 let safeReason = a.reason.replace(/'/g, "\\'");
+                
+                let waButton = a.phone ? `<button class="btn-wa" onclick="openWhatsApp('${a.phone}', '${safeName}', '${a.roll}', '${record.date}', '${safeReason}')">💬 WhatsApp</button>` : `<span style="font-size:12px; color:#888;">(No WA)</span>`;
+                let mailButton = a.email ? `<button class="btn-mail-small" onclick="openEmail('${a.email}', '${safeName}', '${a.roll}', '${record.date}', '${safeReason}')">📧 Email</button>` : "";
+                
                 absentHTML += `
                     <div class="absentee-item">
                         <img src="${a.photo}" class="student-photo" style="width:40px; height:40px;" alt="Photo">
                         <div>
                             🔴 <b>Roll ${a.roll}: ${a.name}</b><br>
                             📝 <span style="color:#555;">Reason: ${a.reason}</span><br>
-                            <button class="btn-wa" onclick="openWhatsApp('${a.phone}', '${safeName}', '${a.roll}', '${record.date}', '${safeReason}')">💬 WhatsApp</button>
-                            ${a.email ? `<button class="btn-mail-small" onclick="openEmail('${a.email}', '${safeName}', '${a.roll}', '${record.date}', '${safeReason}')">📧 Email</button>` : ""}
+                            ${waButton} ${mailButton}
                         </div>
                     </div>`;
             });
