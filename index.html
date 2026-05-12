@@ -204,9 +204,9 @@
             <div id="tab-classes-section" class="hidden">
                 <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="Class Name"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
                 <div id="class-list-management" style="margin-top:15px;"></div>
+                
+                <button class="btn-info btn-full" style="margin-top: 25px; font-size: 14px;" onclick="openSchoolSettings()">🏫 Edit Institution & Reset Options</button>
             </div>
-
-            <button class="btn-info btn-full" style="margin-top: 25px; font-size: 14px;" onclick="openSchoolSettings()">🏫 Edit Institution & Reset Options</button>
         </div>
 
         <div id="reports-page" class="hidden">
@@ -520,7 +520,7 @@
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let csv = "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
             const stats = getStats(m);
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.total},${s.total?Math.round(((s.present+s.leave)/s.total)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
         }
