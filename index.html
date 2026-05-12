@@ -15,12 +15,38 @@
         button { background: var(--primary); color: white; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-full { width: 100%; font-size: 16px; margin-top: 10px; padding: 15px; }
         .btn-red { background: #dc3545; }
+        .btn-wa { background-color: #25d366; font-size: 11px; padding: 6px 10px; margin-top: 5px; }
+        .btn-mail { background-color: #ea4335; font-size: 11px; padding: 6px 10px; margin-top: 5px; margin-left: 5px; }
         .student-row { background: var(--bg); padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid var(--border); }
         .student-photo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid var(--primary); }
         .history-card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 12px; border-left: 6px solid var(--primary); }
         details { border: 1px solid var(--border); border-radius: 8px; padding: 5px; margin-top: 10px; }
         summary { padding: 10px; cursor: pointer; font-weight: bold; }
         .line-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border); }
+        
+        /* Toggle Button Styles */
+        .status-toggle {
+            display: flex;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 1px solid var(--border);
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            background: var(--bg);
+            color: var(--text);
+            border: none;
+            border-radius: 0;
+        }
+        .toggle-btn.present.active { background: #28a745; color: white; }
+        .toggle-btn.absent.active { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
@@ -55,6 +81,7 @@
             <input type="number" id="new-roll" placeholder="Roll" style="width:30%"><input type="text" id="new-name" placeholder="Name">
         </div>
         <input type="tel" id="new-phone" placeholder="WhatsApp Number">
+        <input type="email" id="new-email" placeholder="Parent Email Address (Optional)">
         <input type="file" id="new-photo" accept="image/*">
         <button class="btn-full" onclick="handleAddStudent()">+ Add Student</button>
         <div id="student-management-list" style="margin-top:15px;"></div>
@@ -90,25 +117,40 @@
         renderAll();
     }
 
+    // Toggle button logic
+    function setStatus(index, status) {
+        document.getElementById(`status-val-${index}`).value = status;
+        document.getElementById(`btn-p-${index}`).classList.toggle('active', status === 'Present');
+        document.getElementById(`btn-a-${index}`).classList.toggle('active', status === 'Absent');
+    }
+
     function renderAll() {
         const cls = classes.find(c => c.id == currentClassId) || classes[0];
         document.getElementById("class-title").querySelector('span').innerText = cls.name;
         
-        // Render Selectors
         const selector = document.getElementById("class-selector");
         selector.innerHTML = classes.map(c => `<option value="${c.id}" ${c.id == currentClassId ? 'selected' : ''}>${c.name}</option>`).join('');
 
-        // Attendance View
         const container = document.getElementById("student-container");
         container.innerHTML = cls.roster.length ? "" : "<p>No students. Add them in settings.</p>";
+        
         cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, i) => {
-            container.innerHTML += `<div class="student-row"><div style="display:flex; align-items:center;"><input type="checkbox" style="transform:scale(1.5); margin-right:15px;" id="check-${i}" checked><img src="${s.photo || ''}" class="student-photo" onerror="this.style.display='none'"><label>Roll ${s.roll}: ${s.name}</label></div><input type="text" id="reason-${i}" placeholder="Remarks"></div>`;
+            container.innerHTML += `
+                <div class="student-row">
+                    <div style="display:flex; align-items:center;">
+                        <img src="${s.photo || ''}" class="student-photo" onerror="this.style.display='none'">
+                        <label>Roll ${s.roll}: ${s.name}</label>
+                    </div>
+                    <div class="status-toggle">
+                        <input type="hidden" id="status-val-${i}" value="Present">
+                        <button class="toggle-btn present active" id="btn-p-${i}" onclick="setStatus(${i}, 'Present')">Present</button>
+                        <button class="toggle-btn absent" id="btn-a-${i}" onclick="setStatus(${i}, 'Absent')">Absent</button>
+                    </div>
+                    <input type="text" id="reason-${i}" placeholder="Remarks (Optional)" style="margin-top:8px;">
+                </div>`;
         });
 
-        // Settings: Classes
         document.getElementById("class-management-list").innerHTML = classes.map(c => `<div class="line-item"><span>${c.name}</span><button class="btn-red" onclick="deleteClass(${c.id})">Delete</button></div>`).join('');
-
-        // Settings: Students
         document.getElementById("student-management-list").innerHTML = cls.roster.map((s, i) => `<div class="line-item"><span>Roll ${s.roll}: ${s.name}</span><button class="btn-red" onclick="deleteStudent(${i})">Delete</button></div>`).join('');
     }
 
@@ -136,13 +178,15 @@
         const r = document.getElementById("new-roll").value;
         const n = document.getElementById("new-name").value;
         const p = document.getElementById("new-phone").value;
+        const email = document.getElementById("new-email").value;
         const file = document.getElementById("new-photo").files[0];
         const cls = classes.find(c => c.id == currentClassId);
         
         const saveS = (img) => {
-            cls.roster.push({ roll: parseInt(r), name: n, phone: p, photo: img });
+            cls.roster.push({ roll: parseInt(r), name: n, phone: p, email: email, photo: img });
             save(); renderAll();
             document.getElementById("new-roll").value = ""; document.getElementById("new-name").value = "";
+            document.getElementById("new-phone").value = ""; document.getElementById("new-email").value = "";
         };
 
         if(file) { 
@@ -162,13 +206,16 @@
 
     function submitAttendance() {
         const cls = classes.find(c => c.id == currentClassId);
+        if(cls.roster.length === 0) return alert("No students in this class.");
+        
         const date = document.getElementById('class-date').value;
         let pCount = 0;
         let records = cls.roster.map((s, i) => {
-            const isP = document.getElementById(`check-${i}`).checked;
-            if(isP) pCount++;
-            return { roll: s.roll, name: s.name, status: isP ? "Present" : "Absent", phone: s.phone };
+            const status = document.getElementById(`status-val-${i}`).value;
+            if(status === 'Present') pCount++;
+            return { roll: s.roll, name: s.name, status: status, phone: s.phone, email: s.email, reason: document.getElementById(`reason-${i}`).value };
         });
+        
         historyData.unshift({ date, className: cls.name, total: cls.roster.length, present: pCount, absent: cls.roster.length - pCount, records });
         localStorage.setItem("attendance_history", JSON.stringify(historyData));
         alert("Attendance Saved!");
@@ -178,9 +225,33 @@
         const container = document.getElementById("history-container");
         container.innerHTML = historyData.length ? "" : "<p>No history.</p>";
         historyData.forEach(day => {
-            let list = day.records.map(r => `<div class="line-item"><span>${r.roll}. ${r.name}</span><span style="color:${r.status=='Present'?'#28a745':'#dc3545'}">${r.status}</span></div>`).join('');
+            let list = day.records.map(r => `
+                <div class="line-item" style="flex-direction:column; align-items:flex-start;">
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <span>${r.roll}. ${r.name}</span>
+                        <span style="color:${r.status=='Present'?'#28a745':'#dc3545'}">${r.status}</span>
+                    </div>
+                    ${r.status === 'Absent' ? `
+                        <div style="font-size:12px; color:#666; margin-top:4px;">Reason: ${r.reason || 'None'}</div>
+                        <div style="margin-top:5px;">
+                            ${r.phone ? `<button class="btn-wa" onclick="sendWA('${r.phone}','${r.name}','${day.date}','${day.className}')">💬 WhatsApp</button>` : ''}
+                            ${r.email ? `<button class="btn-mail" onclick="sendEmail('${r.email}','${r.name}','${day.date}','${day.className}')">📧 Email</button>` : ''}
+                        </div>
+                    ` : ''}
+                </div>`).join('');
             container.innerHTML += `<div class="history-card"><b>📅 ${day.date} - ${day.className}</b><div style="font-size:12px">Present: ${day.present} | Absent: ${day.absent}</div><details><summary>View Details</summary>${list}</details></div>`;
         });
+    }
+
+    function sendWA(num, name, date, clsName) {
+        const msg = `Dear Parent, your child ${name} was ABSENT for class (${clsName}) on ${date}.`;
+        window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function sendEmail(email, name, date, clsName) {
+        const subject = encodeURIComponent(`Absence Notification: ${name}`);
+        const body = encodeURIComponent(`Dear Parent,\n\nThis is to inform you that ${name} is marked ABSENT today (${date}) from ${clsName}.\n\nRegards,\nClass Teacher`);
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
 
     function clearHistory() { if(confirm("Clear all?")) { historyData = []; localStorage.setItem("attendance_history", "[]"); renderHistory(); } }
