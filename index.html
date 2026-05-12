@@ -97,7 +97,6 @@
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
         .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
 
-        /* Sub-options for L/D (Appears only on A) */
         .extra-opts { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; padding-top: 8px; border-top: 1px dashed var(--border-color); }
         .sub-btn { font-size: 10px; padding: 5px 10px; border-radius: 4px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); }
         .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
@@ -164,7 +163,7 @@
                 <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
                 <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll"><input type="text" id="input-student-name" placeholder="Name"></div>
                 <input type="tel" id="input-student-phone" placeholder="WhatsApp No (e.g. 919876543210)">
-                <input type="email" id="input-student-email" placeholder="Parent Email Address">
+                <input type="email" id="input-student-email" placeholder="Parent Email">
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 <div id="student-list-management" style="margin-top: 15px;"></div>
@@ -200,7 +199,6 @@
     </div>
 
     <script>
-        // MIGRATION & DATA CORE
         function migrateOldData() {
             const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
             if (oc || oh) return { classes: oc || [], activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), schoolName: os || "School", language: ol || "en", history: oh || [] };
@@ -308,8 +306,14 @@
         }
 
         function saveAttendanceData() {
-            const cls = appData.classes.find(c => c.id == appData.activeClassId), d = document.getElementById('attendance-date-input').value;
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const d = document.getElementById('attendance-date-input').value;
             if (!d) return alert("Select Date!");
+            
+            // CHECK FOR DUPLICATE: One entry per class per day
+            const exists = appData.history.find(h => h.classId == cls.id && h.date == d);
+            if (exists) return alert("Attendance for " + cls.name + " on " + d + " has already been saved!");
+
             if (new Date(d).getDay() === 0) if(!confirm("Sunday detected. Save anyway?")) return;
             let p = 0;
             const recs = cls.roster.map((s, idx) => {
@@ -342,23 +346,15 @@
                 </div>`}).join('') : "No History.";
         }
 
-        // FULL DETAILED MESSAGING LOGIC
         function smartMessage(roll, date, type) {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const student = cls.roster.find(s => s.roll == roll);
             if (!student) return alert("Student not found!");
-            
             let target = (type === 'wa') ? student.phone : student.email;
-            if (!target || target.trim() === "") return alert(`No ${type==='wa'?'number':'email'} found for Roll ${roll}!`);
-
+            if (!target || target.trim() === "") return alert(`No contact saved for Roll ${roll}!`);
             let ct = target.replace(/\D/g, ''); 
             if (type === 'wa' && ct.length === 10) ct = "91" + ct;
-            
-            // REMADE FULL MESSAGES
-            let msg = appData.language === 'ml' ? 
-                `പ്രിയ രക്ഷിതാവേ,\n\n${appData.schoolName}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${student.name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ` : 
-                `Dear Parent,\n\nThis is to inform you that your child, ${student.name} (Roll No: ${roll}), was marked absent today (${date}) from ${appData.schoolName}.\n\nRegards,\nClass Teacher`;
-            
+            let msg = appData.language === 'ml' ? `പ്രിയ രക്ഷിതാവേ,\n\n${appData.schoolName}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${student.name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ` : `Dear Parent,\n\nThis is to inform you that your child, ${student.name} (Roll No: ${roll}), was marked absent today (${date}) from ${appData.schoolName}.\n\nRegards,\nClass Teacher`;
             if (type === 'wa') window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
             else window.location.href = `mailto:${target}?subject=Absence Notification&body=${encodeURIComponent(msg)}`;
         }
@@ -408,7 +404,7 @@
             const stats = getStats(m);
             Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.d},${s.t},${s.t?Math.round(((s.p+s.l+s.d)/s.t)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_Report_${cls.name}_${m}.csv`; link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Report_${cls.name}_${m}.csv`; link.click();
         }
 
         function getStats(month) {
@@ -422,8 +418,8 @@
 
         function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
         function removeClass(id) { if(appData.classes.length>1 && confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes[0].id; persistData(); refreshViews(); } }
-        function wipeHistoryForCurrentClass() { if(confirm("Delete class history?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
-        function updateGlobalSettings() { appData.schoolName = document.getElementById('input-school-name').value; appData.language = document.getElementById('select-msg-language').value; persistData(); alert("Settings Saved!"); }
+        function wipeHistoryForCurrentClass() { if(confirm("Delete history?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+        function updateGlobalSettings() { appData.schoolName = document.getElementById('input-school-name').value; appData.language = document.getElementById('select-msg-language').value; persistData(); alert("Saved!"); }
 
         refreshViews();
     </script>
