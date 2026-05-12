@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Attendance Pro - Ultimate Teacher Edition 2026</title>
     
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
@@ -104,8 +104,8 @@
         .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
         .sub-btn.d-active { background: var(--duty-purple); color: white; border-color: var(--duty-purple); }
 
-        /* --- QR SCANNER MODAL --- */
-        #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; }
+        /* --- QR REPORT DISPLAY --- */
+        #report-qr-display { background: white; padding: 15px; display: flex; flex-direction: column; align-items: center; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
 
         /* --- REPORT UI --- */
         .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
@@ -125,7 +125,7 @@
         .tab-btn.active { background-color: var(--primary-blue); color: white; border-color: var(--primary-blue); }
         
         .trend-box { background: #e8f4fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid var(--primary-blue); }
-        .csv-reminder { font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; }
+        .csv-reminder { font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -147,11 +147,6 @@
                 <input type="date" id="attendance-date-input" style="margin-bottom: 0;">
                 <button onclick="showPage('history-page')" class="btn-success" style="flex: 1;">📁 History</button>
                 <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1;">📊 Reports</button>
-            </div>
-
-            <div style="margin-bottom: 15px;">
-                <button onclick="toggleQRScanner()" id="qr-toggle-btn" class="btn-primary" style="width: 100%; padding: 12px;">📷 Start QR Scanner Mode</button>
-                <div id="qr-reader" class="hidden"></div>
             </div>
 
             <div id="attendance-list-container"></div>
@@ -186,7 +181,7 @@
             </div>
 
             <div id="tab-school-section" class="hidden">
-                <input type="text" id="input-school-name" placeholder="School Name">
+                <input type="text" id="input-school-name" placeholder="Institution Name">
                 <select id="select-msg-language"><option value="en">English</option><option value="ml">Malayalam</option></select>
                 <button class="btn-primary btn-full" onclick="updateGlobalSettings()">Save Settings</button>
             </div>
@@ -199,8 +194,15 @@
             <div id="trend-analysis" class="trend-box"></div>
             
             <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
-            <p class="csv-reminder">⚠️ Important: Ensure filename ends with .csv before clicking Save</p>
+            <p class="csv-reminder">⚠️ Ensure filename ends with .csv before clicking Save</p>
             
+            <button class="btn-success btn-full" onclick="generateReportQR()">📢 Generate QR Report</button>
+            <div id="report-qr-display" class="hidden">
+                <div id="qrcode"></div>
+                <p style="font-size: 10px; margin-top: 10px; color: var(--text-secondary);">Scan this to view percentages</p>
+                <button class="btn-danger" style="padding: 5px 15px; font-size: 11px;" onclick="document.getElementById('report-qr-display').classList.add('hidden')">Close QR</button>
+            </div>
+
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
 
@@ -213,7 +215,6 @@
     </div>
 
     <script>
-        // MIGRATION & DATA CORE
         function migrateOldData() {
             const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
             if (oc || oh) return { classes: oc || [], activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), schoolName: os || "School", language: ol || "en", history: oh || [] };
@@ -223,14 +224,12 @@
         let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || { classes: [{ id: Date.now(), name: "Class 1", roster: [] }], activeClassId: null, schoolName: "GVHSS Madikai", language: "en", history: [] };
         if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
         let editingIdx = -1;
-        let html5QrCode = null;
 
         function persistData() { localStorage.setItem("pro_attendance_data", JSON.stringify(appData)); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem("pro_theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
         if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
         function showPage(pId) {
-            if (html5QrCode) stopScanner();
             document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
             document.getElementById(pId).classList.remove('hidden');
             refreshViews();
@@ -265,7 +264,7 @@
                         </div>
                     </div>
                     <div id="sub-opts-${idx}" class="extra-opts hidden">
-                        <span style="font-size:10px; margin-right:auto; align-self:center;">Reason:</span>
+                        <span style="font-size:10px; margin-right:auto; align-self:center;">Type:</span>
                         <button id="opt-l-${idx}" class="sub-btn" onclick="markStatus(${idx},'Leave')">Leave</button>
                         <button id="opt-d-${idx}" class="sub-btn" onclick="markStatus(${idx},'Duty')">Duty</button>
                         <button id="opt-normal-a-${idx}" class="sub-btn sub-btn-active" style="background:#ddd" onclick="markStatus(${idx},'Absent')">Absent</button>
@@ -294,52 +293,38 @@
             }
         }
 
-        // --- QR SCANNER LOGIC ---
-        function toggleQRScanner() {
-            const readerDiv = document.getElementById('qr-reader');
-            const btn = document.getElementById('qr-toggle-btn');
-            if (readerDiv.classList.contains('hidden')) {
-                readerDiv.classList.remove('hidden');
-                btn.innerText = "🛑 Stop QR Scanner";
-                startScanner();
-            } else {
-                stopScanner();
-                readerDiv.classList.add('hidden');
-                btn.innerText = "📷 Start QR Scanner Mode";
-            }
-        }
+        // --- REPORT QR GENERATION ---
+        function generateReportQR() {
+            const m = document.getElementById('report-month-picker').value;
+            const stats = getStats(m);
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            
+            let summaryText = `${cls.name} (${m})\n`;
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => {
+                const s = stats[r];
+                const active = s.present + s.leave + s.duty;
+                const per = s.total ? Math.round((active/s.total)*100) : 0;
+                summaryText += `${r}:${per}% `;
+            });
 
-        function startScanner() {
-            html5QrCode = new Html5Qrcode("qr-reader");
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => {
-                    // Try to mark student by scanned Roll Number
-                    const cls = appData.classes.find(c => c.id == appData.activeClassId);
-                    const idx = cls.roster.findIndex(s => s.roll == decodedText.trim());
-                    if (idx !== -1) {
-                        markStatus(idx, 'Present');
-                        const item = document.getElementById(`student-item-${decodedText.trim()}`);
-                        item.style.backgroundColor = "#e6fffa";
-                        setTimeout(() => item.style.backgroundColor = "var(--bg-color)", 1000);
-                    }
-                }
-            ).catch(err => console.log(err));
-        }
-
-        function stopScanner() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => { html5QrCode = null; }).catch(err => console.log(err));
-            }
+            document.getElementById('report-qr-display').classList.remove('hidden');
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), {
+                text: summaryText,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.L
+            });
         }
 
         function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
 
         function createNewClass() {
-            const name = document.getElementById('input-new-class-name').value;
-            if (!name) return;
-            appData.classes.push({ id: Date.now(), name: name, roster: [] });
+            const n = document.getElementById('input-new-class-name').value;
+            if (!n) return;
+            appData.classes.push({ id: Date.now(), name: n, roster: [] });
             document.getElementById('input-new-class-name').value = ""; persistData(); refreshViews();
         }
 
@@ -367,10 +352,8 @@
             const d = document.getElementById('attendance-date-input').value;
             if (!d) return alert("Select Date!");
             
-            const exists = appData.history.find(h => h.classId == cls.id && h.date == d);
-            if (exists) return alert("Record already exists for this date!");
-
-            // SATURDAY & SUNDAY CHECK
+            if (appData.history.find(h => h.classId == cls.id && h.date == d)) return alert("Attendance already saved for this date!");
+            
             const dayNum = new Date(d).getDay();
             if (dayNum === 0 || dayNum === 6) {
                 if(!confirm(`Today is ${dayNum === 0 ? 'Sunday' : 'Saturday'}. Are you sure you want to save attendance for a weekend?`)) return;
@@ -391,8 +374,8 @@
             const filtered = appData.history.filter(h => h.classId == cls.id);
             const cont = document.getElementById('history-display-container');
             cont.innerHTML = filtered.length ? filtered.map(h => {
-                const aList = h.students.filter(s => s.status === 'Absent');
-                const pList = h.students.filter(s => s.status !== 'Absent');
+                const aL = h.students.filter(s => s.status === 'Absent');
+                const pL = h.students.filter(s => s.status !== 'Absent');
                 return `
                 <div class="history-card">
                     <b>📅 ${h.date}</b> - P: ${h.present} A: ${h.absent}
@@ -400,9 +383,16 @@
                     <details style="margin-top:10px; font-size:12px;">
                         <summary style="cursor:pointer; color:var(--primary-blue)">View Full Details</summary>
                         <div style="font-weight:bold; margin-top:10px; color:red;">Absents:</div>
-                        ${aList.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><div><button class="msg-btn" style="background:#25D366" onclick="smartMessage(${s.roll},'${h.date}','wa')">WA</button><button class="msg-btn" style="background:#EA4335" onclick="smartMessage(${s.roll},'${h.date}','mail')">Mail</button></div></div>`).join('')}
+                        ${aL.map(s => `
+                            <div class="student-list-row">
+                                <span>${s.roll}. ${s.name}</span>
+                                <div>
+                                    <button class="msg-btn" style="background:#25D366" onclick="smartMessage(${s.roll},'${h.date}','wa')">WA</button>
+                                    <button class="msg-btn" style="background:#EA4335" onclick="smartMessage(${s.roll},'${h.date}','mail')">Mail</button>
+                                </div>
+                            </div>`).join('')}
                         <div style="font-weight:bold; margin-top:10px; color:green;">Present/OD/Leave:</div>
-                        ${pList.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>${s.status}</b></div>`).join('')}
+                        ${pL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>${s.status}</b></div>`).join('')}
                     </details>
                 </div>`}).join('') : "No History.";
         }
@@ -410,12 +400,22 @@
         function smartMessage(roll, date, type) {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const student = cls.roster.find(s => s.roll == roll);
-            if (!student) return alert("Student not found!");
+            
+            if (!student) return alert("Student not found in roster!");
+            
             let target = (type === 'wa') ? student.phone : student.email;
-            if (!target || target.trim() === "") return alert("No contact saved!");
+            
+            if (!target || target.trim() === "") {
+                return alert(`No ${type === 'wa' ? 'WhatsApp number' : 'email'} saved for Roll ${roll} in Settings!`);
+            }
+
             let ct = target.replace(/\D/g, ''); 
             if (type === 'wa' && ct.length === 10) ct = "91" + ct;
-            let msg = appData.language === 'ml' ? `പ്രിയ രക്ഷിതാവേ,\n\n${appData.schoolName}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${student.name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ` : `Dear Parent,\n\nThis is to inform you that your child, ${student.name} (Roll No: ${roll}), was marked absent today (${date}) from ${appData.schoolName}.\n\nRegards,\nClass Teacher`;
+            
+            let msg = appData.language === 'ml' ? 
+                `പ്രിയ രക്ഷിതാവേ,\n\n${appData.schoolName}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി ${student.name} (റോൾ നമ്പർ: ${roll}) ഇന്ന് (${date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ` : 
+                `Dear Parent,\n\nThis is to inform you that your child, ${student.name} (Roll No: ${roll}), was marked absent today (${date}) from ${appData.schoolName}.\n\nRegards,\nClass Teacher`;
+            
             if (type === 'wa') window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
             else window.location.href = `mailto:${target}?subject=Absence Notification&body=${encodeURIComponent(msg)}`;
         }
@@ -423,6 +423,7 @@
         function bulkWhatsApp(hId) {
             const entry = appData.history.find(h => h.id === hId);
             const absents = entry.students.filter(s => s.status === 'Absent');
+            if (!absents.length) return alert("No absentees found!");
             absents.forEach((s, idx) => setTimeout(() => smartMessage(s.roll, entry.date, 'wa'), idx * 1200));
         }
 
@@ -447,7 +448,7 @@
             let dayCounts = [0,0,0,0,0,0,0];
             history.forEach(h => { dayCounts[new Date(h.date).getDay()] += h.absent; });
             const peakDay = dayMap[dayCounts.indexOf(Math.max(...dayCounts))];
-            document.getElementById('trend-analysis').innerText = history.length ? `Trend: Peak Absences on ${peakDay}s` : "No trends available.";
+            document.getElementById('trend-analysis').innerText = history.length ? `Trend: Most Absences on ${peakDay}s` : "No trends available.";
 
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
