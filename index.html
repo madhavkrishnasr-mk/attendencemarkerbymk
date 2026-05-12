@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Ultimate Teacher Edition 2026</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>Attendance Pro - Master Teacher Edition</title>
 
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
@@ -20,7 +18,6 @@
             --danger-red: #dc3545;
             --info-cyan: #17a2b8;
             --warning-orange: #f39c12;
-            --duty-purple: #8e44ad;
         }
 
         .dark-mode {
@@ -88,6 +85,9 @@
         .btn-info { background-color: var(--info-cyan); color: white; }
         .btn-secondary { background-color: var(--text-secondary); color: white; }
 
+        /* --- SETUP SCREEN --- */
+        .welcome-icon { font-size: 40px; text-align: center; margin-bottom: 10px; display: block; }
+
         /* --- ATTENDANCE UI --- */
         .student-item { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); }
         .student-top-row { display: flex; justify-content: space-between; align-items: center; }
@@ -102,10 +102,6 @@
         .extra-opts { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; padding-top: 8px; border-top: 1px dashed var(--border-color); }
         .sub-btn { font-size: 10px; padding: 5px 10px; border-radius: 4px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); }
         .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
-        .sub-btn.d-active { background: var(--duty-purple); color: white; border-color: var(--duty-purple); }
-
-        /* --- QR REPORT DISPLAY --- */
-        #report-qr-display { background: white; padding: 15px; display: flex; flex-direction: column; align-items: center; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
 
         /* --- REPORT UI --- */
         .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
@@ -131,15 +127,32 @@
 <body>
 
     <div class="main-card">
-        <div class="header-section">
+        <div class="header-section" id="main-header">
             <h2 id="app-title">Attendance Pro</h2>
-            <div>
+            <div id="header-buttons">
                 <button onclick="toggleDarkMode()" style="background:none; font-size:22px;">🌓</button>
                 <button onclick="showPage('settings-page')" class="btn-info">⚙️</button>
             </div>
         </div>
 
-        <div id="home-page">
+        <div id="setup-page" class="hidden">
+            <span class="welcome-icon">🎓</span>
+            <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Pro</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your institution details to get started.</p>
+            
+            <label>Institution / School Name:</label>
+            <input type="text" id="setup-school-name" placeholder="e.g. GVHSS Madikai">
+            
+            <label>Preferred Message Language:</label>
+            <select id="setup-msg-language">
+                <option value="en">English</option>
+                <option value="ml">Malayalam</option>
+            </select>
+            
+            <button class="btn-primary btn-full" onclick="completeSetup()">Complete Setup</button>
+        </div>
+
+        <div id="home-page" class="hidden">
             <label>Select Class:</label>
             <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
 
@@ -161,7 +174,6 @@
             <div class="settings-tabs">
                 <button id="btn-tab-students" class="tab-btn active" onclick="switchSettingsTab('students')">Students</button>
                 <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
-                <button id="btn-tab-school" class="tab-btn" onclick="switchSettingsTab('school')">School</button>
             </div>
 
             <div id="tab-students-section">
@@ -179,12 +191,6 @@
                 <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="Class Name"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
                 <div id="class-list-management" style="margin-top:15px;"></div>
             </div>
-
-            <div id="tab-school-section" class="hidden">
-                <input type="text" id="input-school-name" placeholder="Institution Name">
-                <select id="select-msg-language"><option value="en">English</option><option value="ml">Malayalam</option></select>
-                <button class="btn-primary btn-full" onclick="updateGlobalSettings()">Save Settings</button>
-            </div>
         </div>
 
         <div id="reports-page" class="hidden">
@@ -196,13 +202,6 @@
             <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
             <p class="csv-reminder">⚠️ Ensure filename ends with .csv before clicking Save</p>
             
-            <button class="btn-success btn-full" onclick="generateReportQR()">📢 Generate QR Report</button>
-            <div id="report-qr-display" class="hidden">
-                <div id="qrcode"></div>
-                <p style="font-size: 10px; margin-top: 10px; color: var(--text-secondary);">Scan this to view percentages</p>
-                <button class="btn-danger" style="padding: 5px 15px; font-size: 11px;" onclick="document.getElementById('report-qr-display').classList.add('hidden')">Close QR</button>
-            </div>
-
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
 
@@ -217,32 +216,76 @@
     <script>
         function migrateOldData() {
             const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
-            if (oc || oh) return { classes: oc || [], activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), schoolName: os || "School", language: ol || "en", history: oh || [] };
+            if (oc || oh) return { 
+                isSetupComplete: true, // Legacy users skip setup
+                classes: oc || [], 
+                activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), 
+                schoolName: os || "GVHSS Madikai", 
+                language: ol || "en", 
+                history: oh || [] 
+            };
             return null;
         }
 
-        let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || { classes: [{ id: Date.now(), name: "Class 1", roster: [] }], activeClassId: null, schoolName: "GVHSS Madikai", language: "en", history: [] };
+        let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || { 
+            isSetupComplete: false,
+            classes: [{ id: Date.now(), name: "Class 1", roster: [] }], 
+            activeClassId: null, 
+            schoolName: "", 
+            language: "en", 
+            history: [] 
+        };
+        
         if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
+        
+        // Auto-complete setup if data exists (failsafe)
+        if (appData.history.length > 0 || (appData.classes.length && appData.classes[0].roster.length > 0)) {
+            appData.isSetupComplete = true;
+        }
+
         let editingIdx = -1;
 
         function persistData() { localStorage.setItem("pro_attendance_data", JSON.stringify(appData)); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem("pro_theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
         if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
+        function initApp() {
+            if (!appData.isSetupComplete) {
+                document.getElementById('header-buttons').classList.add('hidden');
+                document.getElementById('app-title').innerText = "Welcome";
+                showPage('setup-page');
+            } else {
+                showPage('home-page');
+            }
+        }
+
+        function completeSetup() {
+            const sn = document.getElementById('setup-school-name').value;
+            if (!sn || sn.trim() === "") return alert("Please enter your institution name to continue.");
+            appData.schoolName = sn;
+            appData.language = document.getElementById('setup-msg-language').value;
+            appData.isSetupComplete = true;
+            persistData();
+            document.getElementById('header-buttons').classList.remove('hidden');
+            showPage('home-page');
+        }
+
         function showPage(pId) {
             document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
             document.getElementById(pId).classList.remove('hidden');
-            refreshViews();
+            if (pId !== 'setup-page') refreshViews();
             if (pId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
             if (pId === 'history-page') renderHistoryView();
         }
 
         function switchSettingsTab(t) {
-            ['school', 'classes', 'students'].forEach(k => { document.getElementById(`tab-${k}-section`).classList.add('hidden'); document.getElementById(`btn-tab-${k}`).classList.remove('active'); });
+            ['classes', 'students'].forEach(k => { document.getElementById(`tab-${k}-section`).classList.add('hidden'); document.getElementById(`btn-tab-${k}`).classList.remove('active'); });
             document.getElementById(`tab-${t}-section`).classList.remove('hidden'); document.getElementById(`btn-tab-${t}`).classList.add('active');
         }
 
         function refreshViews() {
+            if(!appData.isSetupComplete) return;
+
             const cls = appData.classes.find(c => c.id == appData.activeClassId) || appData.classes[0];
             document.getElementById('app-title').innerText = cls.name;
             document.querySelectorAll('.class-dropdown').forEach(s => { s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join(''); });
@@ -264,9 +307,8 @@
                         </div>
                     </div>
                     <div id="sub-opts-${idx}" class="extra-opts hidden">
-                        <span style="font-size:10px; margin-right:auto; align-self:center;">Type:</span>
+                        <span style="font-size:10px; margin-right:auto; align-self:center;">Reason:</span>
                         <button id="opt-l-${idx}" class="sub-btn" onclick="markStatus(${idx},'Leave')">Leave</button>
-                        <button id="opt-d-${idx}" class="sub-btn" onclick="markStatus(${idx},'Duty')">Duty</button>
                         <button id="opt-normal-a-${idx}" class="sub-btn sub-btn-active" style="background:#ddd" onclick="markStatus(${idx},'Absent')">Absent</button>
                     </div>
                 </div>`;
@@ -288,35 +330,8 @@
                 document.getElementById(`opt-p-${idx}`).classList.remove('p-active');
                 document.getElementById(`opt-a-${idx}`).classList.add('a-active');
                 document.getElementById(`opt-l-${idx}`).className = (s === 'Leave') ? 'sub-btn l-active' : 'sub-btn';
-                document.getElementById(`opt-d-${idx}`).className = (s === 'Duty') ? 'sub-btn d-active' : 'sub-btn';
                 document.getElementById(`opt-normal-a-${idx}`).style.background = (s === 'Absent') ? '#ddd' : 'transparent';
             }
-        }
-
-        // --- REPORT QR GENERATION ---
-        function generateReportQR() {
-            const m = document.getElementById('report-month-picker').value;
-            const stats = getStats(m);
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            
-            let summaryText = `${cls.name} (${m})\n`;
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => {
-                const s = stats[r];
-                const active = s.present + s.leave + s.duty;
-                const per = s.total ? Math.round((active/s.total)*100) : 0;
-                summaryText += `${r}:${per}% `;
-            });
-
-            document.getElementById('report-qr-display').classList.remove('hidden');
-            document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), {
-                text: summaryText,
-                width: 200,
-                height: 200,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.L
-            });
         }
 
         function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
@@ -391,7 +406,7 @@
                                     <button class="msg-btn" style="background:#EA4335" onclick="smartMessage(${s.roll},'${h.date}','mail')">Mail</button>
                                 </div>
                             </div>`).join('')}
-                        <div style="font-weight:bold; margin-top:10px; color:green;">Present/OD/Leave:</div>
+                        <div style="font-weight:bold; margin-top:10px; color:green;">Present/Leave:</div>
                         ${pL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>${s.status}</b></div>`).join('')}
                     </details>
                 </div>`}).join('') : "No History.";
@@ -431,7 +446,7 @@
 
         function refreshReportsView() {
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
-            let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent: 0, leave: 0, duty: 0, total: 0 });
+            let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent: 0, leave: 0, total: 0 });
             const history = appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m));
             history.forEach(day => {
                 day.students.forEach(r => {
@@ -440,7 +455,6 @@
                         if (r.status === 'Present') stats[r.roll].present++;
                         else if (r.status === 'Absent') stats[r.roll].absent++;
                         else if (r.status === 'Leave') stats[r.roll].leave++;
-                        else if (r.status === 'Duty') stats[r.roll].duty++;
                     }
                 });
             });
@@ -452,27 +466,36 @@
 
             document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
                 const s = stats[roll];
-                const activePresent = s.present + s.leave + s.duty;
+                const activePresent = s.present + s.leave;
                 const per = s.total ? Math.round((activePresent / s.total) * 100) : 0;
                 const isDanger = per < 75 && s.total > 0;
-                return `<div class="report-card ${isDanger ? 'danger-zone' : ''}">${per === 100 && s.total > 0 ? '<span class="badge-100">🌟 TOP</span>' : ''}<b>${roll}. ${s.name}</b><div class="report-grid"><div class="stat-box">P: ${s.present}</div><div class="stat-box">L/D: ${s.leave+s.duty}</div><div class="stat-box">A: ${s.absent}</div><div class="stat-box" style="color:${isDanger?'red':''}">${per}%</div></div></div>`;
+                return `
+                    <div class="report-card ${isDanger ? 'danger-zone' : ''}">
+                        ${per === 100 && s.total > 0 ? '<span class="badge-100">🌟 TOP</span>' : ''}
+                        <b>${roll}. ${s.name}</b>
+                        <div class="report-grid" style="grid-template-columns: repeat(3, 1fr);">
+                            <div class="stat-box">P/L: ${activePresent}</div>
+                            <div class="stat-box">A: ${s.absent}</div>
+                            <div class="stat-box" style="color:${isDanger?'red':''}">${per}%</div>
+                        </div>
+                    </div>`;
             }).join('');
         }
 
         function exportReportToCSV() {
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
-            let csv = "Roll No,Name,Present,Absent,Leave,Duty,Total Days,Percentage\n";
+            let csv = "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
             const stats = getStats(m);
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.duty},${s.total},${s.total?Math.round(((s.present+s.leave+s.duty)/s.total)*100):0}%\n`; });
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
         }
 
         function getStats(month) {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, present: 0, absent:0, leave:0, duty:0, total: 0 });
+            let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, p: 0, a:0, l:0, t: 0 });
             appData.history.filter(h => h.classId == cls.id && h.date.startsWith(month)).forEach(day => {
-                day.students.forEach(r => { if (s[r.roll]) { s[r.roll].total++; if (r.status === 'Present') s[r.roll].present++; else if (r.status === 'Absent') s[r.roll].absent++; else if (r.status === 'Leave') s[r.roll].leave++; else s[r.roll].duty++; }});
+                day.students.forEach(r => { if (s[r.roll]) { s[r.roll].t++; if (r.status === 'Present') s[r.roll].p++; else if (r.status === 'Absent') s[r.roll].a++; else if (r.status === 'Leave') s[r.roll].l++; }});
             });
             return s;
         }
@@ -480,9 +503,9 @@
         function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
         function removeClass(id) { if(appData.classes.length>1 && confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes[0].id; persistData(); refreshViews(); } }
         function wipeHistoryForCurrentClass() { if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
-        function updateGlobalSettings() { appData.schoolName = document.getElementById('input-school-name').value; appData.language = document.getElementById('select-msg-language').value; persistData(); alert("Saved!"); }
 
-        refreshViews();
+        // Start the app correctly based on setup status
+        initApp();
     </script>
 </body>
 </html>
