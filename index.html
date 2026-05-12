@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Master Teacher Edition</title>
+    <title>Attendance Pro - Ultimate Teacher Edition</title>
 
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
@@ -105,7 +105,7 @@
 
         /* --- REPORT UI --- */
         .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
-        .report-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; font-size: 11px; text-align: center; }
+        .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; font-size: 11px; text-align: center; }
         .stat-box { background: var(--card-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); font-weight: bold; }
         .danger-zone { border: 2px solid var(--danger-red) !important; background-color: #fff0f0; }
         .badge-100 { position: absolute; top: 5px; right: 5px; background: gold; color: black; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
@@ -117,7 +117,7 @@
 
         /* --- SETTINGS TABS --- */
         .settings-tabs { display: flex; gap: 5px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 10px; font-size: 12px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
         .tab-btn.active { background-color: var(--primary-blue); color: white; border-color: var(--primary-blue); }
         
         .trend-box { background: #e8f4fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid var(--primary-blue); }
@@ -136,9 +136,16 @@
         </div>
 
         <div id="setup-page" class="hidden">
-            <span class="welcome-icon">🎓</span>
-            <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Pro</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your institution details to get started.</p>
+            <div id="setup-back-btn" class="hidden" style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>Institution Setup</h3>
+                <button onclick="showPage('settings-page')" class="btn-secondary">Back</button>
+            </div>
+            
+            <div id="setup-welcome-text">
+                <span class="welcome-icon">🎓</span>
+                <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Pro</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your institution details to get started.</p>
+            </div>
             
             <label>Institution / School Name:</label>
             <input type="text" id="setup-school-name" placeholder="e.g. GVHSS Madikai">
@@ -149,7 +156,13 @@
                 <option value="ml">Malayalam</option>
             </select>
             
-            <button class="btn-primary btn-full" onclick="completeSetup()">Complete Setup</button>
+            <button class="btn-primary btn-full" onclick="completeSetup()">Save Institution Details</button>
+
+            <div id="reset-zone" class="hidden" style="margin-top: 30px; padding-top: 15px; border-top: 2px dashed var(--danger-red);">
+                <label style="color: var(--danger-red); font-size: 14px;">Danger Zone:</label>
+                <p style="font-size:11px; color:var(--text-secondary);">This will delete all students, classes, and history permanently.</p>
+                <button class="btn-danger btn-full" onclick="factoryResetApp()">⚠️ Factory Reset App</button>
+            </div>
         </div>
 
         <div id="home-page" class="hidden">
@@ -171,6 +184,7 @@
                 <h3>Settings</h3>
                 <button onclick="showPage('home-page')" class="btn-secondary">Back</button>
             </div>
+            
             <div class="settings-tabs">
                 <button id="btn-tab-students" class="tab-btn active" onclick="switchSettingsTab('students')">Students</button>
                 <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
@@ -191,6 +205,8 @@
                 <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="Class Name"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
                 <div id="class-list-management" style="margin-top:15px;"></div>
             </div>
+
+            <button class="btn-info btn-full" style="margin-top: 25px; font-size: 14px;" onclick="openSchoolSettings()">🏫 Edit Institution & Reset Options</button>
         </div>
 
         <div id="reports-page" class="hidden">
@@ -217,7 +233,7 @@
         function migrateOldData() {
             const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
             if (oc || oh) return { 
-                isSetupComplete: true, // Legacy users skip setup
+                isSetupComplete: true, 
                 classes: oc || [], 
                 activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), 
                 schoolName: os || "GVHSS Madikai", 
@@ -238,7 +254,6 @@
         
         if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
         
-        // Auto-complete setup if data exists (failsafe)
         if (appData.history.length > 0 || (appData.classes.length && appData.classes[0].roster.length > 0)) {
             appData.isSetupComplete = true;
         }
@@ -252,11 +267,25 @@
         function initApp() {
             if (!appData.isSetupComplete) {
                 document.getElementById('header-buttons').classList.add('hidden');
-                document.getElementById('app-title').innerText = "Welcome";
+                document.getElementById('setup-back-btn').classList.add('hidden');
+                document.getElementById('setup-welcome-text').classList.remove('hidden');
+                document.getElementById('reset-zone').classList.add('hidden');
                 showPage('setup-page');
             } else {
                 showPage('home-page');
             }
+        }
+
+        function openSchoolSettings() {
+            document.getElementById('header-buttons').classList.add('hidden');
+            document.getElementById('setup-back-btn').classList.remove('hidden');
+            document.getElementById('setup-welcome-text').classList.add('hidden');
+            document.getElementById('reset-zone').classList.remove('hidden');
+            
+            document.getElementById('setup-school-name').value = appData.schoolName;
+            document.getElementById('setup-msg-language').value = appData.language;
+            
+            showPage('setup-page');
         }
 
         function completeSetup() {
@@ -266,14 +295,20 @@
             appData.language = document.getElementById('setup-msg-language').value;
             appData.isSetupComplete = true;
             persistData();
+            
             document.getElementById('header-buttons').classList.remove('hidden');
+            alert("Institution Settings Saved!");
             showPage('home-page');
         }
 
         function showPage(pId) {
             document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
             document.getElementById(pId).classList.remove('hidden');
-            if (pId !== 'setup-page') refreshViews();
+            
+            if (pId !== 'setup-page') {
+                document.getElementById('header-buttons').classList.remove('hidden');
+                refreshViews();
+            }
             if (pId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
             if (pId === 'history-page') renderHistoryView();
         }
@@ -285,7 +320,6 @@
 
         function refreshViews() {
             if(!appData.isSetupComplete) return;
-
             const cls = appData.classes.find(c => c.id == appData.activeClassId) || appData.classes[0];
             document.getElementById('app-title').innerText = cls.name;
             document.querySelectorAll('.class-dropdown').forEach(s => { s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join(''); });
@@ -503,6 +537,27 @@
         function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
         function removeClass(id) { if(appData.classes.length>1 && confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes[0].id; persistData(); refreshViews(); } }
         function wipeHistoryForCurrentClass() { if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+
+        // --- FACTORY RESET APP WITH RESUBMISSION ---
+        function factoryResetApp() {
+            const currentSchool = appData.schoolName;
+            const confirmation = prompt(`⚠️ WARNING: This will delete ALL classes, students, and history permanently.\n\nTo confirm, type your school name exactly as shown:\n"${currentSchool}"`);
+            
+            if (confirmation === currentSchool) {
+                // Wipe everything
+                localStorage.removeItem("pro_attendance_data");
+                localStorage.removeItem("all_classes"); 
+                localStorage.removeItem("attendance_history");
+                localStorage.removeItem("school_name");
+                localStorage.removeItem("msg_lang");
+                localStorage.removeItem("active_class_id");
+                
+                alert("App has been successfully reset to factory defaults.");
+                location.reload(); // Reload the page to trigger setup screen
+            } else if (confirmation !== null) {
+                alert("School name did not match. Reset cancelled.");
+            }
+        }
 
         // Start the app correctly based on setup status
         initApp();
