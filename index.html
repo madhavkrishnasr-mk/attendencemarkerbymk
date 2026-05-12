@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Attendance Pro - Teacher Edition</title>
+    <title>Attendance Pro - Master Teacher Edition</title>
     
     <style>
-        /* --- PROFESSIONAL COLOR PALETTE --- */
+        /* --- PROFESSIONAL COLOR PALETTE (Third Last Version) --- */
         :root {
             --bg-color: #f0f2f5;
             --card-bg: #ffffff;
@@ -61,7 +61,7 @@
             margin-bottom: 20px;
         }
 
-        /* --- INPUTS --- */
+        /* --- INPUTS & DROPDOWNS --- */
         input, select {
             width: 100%;
             padding: 12px;
@@ -74,6 +74,14 @@
             box-sizing: border-box;
         }
 
+        label {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
         /* --- BUTTONS --- */
         button {
             cursor: pointer;
@@ -81,6 +89,7 @@
             border-radius: 8px;
             font-weight: 600;
             padding: 10px;
+            transition: 0.2s ease;
         }
 
         .btn-full { width: 100%; padding: 15px; font-size: 16px; margin-top: 10px; color: white; }
@@ -88,6 +97,7 @@
         .btn-success { background-color: var(--success-green); color: white; }
         .btn-danger { background-color: var(--danger-red); color: white; }
         .btn-info { background-color: var(--info-cyan); color: white; }
+        .btn-secondary { background-color: var(--text-secondary); color: white; }
 
         /* --- STUDENT ROWS (MAIN PAGE) --- */
         .student-item {
@@ -120,6 +130,7 @@
             font-weight: bold;
             background-color: var(--card-bg);
             color: var(--text-main);
+            cursor: pointer;
         }
 
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
@@ -151,7 +162,7 @@
             font-weight: bold;
         }
 
-        /* --- TABS --- */
+        /* --- SETTINGS TABS --- */
         .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
         .tab-btn.active { background-color: var(--primary-blue); color: white; }
@@ -169,8 +180,8 @@
         </div>
 
         <div id="home-page">
-            <label style="font-size: 12px; font-weight: bold;">Current Class:</label>
-            <select id="class-select-main" onchange="handleClassChange(this.value)"></select>
+            <label>Select Class:</label>
+            <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
 
             <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                 <input type="date" id="attendance-date-input" style="margin-bottom: 0;">
@@ -185,7 +196,7 @@
         <div id="settings-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h3>Settings</h3>
-                <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
+                <button onclick="showPage('home-page')" class="btn-secondary" style="padding: 5px 15px;">Back</button>
             </div>
 
             <div class="settings-tabs">
@@ -195,7 +206,9 @@
             </div>
 
             <div id="tab-school-section">
-                <input type="text" id="input-school-name" placeholder="School Name (e.g. GVHSS Madikai)">
+                <label>School/Institution Name:</label>
+                <input type="text" id="input-school-name" placeholder="GVHSS Madikai">
+                <label>Message Language:</label>
                 <select id="select-msg-language">
                     <option value="en">English</option>
                     <option value="ml">Malayalam</option>
@@ -204,21 +217,25 @@
             </div>
 
             <div id="tab-classes-section" class="hidden">
+                <label>Add New Class:</label>
                 <div style="display:flex; gap:8px;">
-                    <input type="text" id="input-new-class-name" placeholder="Class Name" style="margin-bottom:0;">
+                    <input type="text" id="input-new-class-name" placeholder="e.g. 10A" style="margin-bottom:0;">
                     <button onclick="createNewClass()" class="btn-primary">Add</button>
                 </div>
                 <div id="class-list-management" style="margin-top:20px;"></div>
             </div>
 
             <div id="tab-students-section" class="hidden">
+                <label>Active Class for Student Entry:</label>
+                <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
+
                 <h4 id="student-editor-title">Add Student</h4>
                 <div style="display: flex; gap: 8px;">
-                    <input type="number" id="input-student-roll" placeholder="Roll" style="width: 80px;">
-                    <input type="text" id="input-student-name" placeholder="Student Name">
+                    <input type="number" id="input-student-roll" placeholder="Roll No" style="width: 80px;">
+                    <input type="text" id="input-student-name" placeholder="Full Name">
                 </div>
-                <input type="tel" id="input-student-phone" placeholder="Parent WhatsApp Number">
-                <input type="email" id="input-student-email" placeholder="Parent Email (Optional)">
+                <input type="tel" id="input-student-phone" placeholder="WhatsApp Number">
+                <input type="email" id="input-student-email" placeholder="Email Address">
                 <input type="file" id="input-student-photo" accept="image/*">
                 
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
@@ -228,10 +245,16 @@
 
         <div id="reports-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h3>📊 Monthly Reports</h3>
-                <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
+                <h3>📊 Reports</h3>
+                <button onclick="showPage('home-page')" class="btn-secondary" style="padding: 5px 15px;">Back</button>
             </div>
+            
+            <label>Select Class:</label>
+            <select class="class-dropdown" onchange="handleClassChange(this.value); refreshReportsView();"></select>
+
+            <label>Select Month:</label>
             <select id="report-month-picker" onchange="refreshReportsView()"></select>
+
             <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
             <div id="reports-display-container" style="margin-top: 15px;"></div>
         </div>
@@ -239,14 +262,19 @@
         <div id="history-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h3>📁 History: <span id="history-class-label"></span></h3>
-                <button onclick="showPage('home-page')" class="btn-danger" style="padding: 5px 15px;">Back</button>
+                <button onclick="showPage('home-page')" class="btn-secondary" style="padding: 5px 15px;">Back</button>
             </div>
+            
+            <label>Filter by Class:</label>
+            <select class="class-dropdown" onchange="handleClassChange(this.value); renderHistoryView();"></select>
+
             <div id="history-display-container"></div>
-            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History</button>
+            <button class="btn-danger btn-full" style="margin-top: 20px;" onclick="wipeHistoryForCurrentClass()">Delete History for Current Class</button>
         </div>
     </div>
 
     <script>
+        // MIGRATION LOGIC (ENSURES NO DATA LOSS)
         function migrateOldData() {
             const oldClasses = JSON.parse(localStorage.getItem("all_classes"));
             const oldHistory = JSON.parse(localStorage.getItem("attendance_history"));
@@ -307,11 +335,14 @@
             document.getElementById('input-school-name').value = appData.schoolName;
             document.getElementById('select-msg-language').value = appData.language;
             
-            const mainSelector = document.getElementById('class-select-main');
-            mainSelector.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join('');
+            // UPDATE ALL DROPDOWNS
+            document.querySelectorAll('.class-dropdown').forEach(select => {
+                select.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join('');
+            });
             
+            // REFRESH ATTENDANCE LIST
             const container = document.getElementById('attendance-list-container');
-            container.innerHTML = "";
+            container.innerHTML = currentClass.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add them in Settings.</p>";
             currentClass.roster.sort((a,b) => a.roll - b.roll).forEach((student, idx) => {
                 container.innerHTML += `
                     <div class="student-item">
@@ -329,6 +360,7 @@
                     </div>`;
             });
 
+            // REFRESH MANAGEMENT LISTS
             document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;">
                     <span>${c.name}</span>
@@ -414,7 +446,7 @@
         }
 
         function removeClass(id) {
-            if(appData.classes.length === 1) return alert("Keep one class!");
+            if(appData.classes.length === 1) return alert("Keep at least one class!");
             if(confirm("Delete class?")) {
                 appData.history = appData.history.filter(h => h.classId != id);
                 appData.classes = appData.classes.filter(c => c.id != id);
@@ -441,7 +473,9 @@
             const currentClass = appData.classes.find(c => c.id == appData.activeClassId);
             const filtered = appData.history.filter(h => h.classId == currentClass.id);
             document.getElementById('history-class-label').innerText = currentClass.name;
-            document.getElementById('history-display-container').innerHTML = filtered.length ? filtered.map(h => `<div style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No History.";
+            const container = document.getElementById('history-display-container');
+            container.innerHTML = filtered.length ? filtered.map(h => `
+                <div style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:10px;"><b>📅 ${h.date}</b> | P: ${h.present} A: ${h.absent}</div>`).join('') : "No History for this class.";
         }
 
         function wipeHistoryForCurrentClass() {
@@ -497,7 +531,7 @@
                 csv += `${r},${s.name},${s.present},${s.absent},${s.total},${s.total?Math.round((s.present/s.total)*100):0}%\n`;
             });
 
-            // --- RE-IMPLEMENTED STRONG DOWNLOAD LOGIC ---
+            // --- SUPER FORCED BLOB DOWNLOAD LOGIC ---
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const fileName = "Report_" + cls.name + "_" + m + ".csv";
             
