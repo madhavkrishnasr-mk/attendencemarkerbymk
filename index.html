@@ -148,9 +148,10 @@
     <div class="main-card">
         <div class="header-section" id="main-header">
             <h2 id="app-title">Attendance Taker Pro</h2>
-            <div id="header-buttons">
-                <button onclick="toggleDarkMode()" style="background:none; font-size:22px;">🌓</button>
-                <button onclick="showPage('settings-page')" class="btn-info">⚙️</button>
+            <div id="header-buttons" style="display:flex; align-items:center; gap:5px;">
+                <button onclick="toggleDarkMode()" style="background:none; font-size:22px; padding:0; margin-right:5px;">🌓</button>
+                <button onclick="showPage('marks-page')" class="btn-warning" style="padding: 6px 10px; font-size: 14px;">📝 Marks</button>
+                <button onclick="showPage('settings-page')" class="btn-info" style="padding: 6px 10px; font-size: 14px;">⚙️</button>
             </div>
         </div>
 
@@ -204,7 +205,6 @@
                 <input type="date" id="attendance-date-input" style="margin-bottom: 0;">
                 <button onclick="showPage('history-page')" class="btn-success" style="flex: 1; font-size: 13px;">📁 History</button>
                 <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1; font-size: 13px;">📊 Reports</button>
-                <button onclick="showPage('marks-page')" class="btn-warning" style="flex: 1; font-size: 13px;">📝 Marks</button>
             </div>
 
             <div id="attendance-list-container"></div>
@@ -248,7 +248,12 @@
                 </div>
             </div>
 
-            <button class="btn-success btn-full" style="margin-bottom: 15px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+            <button class="btn-success btn-full" style="margin-bottom: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+            
+            <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
+            
+            <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                </div>
 
             <div class="stats-box">
                 <div class="stat-item">
@@ -374,6 +379,7 @@
         if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
         if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
         
+        // Safety patch to ensure older logic has exams and marks arrays
         appData.classes.forEach(c => {
             if(!c.exams) c.exams = [];
             c.roster.forEach(s => { if(!s.marks) s.marks = {}; });
@@ -520,7 +526,7 @@
             const done = (img) => {
                 const s = { roll: parseInt(r), name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {} };
                 if (editingIdx > -1) { 
-                    s.marks = cls.roster[editingIdx].marks || {}; 
+                    s.marks = cls.roster[editingIdx].marks || {}; // Keep old marks
                     cls.roster[editingIdx] = s; 
                     editingIdx = -1; 
                     document.getElementById('submit-student-btn').innerText = "+ Add Student"; 
@@ -538,6 +544,7 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
+        // --- IMPORT STUDENT LIST CSV ---
         function importStudentListCSV() {
             const fileInput = document.getElementById('input-csv-upload');
             const file = fileInput.files[0];
@@ -586,7 +593,7 @@
             reader.readAsText(file);
         }
 
-        // --- MARKS ENTRY LOGIC & GROWTH ---
+        // --- MARKS ENTRY LOGIC & REPORTS ---
         function refreshMarksView() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const examSelect = document.getElementById("examSelect");
@@ -649,6 +656,9 @@
                 document.getElementById("statAvg").innerText = "0.0";
                 document.getElementById("statPass").innerText = "0";
                 document.getElementById("statFail").innerText = "0";
+                if (!document.getElementById('mark-report-container').classList.contains('hidden')) {
+                    renderMarkReport();
+                }
                 return;
             }
 
@@ -705,6 +715,11 @@
             document.getElementById("statAvg").innerText = avg;
             document.getElementById("statPass").innerText = passCount;
             document.getElementById("statFail").innerText = failCount;
+
+            // Keep full report updated if it's currently open
+            if (!document.getElementById('mark-report-container').classList.contains('hidden')) {
+                renderMarkReport();
+            }
         }
 
         function exportMarksToCSV() {
@@ -736,6 +751,51 @@
             link.href = URL.createObjectURL(blob); 
             link.download = `Marks_${cls.name.replace(/ /g, '_')}_${currentExam}.csv`; 
             link.click();
+        }
+
+        function toggleMarkReport() {
+            const container = document.getElementById('mark-report-container');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                renderMarkReport();
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function renderMarkReport() {
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const container = document.getElementById('mark-report-container');
+            if (!cls || !cls.exams || cls.exams.length === 0) {
+                container.innerHTML = "<p style='text-align:center; font-size:12px;'>No exams added yet.</p>";
+                return;
+            }
+
+            let html = '<table class="marks-table" style="min-width:400px;"><thead><tr><th width="10%">Roll</th><th width="30%">Name</th>';
+            cls.exams.forEach(ex => {
+                html += `<th style="text-align:center; color:var(--primary-blue);">${ex}</th>`;
+            });
+            html += '<th style="text-align:center; background:#e8f4fd;">Avg</th></tr></thead><tbody>';
+
+            let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
+            sortedRoster.forEach(s => {
+                html += `<tr><td>${s.roll}</td><td><strong>${s.name}</strong></td>`;
+                let total = 0;
+                let count = 0;
+                cls.exams.forEach(ex => {
+                    let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
+                    html += `<td style="text-align:center;">${mark}</td>`;
+                    if (mark !== '-' && !isNaN(parseFloat(mark))) {
+                        total += parseFloat(mark);
+                        count++;
+                    }
+                });
+                let avg = count > 0 ? (total/count).toFixed(1) : '-';
+                html += `<td style="text-align:center; font-weight:bold; background:#e8f4fd;">${avg}</td></tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
         }
 
         function sendMarkWA(roll) {
