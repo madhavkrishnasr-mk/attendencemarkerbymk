@@ -228,6 +228,22 @@
             
             <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleMarksSettings()">⚙️ Exam Setup & Settings</button>
 
+            <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <label>Select Exam to Enter Marks:</label>
+                <div style="display:flex; gap:8px; margin-bottom: 8px;">
+                    <select id="examSelect" onchange="changeExam()" style="margin-bottom:0; flex:1;">
+                        <option value="">-- Select Exam --</option>
+                    </select>
+                    <button class="btn-info" style="padding: 10px 15px; font-size: 13px;" onclick="editCurrentExam()">✏️ Edit</button>
+                </div>
+                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
+
+                <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
+                <select id="compareExamSelect" onchange="refreshMarksTable()">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+
             <div id="marks-settings-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Create New Exam</h4>
                 <div style="display:flex; gap:8px; margin-bottom:10px;">
@@ -254,22 +270,6 @@
                 <div id="grades-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                     </div>
                 <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
-            </div>
-
-            <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
-                <label>Select Exam to Enter Marks:</label>
-                <div style="display:flex; gap:8px; margin-bottom: 8px;">
-                    <select id="examSelect" onchange="changeExam()" style="margin-bottom:0; flex:1;">
-                        <option value="">-- Select Exam --</option>
-                    </select>
-                    <button class="btn-info" style="padding: 10px 15px; font-size: 13px;" onclick="editCurrentExam()">✏️ Edit</button>
-                </div>
-                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
-
-                <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
-                <select id="compareExamSelect" onchange="refreshMarksTable()">
-                    <option value="">-- None --</option>
-                </select>
             </div>
 
             <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
@@ -348,7 +348,7 @@
                 <div id="bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
                     <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
                     <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
-                        <li><a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/edit?usp=sharing" target="_blank" style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
+                        <li><a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
                         <li>Open it in Google Sheets or Excel</li>
                         <li>Export it as CSV or PDF <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ PDF or CSV)</i></li>
                         <li>Upload it using the options below:</li>
@@ -854,30 +854,9 @@
         function editCurrentExam() {
             if(!currentExam) return alert("Please select an exam first!");
             
-            let newName = prompt("Rename this Exam (or leave as is to just edit marks/grades):", currentExam);
-            if(newName && newName.trim() !== "" && newName !== currentExam) {
-                const cls = appData.classes.find(c => c.id == appData.activeClassId);
-                if(cls.exams.includes(newName)) {
-                    alert("An exam with this name already exists!");
-                } else {
-                    let exIdx = cls.exams.indexOf(currentExam);
-                    if(exIdx > -1) cls.exams[exIdx] = newName;
-                    
-                    cls.roster.forEach(s => {
-                        if(s.marks && s.marks[currentExam] !== undefined) {
-                            s.marks[newName] = s.marks[currentExam];
-                            delete s.marks[currentExam];
-                        }
-                    });
-                    
-                    currentExam = newName;
-                    persistData();
-                }
-            }
-            
             document.getElementById('marks-settings-panel').classList.remove('hidden');
             renderGradesUI();
-            refreshMarksView();
+            
             document.getElementById('marks-settings-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
