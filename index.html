@@ -226,8 +226,6 @@
             
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
             
-            <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleMarksSettings()">⚙️ Exam Setup & Settings</button>
-
             <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <label>Select Exam to Enter Marks:</label>
                 <div style="display:flex; gap:8px; margin-bottom: 8px;">
@@ -305,9 +303,10 @@
                     <thead>
                         <tr>
                             <th width="10%">Roll</th>
-                            <th width="25%">Name</th>
-                            <th width="15%" style="text-align: center;">Mark</th>
-                            <th width="15%" style="text-align: center;">Growth</th>
+                            <th width="20%">Name</th>
+                            <th width="12%" style="text-align: center;">Mark</th>
+                            <th width="10%" style="text-align: center;">Grade</th>
+                            <th width="13%" style="text-align: center;">Growth</th>
                             <th width="12%" style="text-align: center;">Status</th>
                             <th width="13%" style="text-align: center;">Notify</th>
                             <th width="10%" style="text-align: center;">Act</th>
@@ -339,20 +338,10 @@
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-                    <label>Bulk Import Students (CSV or PDF):</label>
+                <div id="bulk-import-section" style="margin-top: 15px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">Bulk Import Students:</h4>
                     <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll No, Name, Phone, Email</p>
-                    <button class="btn-secondary btn-full" style="margin-top: 0; margin-bottom: 10px; padding: 10px;" onclick="toggleBulkImport()">📤 Open Bulk Import Options</button>
-                </div>
-                
-                <div id="bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
-                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
-                    <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
-                        <li><a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
-                        <li>Open it in Google Sheets or Excel</li>
-                        <li>Export it as CSV or PDF <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ PDF or CSV)</i></li>
-                        <li>Upload it using the options below:</li>
-                    </ul>
+                    <button class="btn-info btn-full" style="margin-bottom: 15px; padding: 8px; font-size: 13px;" onclick="downloadSheetTemplate()">📄 Download CSV Template</button>
                     
                     <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
                         <label style="margin-bottom: 8px;">Upload CSV</label>
@@ -619,9 +608,15 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
-        function toggleBulkImport() {
-            const section = document.getElementById('bulk-import-section');
-            section.classList.toggle('hidden');
+        function downloadSheetTemplate() {
+            let iframe = document.getElementById('silent-download-frame');
+            if(!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'silent-download-frame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            iframe.src = "https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/export?format=csv";
         }
 
         function importStudentListCSV() {
@@ -760,14 +755,6 @@
             refreshMarksTable();
         }
 
-        function toggleMarksSettings() {
-            const pnl = document.getElementById('marks-settings-panel');
-            pnl.classList.toggle('hidden');
-            if(!pnl.classList.contains('hidden')) {
-                renderGradesUI();
-            }
-        }
-
         function renderGradesUI() {
             const container = document.getElementById('grades-container');
             container.innerHTML = '';
@@ -853,10 +840,8 @@
         
         function editCurrentExam() {
             if(!currentExam) return alert("Please select an exam first!");
-            
             document.getElementById('marks-settings-panel').classList.remove('hidden');
             renderGradesUI();
-            
             document.getElementById('marks-settings-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -919,22 +904,23 @@
                 let markVal = parseFloat(currentMark);
                 
                 let statusHtml = '<span class="status pending">-</span>';
-                let gradeStr = '';
+                let gradeStr = '-';
 
                 if(currentMark === 'AB' || (typeof currentMark === 'string' && currentMark.toUpperCase() === 'AB')) {
                     statusHtml = '<span class="status fail" style="background:var(--text-secondary)">Absent</span>';
+                    gradeStr = 'AB';
                 } else if(!isNaN(markVal) && currentMark !== '') {
                     totalMarksSum += markVal;
                     markCount++;
                     
                     let g = grades.find(g => markVal >= g.min);
-                    if(g) gradeStr = ` (${g.name})`;
+                    if(g) gradeStr = g.name;
 
                     if(markVal >= passThreshold) {
-                        statusHtml = `<span class="status pass">Pass</span><span style="font-size:10px; font-weight:bold; color:var(--primary-blue); display:block;">${gradeStr}</span>`;
+                        statusHtml = `<span class="status pass">Pass</span>`;
                         passCount++;
                     } else {
-                        statusHtml = `<span class="status fail">Fail</span><span style="font-size:10px; font-weight:bold; color:var(--primary-blue); display:block;">${gradeStr}</span>`;
+                        statusHtml = `<span class="status fail">Fail</span>`;
                         failCount++;
                     }
                 }
@@ -961,6 +947,7 @@
                     <td style="text-align: center; min-width: 60px;">
                         <input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())" style="width: 45px; display:inline-block;">
                     </td>
+                    <td style="text-align: center; font-weight: bold; color: var(--primary-blue);">${gradeStr}</td>
                     <td style="text-align: center;">${growthHtml}</td>
                     <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
                     <td style="text-align: center;">
