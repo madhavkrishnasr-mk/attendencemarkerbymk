@@ -379,7 +379,6 @@
         if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
         if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
         
-        // Safety patch to ensure older logic has exams and marks arrays
         appData.classes.forEach(c => {
             if(!c.exams) c.exams = [];
             c.roster.forEach(s => { if(!s.marks) s.marks = {}; });
@@ -526,7 +525,7 @@
             const done = (img) => {
                 const s = { roll: parseInt(r), name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {} };
                 if (editingIdx > -1) { 
-                    s.marks = cls.roster[editingIdx].marks || {}; // Keep old marks
+                    s.marks = cls.roster[editingIdx].marks || {}; 
                     cls.roster[editingIdx] = s; 
                     editingIdx = -1; 
                     document.getElementById('submit-student-btn').innerText = "+ Add Student"; 
@@ -544,7 +543,6 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
-        // --- IMPORT STUDENT LIST CSV ---
         function importStudentListCSV() {
             const fileInput = document.getElementById('input-csv-upload');
             const file = fileInput.files[0];
@@ -599,10 +597,17 @@
             const examSelect = document.getElementById("examSelect");
             const compareSelect = document.getElementById("compareExamSelect");
 
-            examSelect.innerHTML = '<option value="">-- Select Exam --</option>';
+            if (cls && cls.exams && cls.exams.length > 0) {
+                examSelect.innerHTML = '';
+            } else {
+                examSelect.innerHTML = '<option value="">-- Select Exam --</option>';
+            }
             compareSelect.innerHTML = '<option value="">-- None --</option>';
 
             if(cls && cls.exams) {
+                if (cls.exams.length > 0 && !cls.exams.includes(currentExam)) {
+                    currentExam = cls.exams[0];
+                }
                 cls.exams.forEach(exam => {
                     let opt = document.createElement('option');
                     opt.value = exam; opt.innerHTML = exam;
@@ -614,7 +619,7 @@
                     compareSelect.appendChild(optC);
                 });
             }
-            if(!cls.exams.includes(currentExam)) currentExam = "";
+            if(cls && (!cls.exams || !cls.exams.includes(currentExam))) currentExam = "";
             refreshMarksTable();
         }
 
@@ -716,7 +721,6 @@
             document.getElementById("statPass").innerText = passCount;
             document.getElementById("statFail").innerText = failCount;
 
-            // Keep full report updated if it's currently open
             if (!document.getElementById('mark-report-container').classList.contains('hidden')) {
                 renderMarkReport();
             }
