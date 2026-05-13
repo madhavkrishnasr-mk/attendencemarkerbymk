@@ -257,35 +257,22 @@
                 </div>
 
                 <label style="margin-top:10px;">Grade Index (Minimum mark for grade):</label>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <div style="display:flex; gap:5px; align-items:center;">
-                        <input type="text" value="A" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
-                        <span style="font-size:12px; font-weight:bold;">:</span> 
-                        <input type="number" value="90" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
+                <div id="grades-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                     </div>
-                    <div style="display:flex; gap:5px; align-items:center;">
-                        <input type="text" value="B" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
-                        <span style="font-size:12px; font-weight:bold;">:</span> 
-                        <input type="number" value="80" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
-                    </div>
-                    <div style="display:flex; gap:5px; align-items:center;">
-                        <input type="text" value="C" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
-                        <span style="font-size:12px; font-weight:bold;">:</span> 
-                        <input type="number" value="70" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
-                    </div>
-                    <div style="display:flex; gap:5px; align-items:center;">
-                        <input type="text" value="D" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
-                        <span style="font-size:12px; font-weight:bold;">:</span> 
-                        <input type="number" value="60" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
-                    </div>
-                </div>
+                <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
             </div>
 
             <button class="btn-success btn-full" style="margin-bottom: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+            
             <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
             
-            <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+            <div id="mark-report-container" class="hidden" style="background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <label style="margin-bottom:0; flex:1;">Student Filter:</label>
+                    <select id="reportStudentFilter" onchange="renderMarkReport()" style="flex:2; padding:6px; margin-bottom:0;"></select>
                 </div>
+                <div id="mark-report-table-wrapper" style="overflow-x: auto;"></div>
+            </div>
 
             <div class="stats-box">
                 <div class="stat-item">
@@ -306,12 +293,13 @@
                 <table class="marks-table">
                     <thead>
                         <tr>
-                            <th width="12%">Roll</th>
-                            <th width="30%">Name</th>
+                            <th width="10%">Roll</th>
+                            <th width="25%">Name</th>
                             <th width="15%" style="text-align: center;">Mark</th>
                             <th width="15%" style="text-align: center;">Growth</th>
-                            <th width="13%" style="text-align: center;">Status</th>
-                            <th width="15%" style="text-align: center;">Notify</th>
+                            <th width="12%" style="text-align: center;">Status</th>
+                            <th width="13%" style="text-align: center;">Notify</th>
+                            <th width="10%" style="text-align: center;">Act</th>
                         </tr>
                     </thead>
                     <tbody id="marksTableBody">
@@ -392,7 +380,8 @@
                 language: ol || "en", 
                 history: oh || [],
                 msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
-                msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ"
+                msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
+                grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}]
             };
             return null;
         }
@@ -405,11 +394,13 @@
             language: "en", 
             history: [],
             msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
-            msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ"
+            msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
+            grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}]
         };
 
         if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
         if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
+        if (!appData.grades) appData.grades = [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}];
         
         appData.classes.forEach(c => {
             if(!c.exams) c.exams = [];
@@ -627,6 +618,44 @@
         function toggleMarksSettings() {
             const pnl = document.getElementById('marks-settings-panel');
             pnl.classList.toggle('hidden');
+            if(!pnl.classList.contains('hidden')) {
+                renderGradesUI();
+            }
+        }
+
+        function renderGradesUI() {
+            const container = document.getElementById('grades-container');
+            container.innerHTML = '';
+            appData.grades.forEach((g, i) => {
+                container.innerHTML += `
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="text" value="${g.name}" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" onchange="updateGrade(${i}, 'name', this.value)">
+                        <span style="font-size:12px; font-weight:bold;">:</span>
+                        <input type="number" value="${g.min}" style="width:60px; padding:6px; margin-bottom:0;" onchange="updateGrade(${i}, 'min', this.value)">
+                        <button style="background:none; border:none; color:var(--danger-red); cursor:pointer; padding:0; font-size:14px;" onclick="removeGrade(${i})">×</button>
+                    </div>
+                `;
+            });
+        }
+
+        function addGradeRow() {
+            appData.grades.push({name: '', min: 0});
+            persistData();
+            renderGradesUI();
+        }
+
+        function updateGrade(idx, field, val) {
+            if(field === 'min') val = parseFloat(val) || 0;
+            appData.grades[idx][field] = val;
+            persistData();
+            refreshMarksTable();
+        }
+
+        function removeGrade(idx) {
+            appData.grades.splice(idx, 1);
+            persistData();
+            renderGradesUI();
+            refreshMarksTable();
         }
 
         function refreshMarksView() {
@@ -692,25 +721,12 @@
             refreshMarksTable();
         }
 
-        function getGradesFromUI() {
-            let grades = [];
-            let names = document.querySelectorAll('.grade-name');
-            let vals = document.querySelectorAll('.grade-val');
-            for(let i=0; i<names.length; i++) {
-                let n = names[i].value.trim();
-                let v = parseFloat(vals[i].value);
-                if(n && !isNaN(v)) grades.push({name: n, min: v});
-            }
-            return grades.sort((a,b) => b.min - a.min); // highest first
-        }
-
         function refreshMarksTable() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let tbody = document.getElementById("marksTableBody");
             let compareExam = document.getElementById("compareExamSelect").value;
             tbody.innerHTML = '';
             
-            // Disclaimer logic
             document.getElementById('exam-select-warning').style.display = currentExam ? 'none' : 'block';
 
             if(!currentExam) {
@@ -724,7 +740,7 @@
             }
 
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
-            let grades = getGradesFromUI();
+            let grades = [...appData.grades].sort((a,b) => b.min - a.min);
             
             let totalMarksSum = 0; let markCount = 0; let passCount = 0; let failCount = 0;
 
@@ -765,13 +781,19 @@
                     else growthHtml = `<span style="color:var(--text-secondary); font-weight:bold;">▶ 0</span>`;
                 }
 
+                let abBtnHtml = '';
+                if (currentMark === 'AB') {
+                    abBtnHtml = `<button style="background:var(--warning-orange); color:white; border:none; border-radius:4px; padding:6px 4px; font-size:9px; cursor:pointer;" onclick="setMark(${s.roll}, '')">Undo AB</button>`;
+                } else {
+                    abBtnHtml = `<button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 4px; font-size:9px; cursor:pointer;" onclick="setMark(${s.roll}, 'AB')">Mark AB</button>`;
+                }
+
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${s.roll}</td>
                     <td><strong>${s.name}</strong></td>
-                    <td style="text-align: center; white-space: nowrap;">
+                    <td style="text-align: center;">
                         <input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())" style="width: 45px; display:inline-block;">
-                        <button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 4px; font-size:9px; cursor:pointer;" onclick="setMark(${s.roll}, 'AB')">AB</button>
                     </td>
                     <td style="text-align: center;">${growthHtml}</td>
                     <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
@@ -779,6 +801,7 @@
                         <button class="msg-btn" style="background:#25D366; padding:4px 6px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
                         <button class="msg-btn" style="background:#EA4335; padding:4px 6px;" onclick="sendMarkEmail(${s.roll})">${mailIconHTML}</button>
                     </td>
+                    <td style="text-align: center;">${abBtnHtml}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -798,7 +821,7 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let compareExam = document.getElementById("compareExamSelect").value;
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
-            let grades = getGradesFromUI();
+            let grades = [...appData.grades].sort((a,b) => b.min - a.min);
 
             let csv = "Roll No,Name,Mark,Grade,Status,Growth (vs " + (compareExam || 'None') + ")\n";
             let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
@@ -839,6 +862,14 @@
             const container = document.getElementById('mark-report-container');
             if (container.classList.contains('hidden')) {
                 container.classList.remove('hidden');
+                
+                const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                const filter = document.getElementById('reportStudentFilter');
+                filter.innerHTML = '<option value="">All Students (Class Matrix)</option>';
+                [...cls.roster].sort((a,b) => a.roll - b.roll).forEach(s => {
+                    filter.innerHTML += `<option value="${s.roll}">${s.roll}. ${s.name}</option>`;
+                });
+
                 renderMarkReport();
             } else {
                 container.classList.add('hidden');
@@ -847,37 +878,70 @@
 
         function renderMarkReport() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            const container = document.getElementById('mark-report-container');
+            const wrapper = document.getElementById('mark-report-table-wrapper');
+            const studentFilter = document.getElementById('reportStudentFilter').value;
+
             if (!cls || !cls.exams || cls.exams.length === 0) {
-                container.innerHTML = "<p style='text-align:center; font-size:12px;'>No exams added yet.</p>";
+                wrapper.innerHTML = "<p style='text-align:center; font-size:12px;'>No exams added yet.</p>";
                 return;
             }
 
-            let html = '<table class="marks-table" style="min-width:400px;"><thead><tr><th width="10%">Roll</th><th width="30%">Name</th>';
-            cls.exams.forEach(ex => {
-                html += `<th style="text-align:center; color:var(--primary-blue);">${ex}</th>`;
-            });
-            html += '<th style="text-align:center; background:#e8f4fd;">Avg</th></tr></thead><tbody>';
-
-            let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
-            sortedRoster.forEach(s => {
-                html += `<tr><td>${s.roll}</td><td><strong>${s.name}</strong></td>`;
-                let total = 0;
-                let count = 0;
+            if (studentFilter) {
+                const s = cls.roster.find(st => st.roll == studentFilter);
+                if (!s) return;
+                
+                let html = `<table class="marks-table"><thead><tr><th>Exam / Subject</th><th style="text-align:center;">Mark</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
+                let total = 0, count = 0;
+                let grades = [...appData.grades].sort((a,b) => b.min - a.min);
+                
                 cls.exams.forEach(ex => {
                     let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
-                    html += `<td style="text-align:center;">${mark}</td>`;
-                    if (mark !== '-' && mark !== 'AB' && !isNaN(parseFloat(mark))) {
+                    let gradeText = '-';
+                    if (mark === 'AB') { 
+                        gradeText = 'AB'; 
+                    } else if (mark !== '-' && !isNaN(parseFloat(mark))) {
                         total += parseFloat(mark);
                         count++;
+                        let g = grades.find(gd => parseFloat(mark) >= gd.min);
+                        if (g) gradeText = g.name;
                     }
+                    html += `<tr><td>${ex}</td><td style="text-align:center;">${mark}</td><td style="text-align:center; font-weight:bold;">${gradeText}</td></tr>`;
                 });
+                
                 let avg = count > 0 ? (total/count).toFixed(1) : '-';
-                html += `<td style="text-align:center; font-weight:bold; background:#e8f4fd;">${avg}</td></tr>`;
-            });
+                html += `<tr style="background:#e8f4fd; font-weight:bold;"><td>Overall Average</td><td style="text-align:center;">${avg}</td><td></td></tr>`;
+                html += `</tbody></table>`;
+                html += `<button class="btn-success btn-full" style="margin-top:10px; font-size:13px; padding:10px;" onclick="window.print()">🖨️ Print Student Mark List</button>`;
+                
+                wrapper.innerHTML = html;
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            } else {
+                let html = '<table class="marks-table" style="min-width:400px;"><thead><tr><th width="10%">Roll</th><th width="30%">Name</th>';
+                cls.exams.forEach(ex => {
+                    html += `<th style="text-align:center; color:var(--primary-blue);">${ex}</th>`;
+                });
+                html += '<th style="text-align:center; background:#e8f4fd;">Avg</th></tr></thead><tbody>';
+
+                let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
+                sortedRoster.forEach(s => {
+                    html += `<tr><td>${s.roll}</td><td><strong>${s.name}</strong></td>`;
+                    let total = 0;
+                    let count = 0;
+                    cls.exams.forEach(ex => {
+                        let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
+                        html += `<td style="text-align:center;">${mark}</td>`;
+                        if (mark !== '-' && mark !== 'AB' && !isNaN(parseFloat(mark))) {
+                            total += parseFloat(mark);
+                            count++;
+                        }
+                    });
+                    let avg = count > 0 ? (total/count).toFixed(1) : '-';
+                    html += `<td style="text-align:center; font-weight:bold; background:#e8f4fd;">${avg}</td></tr>`;
+                });
+
+                html += '</tbody></table>';
+                wrapper.innerHTML = html;
+            }
         }
 
         function sendMarkWA(roll) {
