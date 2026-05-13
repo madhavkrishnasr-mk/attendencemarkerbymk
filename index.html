@@ -213,7 +213,12 @@
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 
-                <button class="btn-success btn-full" onclick="exportStudentListCSV()" style="margin-top: 10px;">📥 Download Student List (.csv)</button>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                    <label>Bulk Import Students (CSV):</label>
+                    <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll No, Name, Phone, Email</p>
+                    <input type="file" id="input-csv-upload" accept=".csv" style="margin-bottom: 8px;">
+                    <button class="btn-success btn-full" style="margin-top: 0;" onclick="importStudentListCSV()">📤 Import Students</button>
+                </div>
                 
                 <div id="student-list-management" style="margin-top: 15px;"></div>
             </div>
@@ -428,6 +433,59 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
+        // --- NEW FUNCTION: IMPORT STUDENT LIST CSV ---
+        function importStudentListCSV() {
+            const fileInput = document.getElementById('input-csv-upload');
+            const file = fileInput.files[0];
+            if (!file) return alert("Please select a CSV file first.");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                let addedCount = 0;
+
+                // Start from index 1 to skip the header row
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Simple split by comma
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        const roll = parseInt(parts[0].trim());
+                        const name = parts[1].trim();
+                        const phone = parts.length > 2 ? parts[2].trim() : "";
+                        const email = parts.length > 3 ? parts[3].trim() : "";
+
+                        if (!isNaN(roll) && name) {
+                            // Check if student already exists by roll number
+                            const existingIdx = cls.roster.findIndex(s => s.roll === roll);
+                            if (existingIdx > -1) {
+                                cls.roster[existingIdx].name = name;
+                                if (phone) cls.roster[existingIdx].phone = phone;
+                                if (email) cls.roster[existingIdx].email = email;
+                            } else {
+                                cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null });
+                            }
+                            addedCount++;
+                        }
+                    }
+                }
+                
+                if (addedCount > 0) {
+                    persistData();
+                    refreshViews();
+                    alert(`Successfully imported/updated ${addedCount} students in ${cls.name}!`);
+                    fileInput.value = ""; // Clear the file input
+                } else {
+                    alert("No valid student data found. Ensure your CSV has headers: Roll No, Name, Phone, Email.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function saveAttendanceData() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const d = document.getElementById('attendance-date-input').value;
@@ -553,29 +611,6 @@
                         </div>
                     </div>`;
             }).join('');
-        }
-
-        // --- NEW FUNCTION: EXPORT STUDENT LIST CSV ---
-        function exportStudentListCSV() {
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            if (!cls || !cls.roster || cls.roster.length === 0) {
-                return alert("No students in this class to export.");
-            }
-            let csv = "Roll No,Name,Phone,Email\n";
-            let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
-            
-            sortedRoster.forEach(s => {
-                let name = s.name ? s.name.replace(/,/g, '') : '';
-                let phone = s.phone || '';
-                let email = s.email || '';
-                csv += `${s.roll},${name},${phone},${email}\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a"); 
-            link.href = URL.createObjectURL(blob); 
-            link.download = `Student_List_${cls.name.replace(/ /g, '_')}.csv`; 
-            link.click();
         }
 
         function exportReportToCSV() {
