@@ -242,11 +242,11 @@
                 <div style="display:flex; gap:10px; margin-top:5px;">
                     <div style="flex:1;">
                         <label>Total Marks:</label>
-                        <input type="number" id="totalMarkInput" value="100" oninput="refreshMarksTable()">
+                        <input type="number" id="totalMarkInput" value="100" oninput="updateExamConfig()">
                     </div>
                     <div style="flex:1;">
                         <label>Pass Mark:</label>
-                        <input type="number" id="passMarkInput" value="40" oninput="refreshMarksTable()">
+                        <input type="number" id="passMarkInput" value="40" oninput="updateExamConfig()">
                     </div>
                 </div>
 
@@ -258,10 +258,13 @@
 
             <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <label>Select Exam to Enter Marks:</label>
-                <select id="examSelect" onchange="changeExam()">
-                    <option value="">-- Select Exam --</option>
-                </select>
-                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:-8px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
+                <div style="display:flex; gap:8px; margin-bottom: 8px;">
+                    <select id="examSelect" onchange="changeExam()" style="margin-bottom:0; flex:1;">
+                        <option value="">-- Select Exam --</option>
+                    </select>
+                    <button class="btn-info" style="padding: 10px 15px; font-size: 13px;" onclick="editCurrentExam()">✏️ Edit</button>
+                </div>
+                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
 
                 <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
                 <select id="compareExamSelect" onchange="refreshMarksTable()">
@@ -347,7 +350,7 @@
                     <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
                         <li><a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/edit?usp=sharing" target="_blank" style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
                         <li>Open it in Google Sheets or Excel</li>
-                        <li>Export it as CSV or PDF <br><i>(Click the three dots of the Google Sheets ➔ Share and export ➔ Save as ➔ PDF or CSV)</i></li>
+                        <li>Export it as CSV or PDF <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ PDF or CSV)</i></li>
                         <li>Upload it using the options below:</li>
                     </ul>
                     
@@ -414,7 +417,9 @@
                 history: oh || [],
                 msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
                 msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
-                grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}]
+                grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
+                totalMark: 100,
+                passMark: 40
             };
             return null;
         }
@@ -428,12 +433,16 @@
             history: [],
             msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
             msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
-            grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}]
+            grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
+            totalMark: 100,
+            passMark: 40
         };
 
         if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
         if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
         if (!appData.grades) appData.grades = [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}];
+        if (appData.totalMark === undefined) appData.totalMark = 100;
+        if (appData.passMark === undefined) appData.passMark = 40;
         
         appData.classes.forEach(c => {
             if(!c.exams) c.exams = [];
@@ -454,6 +463,9 @@
         if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
         function initApp() {
+            document.getElementById('totalMarkInput').value = appData.totalMark;
+            document.getElementById('passMarkInput').value = appData.passMark;
+
             if (!appData.isSetupComplete) {
                 document.getElementById('header-buttons').classList.add('hidden');
                 document.getElementById('setup-back-btn').classList.add('hidden');
@@ -741,6 +753,13 @@
         }
 
         // --- MARKS ENTRY LOGIC & REPORTS ---
+        function updateExamConfig() {
+            appData.totalMark = document.getElementById("totalMarkInput").value;
+            appData.passMark = document.getElementById("passMarkInput").value;
+            persistData();
+            refreshMarksTable();
+        }
+
         function toggleMarksSettings() {
             const pnl = document.getElementById('marks-settings-panel');
             pnl.classList.toggle('hidden');
@@ -830,6 +849,35 @@
                 currentExam = examLabel;
                 refreshMarksView();
             }
+        }
+        
+        function editCurrentExam() {
+            if(!currentExam) return alert("Please select an exam first!");
+            
+            let newName = prompt("Rename this Exam (or leave as is):", currentExam);
+            if(newName && newName.trim() !== "" && newName !== currentExam) {
+                const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                if(cls.exams.includes(newName)) {
+                    alert("An exam with this name already exists!");
+                } else {
+                    let exIdx = cls.exams.indexOf(currentExam);
+                    if(exIdx > -1) cls.exams[exIdx] = newName;
+                    
+                    cls.roster.forEach(s => {
+                        if(s.marks && s.marks[currentExam] !== undefined) {
+                            s.marks[newName] = s.marks[currentExam];
+                            delete s.marks[currentExam];
+                        }
+                    });
+                    
+                    currentExam = newName;
+                    persistData();
+                }
+            }
+            
+            document.getElementById('marks-settings-panel').classList.remove('hidden');
+            renderGradesUI();
+            refreshMarksView();
         }
 
         function changeExam() {
