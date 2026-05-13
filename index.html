@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Attendance Taker Pro - Ultimate Teacher Edition</title>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
     <style>
         /* --- PROFESSIONAL COLOR PALETTE --- */
         :root {
@@ -95,10 +100,12 @@
         /* --- ATTENDANCE UI --- */
         .student-item { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); }
         .student-top-row { display: flex; justify-content: space-between; align-items: center; }
-        .student-meta { display: flex; align-items: center; gap: 10px; }
-        .student-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-blue); }
-
-        .attendance-toggle { display: flex; width: 100px; height: 35px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
+        
+        /* FIX: Prevents long names from pushing UI */
+        .student-meta { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; padding-right: 10px; }
+        .student-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+        
+        .attendance-toggle { display: flex; width: 100px; height: 35px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
         .toggle-opt { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; background-color: var(--card-bg); color: var(--text-main); cursor: pointer; }
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
         .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
@@ -129,7 +136,7 @@
 
         /* --- MARKS MODULE UI --- */
         .marks-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; color: var(--text-main); }
-        .marks-table th, .marks-table td { padding: 8px; border: 1px solid var(--border-color); text-align: left; }
+        .marks-table th, .marks-table td { padding: 8px; border: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
         .marks-table th { background-color: var(--bg-color); }
         .mark-input { width: 45px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); }
         .status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 40px; }
@@ -218,6 +225,8 @@
                 <button onclick="showPage('home-page')" class="btn-secondary">Back</button>
             </div>
             
+            <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
+            
             <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <label>Select Exam to Enter Marks:</label>
                 <select id="examSelect" onchange="changeExam()">
@@ -261,11 +270,7 @@
                 <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
             </div>
 
-            <label>Select Class:</label>
-            <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
-            
-            <button class="btn-success btn-full" style="margin-bottom: 5px; margin-top: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
-            <p class="csv-reminder" style="margin-bottom: 10px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
+            <button class="btn-success btn-full" style="margin-bottom: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
             
             <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
             
@@ -332,13 +337,10 @@
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-                    <label>Bulk Import Students (CSV):</label>
-                    <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll No, Name, Phone, Email</p>
-                    <p style="font-size:11px; margin-top:0; margin-bottom:10px;">
-                        <a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/edit?usp=sharing" target="_blank" style="color:var(--primary-blue); text-decoration:underline; font-weight:bold;">📄 Download CSV Template</a>
-                    </p>
-                    <input type="file" id="input-csv-upload" accept=".csv" style="margin-bottom: 8px;">
-                    <button class="btn-success btn-full" style="margin-top: 0;" onclick="importStudentListCSV()">📤 Import Students</button>
+                    <label>Bulk Import Students (PDF):</label>
+                    <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format should be a list with: Roll No, Name, Phone, Email</p>
+                    <input type="file" id="input-pdf-upload" accept=".pdf" style="margin-bottom: 8px;">
+                    <button class="btn-success btn-full" style="margin-top: 0;" onclick="importStudentListPDF()">📤 Import Students</button>
                 </div>
                 
                 <div id="student-list-management" style="margin-top: 15px;"></div>
@@ -572,52 +574,84 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
-        function importStudentListCSV() {
-            const fileInput = document.getElementById('input-csv-upload');
+        async function importStudentListPDF() {
+            const fileInput = document.getElementById('input-pdf-upload');
             const file = fileInput.files[0];
-            if (!file) return alert("Please select a CSV file first.");
+            if (!file) return alert("Please select a PDF file first.");
 
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
-                const cls = appData.classes.find(c => c.id == appData.activeClassId);
-                let addedCount = 0;
+            reader.onload = async function(e) {
+                try {
+                    const typedarray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                    let addedCount = 0;
 
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    
-                    const parts = line.split(',');
-                    if (parts.length >= 2) {
-                        const roll = parseInt(parts[0].trim());
-                        const name = parts[1].trim();
-                        const phone = parts.length > 2 ? parts[2].trim() : "";
-                        const email = parts.length > 3 ? parts[3].trim() : "";
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        
+                        let rows = {};
+                        textContent.items.forEach(item => {
+                            let y = Math.round(item.transform[5]);
+                            if(!rows[y]) rows[y] = [];
+                            rows[y].push(item);
+                        });
 
-                        if (!isNaN(roll) && name) {
-                            const existingIdx = cls.roster.findIndex(s => s.roll === roll);
-                            if (existingIdx > -1) {
-                                cls.roster[existingIdx].name = name;
-                                if (phone) cls.roster[existingIdx].phone = phone;
-                                if (email) cls.roster[existingIdx].email = email;
-                            } else {
-                                cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {} });
+                        let yKeys = Object.keys(rows).map(Number).sort((a,b) => b - a);
+                        
+                        yKeys.forEach(y => {
+                            let rowItems = rows[y].sort((a,b) => a.transform[4] - b.transform[4]);
+                            let rowText = rowItems.map(item => item.str).join(' ').trim();
+                            
+                            let parts = rowText.split(/\s+/);
+                            if (parts.length >= 2) {
+                                let roll = parseInt(parts[0]);
+                                if (!isNaN(roll)) {
+                                    let nameParts = [];
+                                    let phone = "";
+                                    let email = "";
+                                    
+                                    for(let j=1; j<parts.length; j++) {
+                                        if(parts[j].includes('@')) {
+                                            email = parts[j];
+                                        } else if(/^\d{7,15}$/.test(parts[j].replace(/[^0-9]/g, ''))) {
+                                            phone = parts[j];
+                                        } else {
+                                            nameParts.push(parts[j]);
+                                        }
+                                    }
+                                    
+                                    let name = nameParts.join(' ').trim();
+                                    if(name) {
+                                        const existingIdx = cls.roster.findIndex(s => s.roll === roll);
+                                        if (existingIdx > -1) {
+                                            cls.roster[existingIdx].name = name;
+                                            if (phone) cls.roster[existingIdx].phone = phone;
+                                            if (email) cls.roster[existingIdx].email = email;
+                                        } else {
+                                            cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {} });
+                                        }
+                                        addedCount++;
+                                    }
+                                }
                             }
-                            addedCount++;
-                        }
+                        });
                     }
-                }
-                
-                if (addedCount > 0) {
-                    persistData(); refreshViews();
-                    alert(`Successfully imported/updated ${addedCount} students!`);
-                    fileInput.value = ""; 
-                } else {
-                    alert("No valid data found. Ensure CSV headers: Roll No, Name, Phone, Email.");
+                    
+                    if (addedCount > 0) {
+                        persistData(); refreshViews();
+                        alert(`Successfully imported/updated ${addedCount} students from PDF!`);
+                        fileInput.value = ""; 
+                    } else {
+                        alert("Could not detect student rows. Ensure the PDF contains lines starting with a Roll Number.");
+                    }
+                } catch (err) {
+                    alert("Error parsing PDF. Please make sure it is a valid text-based PDF (not an image scan).");
+                    console.error(err);
                 }
             };
-            reader.readAsText(file);
+            reader.readAsArrayBuffer(file);
         }
 
         // --- MARKS ENTRY LOGIC & REPORTS ---
@@ -809,8 +843,8 @@
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${s.roll}</td>
-                    <td><strong>${s.name}</strong></td>
-                    <td style="text-align: center;">
+                    <td style="max-width: 120px; white-space: normal; overflow-wrap: break-word;"><strong>${s.name}</strong></td>
+                    <td style="text-align: center; min-width: 60px;">
                         <input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())" style="width: 45px; display:inline-block;">
                     </td>
                     <td style="text-align: center;">${growthHtml}</td>
