@@ -269,7 +269,8 @@
                 </select>
             </div>
 
-            <button class="btn-success btn-full" style="margin-bottom: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+            <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+            <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
             
             <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
             
@@ -335,14 +336,32 @@
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-                    <label>Bulk Import Students (PDF):</label>
-                    <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format should be a list with: Roll No, Name, Phone, Email</p>
-                    <p style="font-size:11px; margin-top:0; margin-bottom:10px;">
-                        <a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/edit?usp=sharing" target="_blank" style="color:var(--primary-blue); text-decoration:underline; font-weight:bold;">📄 Download Template (Save as PDF)</a>
-                    </p>
-                    <input type="file" id="input-pdf-upload" accept=".pdf" style="margin-bottom: 8px;">
-                    <button class="btn-success btn-full" style="margin-top: 0;" onclick="importStudentListPDF()">📤 Import Students</button>
+                <button class="btn-secondary btn-full" style="margin-top: 15px;" onclick="toggleBulkImport()">📤 Bulk Import Students</button>
+                
+                <div id="bulk-import-section" class="hidden" style="margin-top: 15px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
+                    <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
+                        <li><a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/edit?usp=sharing" target="_blank" style="color:var(--primary-blue); font-weight:bold;">Download the file here</a></li>
+                        <li>Open it in Google Sheets or Excel</li>
+                        <li>Download the file as PDF or CSV <br><i>(PDF in mobile. Download option on mobile will be on the three dots on the Google Sheets form)</i></li>
+                        <li>Upload it using the options below:</li>
+                    </ul>
+                    
+                    <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
+                        <label style="margin-bottom: 8px;">Upload CSV</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="file" id="input-csv-upload" accept=".csv" style="margin-bottom: 0; padding: 8px;">
+                            <button class="btn-success" style="padding: 8px 15px;" onclick="importStudentListCSV()">Upload</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label style="margin-bottom: 8px;">Upload PDF</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="file" id="input-pdf-upload" accept=".pdf" style="margin-bottom: 0; padding: 8px;">
+                            <button class="btn-success" style="padding: 8px 15px;" onclick="importStudentListPDF()">Upload</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div id="student-list-management" style="margin-top: 15px;"></div>
@@ -524,7 +543,16 @@
             });
 
             document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;"><span>${c.name}</span><button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button></div>`).join('');
-            document.getElementById('student-list-management').innerHTML = cls.roster.map((s, idx) => `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom: 1px solid var(--border-color); padding: 5px;"><span>${s.roll}. ${s.name}</span><div><button class="btn-info" style="color:white; padding: 2px 8px;" onclick="loadStudentForEdit(${idx})">Edit</button><button class="btn-danger" style="padding: 2px 8px;" onclick="removeStudent(${idx})">Del</button></div></div>`).join('');
+            
+            // Fixed long name bug with text-overflow for Settings list
+            document.getElementById('student-list-management').innerHTML = cls.roster.map((s, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid var(--border-color); padding: 5px;">
+                    <span style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px; font-size:14px;">${s.roll}. ${s.name}</span>
+                    <div style="flex-shrink:0;">
+                        <button class="btn-info" style="color:white; padding: 4px 8px; font-size:11px;" onclick="loadStudentForEdit(${idx})">Edit</button>
+                        <button class="btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="removeStudent(${idx})">Del</button>
+                    </div>
+                </div>`).join('');
         }
 
         function markStatus(idx, s) {
@@ -574,6 +602,60 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId), s = cls.roster[idx];
             document.getElementById('input-student-roll').value = s.roll; document.getElementById('input-student-name').value = s.name; document.getElementById('input-student-phone').value = s.phone || ""; document.getElementById('input-student-email').value = s.email || "";
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
+        }
+
+        // --- BULK IMPORT SECTION ---
+        function toggleBulkImport() {
+            const section = document.getElementById('bulk-import-section');
+            section.classList.toggle('hidden');
+        }
+
+        function importStudentListCSV() {
+            const fileInput = document.getElementById('input-csv-upload');
+            const file = fileInput.files[0];
+            if (!file) return alert("Please select a CSV file first.");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                let addedCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        const roll = parseInt(parts[0].trim());
+                        const name = parts[1].trim();
+                        const phone = parts.length > 2 ? parts[2].trim() : "";
+                        const email = parts.length > 3 ? parts[3].trim() : "";
+
+                        if (!isNaN(roll) && name) {
+                            const existingIdx = cls.roster.findIndex(s => s.roll === roll);
+                            if (existingIdx > -1) {
+                                cls.roster[existingIdx].name = name;
+                                if (phone) cls.roster[existingIdx].phone = phone;
+                                if (email) cls.roster[existingIdx].email = email;
+                            } else {
+                                cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {} });
+                            }
+                            addedCount++;
+                        }
+                    }
+                }
+                
+                if (addedCount > 0) {
+                    persistData(); refreshViews();
+                    alert(`Successfully imported/updated ${addedCount} students from CSV!`);
+                    fileInput.value = ""; 
+                } else {
+                    alert("No valid data found. Ensure CSV headers: Roll No, Name, Phone, Email.");
+                }
+            };
+            reader.readAsText(file);
         }
 
         async function importStudentListPDF() {
