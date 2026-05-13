@@ -101,7 +101,6 @@
         .student-item { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); }
         .student-top-row { display: flex; justify-content: space-between; align-items: center; }
         
-        /* FIX: Prevents long names from pushing UI */
         .student-meta { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; padding-right: 10px; }
         .student-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
         
@@ -227,20 +226,7 @@
             
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
             
-            <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
-                <label>Select Exam to Enter Marks:</label>
-                <select id="examSelect" onchange="changeExam()">
-                    <option value="">-- Select Exam --</option>
-                </select>
-                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:-8px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
-
-                <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
-                <select id="compareExamSelect" onchange="refreshMarksTable()">
-                    <option value="">-- None --</option>
-                </select>
-                
-                <button class="btn-secondary btn-full" style="margin-top:10px; font-size:13px;" onclick="toggleMarksSettings()">⚙️ Exam Setup & Settings</button>
-            </div>
+            <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleMarksSettings()">⚙️ Exam Setup & Settings</button>
 
             <div id="marks-settings-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Create New Exam</h4>
@@ -268,6 +254,19 @@
                 <div id="grades-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                     </div>
                 <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
+            </div>
+
+            <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <label>Select Exam to Enter Marks:</label>
+                <select id="examSelect" onchange="changeExam()">
+                    <option value="">-- Select Exam --</option>
+                </select>
+                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:-8px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
+
+                <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
+                <select id="compareExamSelect" onchange="refreshMarksTable()">
+                    <option value="">-- None --</option>
+                </select>
             </div>
 
             <button class="btn-success btn-full" style="margin-bottom: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
@@ -339,6 +338,9 @@
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
                     <label>Bulk Import Students (PDF):</label>
                     <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format should be a list with: Roll No, Name, Phone, Email</p>
+                    <p style="font-size:11px; margin-top:0; margin-bottom:10px;">
+                        <a href="https://docs.google.com/spreadsheets/d/1hfenrzxuHROmy_FGWVpTj7_vNWD1FmKzC_w8OX_eucw/edit?usp=sharing" target="_blank" style="color:var(--primary-blue); text-decoration:underline; font-weight:bold;">📄 Download Template (Save as PDF)</a>
+                    </p>
                     <input type="file" id="input-pdf-upload" accept=".pdf" style="margin-bottom: 8px;">
                     <button class="btn-success btn-full" style="margin-top: 0;" onclick="importStudentListPDF()">📤 Import Students</button>
                 </div>
