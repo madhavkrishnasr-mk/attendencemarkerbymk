@@ -131,7 +131,7 @@
         .marks-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; color: var(--text-main); }
         .marks-table th, .marks-table td { padding: 8px; border: 1px solid var(--border-color); text-align: left; }
         .marks-table th { background-color: var(--bg-color); }
-        .mark-input { width: 50px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); }
+        .mark-input { width: 45px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); }
         .status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 40px; }
         .pass { background-color: var(--success-green); }
         .fail { background-color: var(--danger-red); }
@@ -213,7 +213,7 @@
 
         <div id="marks-page" class="hidden">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h3>📝 Mark Entry</h3>
+                <h3>📝 Mark Entry & Growth</h3>
                 <button onclick="showPage('home-page')" class="btn-secondary">Back</button>
             </div>
             
@@ -230,8 +230,13 @@
                 <select id="examSelect" onchange="changeExam()">
                     <option value="">-- Select Exam --</option>
                 </select>
+
+                <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
+                <select id="compareExamSelect" onchange="refreshMarksTable()">
+                    <option value="">-- None --</option>
+                </select>
                 
-                <div style="display:flex; gap:10px; margin-top:5px;">
+                <div style="display:flex; gap:10px; margin-top:10px;">
                     <div style="flex:1;">
                         <label>Total Marks:</label>
                         <input type="number" id="totalMarkInput" value="100" oninput="refreshMarksTable()">
@@ -242,6 +247,8 @@
                     </div>
                 </div>
             </div>
+
+            <button class="btn-success btn-full" style="margin-bottom: 15px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
 
             <div class="stats-box">
                 <div class="stat-item">
@@ -262,10 +269,11 @@
                 <table class="marks-table">
                     <thead>
                         <tr>
-                            <th width="15%">Roll</th>
-                            <th width="35%">Name</th>
-                            <th width="20%" style="text-align: center;">Mark</th>
-                            <th width="15%" style="text-align: center;">Status</th>
+                            <th width="12%">Roll</th>
+                            <th width="30%">Name</th>
+                            <th width="15%" style="text-align: center;">Mark</th>
+                            <th width="15%" style="text-align: center;">Growth</th>
+                            <th width="13%" style="text-align: center;">Status</th>
                             <th width="15%" style="text-align: center;">Notify</th>
                         </tr>
                     </thead>
@@ -366,7 +374,6 @@
         if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
         if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
         
-        // Safety patch to ensure older logic has exams and marks arrays
         appData.classes.forEach(c => {
             if(!c.exams) c.exams = [];
             c.roster.forEach(s => { if(!s.marks) s.marks = {}; });
@@ -513,7 +520,7 @@
             const done = (img) => {
                 const s = { roll: parseInt(r), name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {} };
                 if (editingIdx > -1) { 
-                    s.marks = cls.roster[editingIdx].marks || {}; // Keep old marks
+                    s.marks = cls.roster[editingIdx].marks || {}; 
                     cls.roster[editingIdx] = s; 
                     editingIdx = -1; 
                     document.getElementById('submit-student-btn').innerText = "+ Add Student"; 
@@ -531,7 +538,6 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
-        // --- IMPORT STUDENT LIST CSV ---
         function importStudentListCSV() {
             const fileInput = document.getElementById('input-csv-upload');
             const file = fileInput.files[0];
@@ -580,17 +586,25 @@
             reader.readAsText(file);
         }
 
-        // --- MARKS ENTRY LOGIC ---
+        // --- MARKS ENTRY LOGIC & GROWTH ---
         function refreshMarksView() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const examSelect = document.getElementById("examSelect");
+            const compareSelect = document.getElementById("compareExamSelect");
+
             examSelect.innerHTML = '<option value="">-- Select Exam --</option>';
+            compareSelect.innerHTML = '<option value="">-- None --</option>';
+
             if(cls && cls.exams) {
                 cls.exams.forEach(exam => {
                     let opt = document.createElement('option');
                     opt.value = exam; opt.innerHTML = exam;
                     if(exam === currentExam) opt.selected = true;
                     examSelect.appendChild(opt);
+
+                    let optC = document.createElement('option');
+                    optC.value = exam; optC.innerHTML = exam;
+                    compareSelect.appendChild(optC);
                 });
             }
             if(!cls.exams.includes(currentExam)) currentExam = "";
@@ -628,6 +642,7 @@
         function refreshMarksTable() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let tbody = document.getElementById("marksTableBody");
+            let compareExam = document.getElementById("compareExamSelect").value;
             tbody.innerHTML = '';
             
             if(!currentExam) {
@@ -644,6 +659,8 @@
 
             sortedRoster.forEach((s) => {
                 let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+                let prevMark = (compareExam && s.marks && s.marks[compareExam]) ? s.marks[compareExam] : '';
+                
                 let markVal = parseFloat(currentMark);
                 
                 let statusHtml = '<span class="status pending">-</span>';
@@ -659,6 +676,14 @@
                     }
                 }
 
+                let growthHtml = '-';
+                if(currentMark !== '' && prevMark !== '' && compareExam !== currentExam) {
+                    let diff = parseFloat(currentMark) - parseFloat(prevMark);
+                    if(diff > 0) growthHtml = `<span style="color:var(--success-green); font-weight:bold;">▲ +${diff}</span>`;
+                    else if(diff < 0) growthHtml = `<span style="color:var(--danger-red); font-weight:bold;">▼ ${diff}</span>`;
+                    else growthHtml = `<span style="color:var(--text-secondary); font-weight:bold;">▶ 0</span>`;
+                }
+
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${s.roll}</td>
@@ -666,6 +691,7 @@
                     <td style="text-align: center;">
                         <input type="number" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value)">
                     </td>
+                    <td style="text-align: center;">${growthHtml}</td>
                     <td style="text-align: center;">${statusHtml}</td>
                     <td style="text-align: center;">
                         <button class="msg-btn" style="background:#25D366; padding:4px 6px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
@@ -679,6 +705,37 @@
             document.getElementById("statAvg").innerText = avg;
             document.getElementById("statPass").innerText = passCount;
             document.getElementById("statFail").innerText = failCount;
+        }
+
+        function exportMarksToCSV() {
+            if(!currentExam) return alert("Please select an exam first.");
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            let compareExam = document.getElementById("compareExamSelect").value;
+            let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+
+            let csv = "Roll No,Name,Mark,Status,Growth (vs " + (compareExam || 'None') + ")\n";
+            let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
+            
+            sortedRoster.forEach(s => {
+                let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+                let status = (mark !== '' && parseFloat(mark) >= passThreshold) ? 'Pass' : (mark !== '' ? 'Fail' : 'Pending');
+                
+                let prevMark = (compareExam && s.marks && s.marks[compareExam]) ? s.marks[compareExam] : '';
+                let growthText = 'N/A';
+                if(mark !== '' && prevMark !== '' && compareExam !== currentExam) {
+                    let diff = parseFloat(mark) - parseFloat(prevMark);
+                    growthText = diff > 0 ? `+${diff}` : diff.toString();
+                }
+
+                let name = s.name ? s.name.replace(/,/g, '') : '';
+                csv += `${s.roll},${name},${mark},${status},${growthText}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(blob); 
+            link.download = `Marks_${cls.name.replace(/ /g, '_')}_${currentExam}.csv`; 
+            link.click();
         }
 
         function sendMarkWA(roll) {
@@ -847,7 +904,7 @@
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let csv = "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
             const stats = getStats(m);
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.total},${s.total?Math.round(((s.present+s.leave)/s.total)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
         }
