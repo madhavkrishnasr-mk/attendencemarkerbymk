@@ -220,24 +220,32 @@
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
             
             <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
-                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Exam Setup</h4>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input type="text" id="newExamInput" placeholder="New exam name" style="margin-bottom:0;">
-                    <button class="btn-primary" onclick="addExam()">Add</button>
-                </div>
-                
                 <label>Select Exam to Enter Marks:</label>
                 <select id="examSelect" onchange="changeExam()">
                     <option value="">-- Select Exam --</option>
                 </select>
-                <p style="font-size:10px; color:var(--danger-red); margin-top:-8px; margin-bottom:10px;">⚠️ Please select an exam</p>
+                <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:-8px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
 
                 <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
                 <select id="compareExamSelect" onchange="refreshMarksTable()">
                     <option value="">-- None --</option>
                 </select>
                 
-                <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-secondary btn-full" style="margin-top:10px; font-size:13px;" onclick="toggleMarksSettings()">⚙️ Exam Setup & Settings</button>
+            </div>
+
+            <div id="marks-settings-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Create New Exam</h4>
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <input type="text" id="newExamInput" placeholder="Exam Name" style="margin-bottom:0; flex:2;">
+                    <input type="text" id="newExamSubject" placeholder="Subject (Opt)" style="margin-bottom:0; flex:1.5;">
+                    <button class="btn-primary" onclick="addExam()">Add</button>
+                </div>
+                
+                <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
+                
+                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Mark & Grade Configuration</h4>
+                <div style="display:flex; gap:10px; margin-top:5px;">
                     <div style="flex:1;">
                         <label>Total Marks:</label>
                         <input type="number" id="totalMarkInput" value="100" oninput="refreshMarksTable()">
@@ -247,10 +255,33 @@
                         <input type="number" id="passMarkInput" value="40" oninput="refreshMarksTable()">
                     </div>
                 </div>
+
+                <label style="margin-top:10px;">Grade Index (Minimum mark for grade):</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="text" value="A" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
+                        <span style="font-size:12px; font-weight:bold;">:</span> 
+                        <input type="number" value="90" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
+                    </div>
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="text" value="B" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
+                        <span style="font-size:12px; font-weight:bold;">:</span> 
+                        <input type="number" value="80" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
+                    </div>
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="text" value="C" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
+                        <span style="font-size:12px; font-weight:bold;">:</span> 
+                        <input type="number" value="70" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
+                    </div>
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="text" value="D" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" class="grade-name" onchange="refreshMarksTable()">
+                        <span style="font-size:12px; font-weight:bold;">:</span> 
+                        <input type="number" value="60" style="width:60px; padding:6px; margin-bottom:0;" class="grade-val" onchange="refreshMarksTable()">
+                    </div>
+                </div>
             </div>
 
             <button class="btn-success btn-full" style="margin-bottom: 10px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
-            
             <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
             
             <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
@@ -593,6 +624,11 @@
         }
 
         // --- MARKS ENTRY LOGIC & REPORTS ---
+        function toggleMarksSettings() {
+            const pnl = document.getElementById('marks-settings-panel');
+            pnl.classList.toggle('hidden');
+        }
+
         function refreshMarksView() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const examSelect = document.getElementById("examSelect");
@@ -628,11 +664,15 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             if(!cls.exams) cls.exams = [];
             let name = document.getElementById("newExamInput").value.trim();
-            if(name && !cls.exams.includes(name)) {
-                cls.exams.push(name);
+            let subj = document.getElementById("newExamSubject").value.trim();
+            let examLabel = subj ? `${name} - ${subj}` : name;
+
+            if(examLabel && !cls.exams.includes(examLabel)) {
+                cls.exams.push(examLabel);
                 document.getElementById("newExamInput").value = '';
+                document.getElementById("newExamSubject").value = '';
                 persistData();
-                currentExam = name;
+                currentExam = examLabel;
                 refreshMarksView();
             }
         }
@@ -652,12 +692,27 @@
             refreshMarksTable();
         }
 
+        function getGradesFromUI() {
+            let grades = [];
+            let names = document.querySelectorAll('.grade-name');
+            let vals = document.querySelectorAll('.grade-val');
+            for(let i=0; i<names.length; i++) {
+                let n = names[i].value.trim();
+                let v = parseFloat(vals[i].value);
+                if(n && !isNaN(v)) grades.push({name: n, min: v});
+            }
+            return grades.sort((a,b) => b.min - a.min); // highest first
+        }
+
         function refreshMarksTable() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let tbody = document.getElementById("marksTableBody");
             let compareExam = document.getElementById("compareExamSelect").value;
             tbody.innerHTML = '';
             
+            // Disclaimer logic
+            document.getElementById('exam-select-warning').style.display = currentExam ? 'none' : 'block';
+
             if(!currentExam) {
                 document.getElementById("statAvg").innerText = "0.0";
                 document.getElementById("statPass").innerText = "0";
@@ -669,6 +724,8 @@
             }
 
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+            let grades = getGradesFromUI();
+            
             let totalMarksSum = 0; let markCount = 0; let passCount = 0; let failCount = 0;
 
             let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
@@ -680,20 +737,28 @@
                 let markVal = parseFloat(currentMark);
                 
                 let statusHtml = '<span class="status pending">-</span>';
-                if(!isNaN(markVal) && currentMark !== '') {
+                let gradeStr = '';
+
+                if(currentMark === 'AB' || (typeof currentMark === 'string' && currentMark.toUpperCase() === 'AB')) {
+                    statusHtml = '<span class="status fail" style="background:var(--text-secondary)">Absent</span>';
+                } else if(!isNaN(markVal) && currentMark !== '') {
                     totalMarksSum += markVal;
                     markCount++;
+                    
+                    let g = grades.find(g => markVal >= g.min);
+                    if(g) gradeStr = ` (${g.name})`;
+
                     if(markVal >= passThreshold) {
-                        statusHtml = '<span class="status pass">Pass</span>';
+                        statusHtml = `<span class="status pass">Pass</span><span style="font-size:10px; font-weight:bold; color:var(--primary-blue); display:block;">${gradeStr}</span>`;
                         passCount++;
                     } else {
-                        statusHtml = '<span class="status fail">Fail</span>';
+                        statusHtml = `<span class="status fail">Fail</span><span style="font-size:10px; font-weight:bold; color:var(--primary-blue); display:block;">${gradeStr}</span>`;
                         failCount++;
                     }
                 }
 
                 let growthHtml = '-';
-                if(currentMark !== '' && prevMark !== '' && compareExam !== currentExam) {
+                if(currentMark !== '' && currentMark !== 'AB' && prevMark !== '' && prevMark !== 'AB' && compareExam !== currentExam) {
                     let diff = parseFloat(currentMark) - parseFloat(prevMark);
                     if(diff > 0) growthHtml = `<span style="color:var(--success-green); font-weight:bold;">▲ +${diff}</span>`;
                     else if(diff < 0) growthHtml = `<span style="color:var(--danger-red); font-weight:bold;">▼ ${diff}</span>`;
@@ -704,11 +769,12 @@
                 tr.innerHTML = `
                     <td>${s.roll}</td>
                     <td><strong>${s.name}</strong></td>
-                    <td style="text-align: center;">
-                        <input type="number" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value)">
+                    <td style="text-align: center; white-space: nowrap;">
+                        <input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())" style="width: 45px; display:inline-block;">
+                        <button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 4px; font-size:9px; cursor:pointer;" onclick="setMark(${s.roll}, 'AB')">AB</button>
                     </td>
                     <td style="text-align: center;">${growthHtml}</td>
-                    <td style="text-align: center;">${statusHtml}</td>
+                    <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
                     <td style="text-align: center;">
                         <button class="msg-btn" style="background:#25D366; padding:4px 6px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
                         <button class="msg-btn" style="background:#EA4335; padding:4px 6px;" onclick="sendMarkEmail(${s.roll})">${mailIconHTML}</button>
@@ -732,23 +798,34 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let compareExam = document.getElementById("compareExamSelect").value;
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+            let grades = getGradesFromUI();
 
-            let csv = "Roll No,Name,Mark,Status,Growth (vs " + (compareExam || 'None') + ")\n";
+            let csv = "Roll No,Name,Mark,Grade,Status,Growth (vs " + (compareExam || 'None') + ")\n";
             let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
             
             sortedRoster.forEach(s => {
                 let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
-                let status = (mark !== '' && parseFloat(mark) >= passThreshold) ? 'Pass' : (mark !== '' ? 'Fail' : 'Pending');
+                let status = 'Pending';
+                let gradeText = 'N/A';
+                
+                if (mark === 'AB') {
+                    status = 'Absent';
+                } else if (mark !== '') {
+                    let markVal = parseFloat(mark);
+                    status = markVal >= passThreshold ? 'Pass' : 'Fail';
+                    let g = grades.find(gd => markVal >= gd.min);
+                    if(g) gradeText = g.name;
+                }
                 
                 let prevMark = (compareExam && s.marks && s.marks[compareExam]) ? s.marks[compareExam] : '';
                 let growthText = 'N/A';
-                if(mark !== '' && prevMark !== '' && compareExam !== currentExam) {
+                if(mark !== '' && mark !== 'AB' && prevMark !== '' && prevMark !== 'AB' && compareExam !== currentExam) {
                     let diff = parseFloat(mark) - parseFloat(prevMark);
                     growthText = diff > 0 ? `+${diff}` : diff.toString();
                 }
 
                 let name = s.name ? s.name.replace(/,/g, '') : '';
-                csv += `${s.roll},${name},${mark},${status},${growthText}\n`;
+                csv += `${s.roll},${name},${mark},${gradeText},${status},${growthText}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -790,7 +867,7 @@
                 cls.exams.forEach(ex => {
                     let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
                     html += `<td style="text-align:center;">${mark}</td>`;
-                    if (mark !== '-' && !isNaN(parseFloat(mark))) {
+                    if (mark !== '-' && mark !== 'AB' && !isNaN(parseFloat(mark))) {
                         total += parseFloat(mark);
                         count++;
                     }
@@ -814,9 +891,19 @@
             
             let total = document.getElementById("totalMarkInput").value;
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
-            let isPass = parseFloat(currentMark) >= passThreshold;
-            let statusText = isPass ? "Passed" : "Failed";
-            let parentNote = isPass ? "Congratulations!" : "Please work hard for the next exam.";
+            
+            let isPass = false;
+            let statusText = "";
+            let parentNote = "";
+
+            if (currentMark === 'AB') {
+                statusText = "Absent";
+                parentNote = "Please ensure the student attends the re-test.";
+            } else {
+                isPass = parseFloat(currentMark) >= passThreshold;
+                statusText = isPass ? "Passed" : "Failed";
+                parentNote = isPass ? "Congratulations!" : "Please work hard for the next exam.";
+            }
 
             let text = `Dear Parents of *${s.name}*,\n\nThe result for *${currentExam}* (${cls.name}) has been entered.\n\n*Mark Obtained:* ${currentMark} / ${total}\n*Status:* ${statusText}\n\n_${parentNote}_\n\nRegards,\nClass Teacher`;
             
@@ -836,9 +923,19 @@
             
             let total = document.getElementById("totalMarkInput").value;
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
-            let isPass = parseFloat(currentMark) >= passThreshold;
-            let statusText = isPass ? "Passed" : "Failed";
-            let parentNote = isPass ? "Congratulations!" : "Please work hard for the next exam.";
+            
+            let isPass = false;
+            let statusText = "";
+            let parentNote = "";
+
+            if (currentMark === 'AB') {
+                statusText = "Absent";
+                parentNote = "Please ensure the student attends the re-test.";
+            } else {
+                isPass = parseFloat(currentMark) >= passThreshold;
+                statusText = isPass ? "Passed" : "Failed";
+                parentNote = isPass ? "Congratulations!" : "Please work hard for the next exam.";
+            }
 
             let subject = `Exam Result for ${s.name}: ${currentExam}`;
             let body = `Dear Parents of ${s.name},\n\nThe result for ${currentExam} (${cls.name}) has been entered.\n\nMark Obtained: ${currentMark} / ${total}\nStatus: ${statusText}\n\n${parentNote}\n\nRegards,\nClass Teacher`;
