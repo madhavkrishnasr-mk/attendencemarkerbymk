@@ -201,11 +201,12 @@
             <label>Select Class:</label>
             <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
 
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                <input type="date" id="attendance-date-input" style="margin-bottom: 0;">
+            <div style="display: flex; gap: 8px; margin-bottom: 5px;">
+                <input type="date" id="attendance-date-input" style="margin-bottom: 0;" onchange="document.getElementById('date-select-warning').style.display='none'">
                 <button onclick="showPage('history-page')" class="btn-success" style="flex: 1; font-size: 13px;">📁 History</button>
                 <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1; font-size: 13px;">📊 Reports</button>
             </div>
+            <p id="date-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please pick a date</p>
 
             <div id="attendance-list-container"></div>
             <button class="btn-primary btn-full" onclick="saveAttendanceData()">Save Attendance Record</button>
@@ -266,7 +267,7 @@
             
             <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
             
-            <div id="mark-report-container" class="hidden" style="background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+            <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
                 <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                     <label style="margin-bottom:0; flex:1;">Student Filter:</label>
                     <select id="reportStudentFilter" onchange="renderMarkReport()" style="flex:2; padding:6px; margin-bottom:0;"></select>
@@ -721,6 +722,18 @@
             refreshMarksTable();
         }
 
+        function getGradesFromUI() {
+            let grades = [];
+            let names = document.querySelectorAll('.grade-name');
+            let vals = document.querySelectorAll('.grade-val');
+            for(let i=0; i<names.length; i++) {
+                let n = names[i].value.trim();
+                let v = parseFloat(vals[i].value);
+                if(n && !isNaN(v)) grades.push({name: n, min: v});
+            }
+            return grades.sort((a,b) => b.min - a.min); 
+        }
+
         function refreshMarksTable() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let tbody = document.getElementById("marksTableBody");
@@ -740,7 +753,7 @@
             }
 
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
-            let grades = [...appData.grades].sort((a,b) => b.min - a.min);
+            let grades = getGradesFromUI();
             
             let totalMarksSum = 0; let markCount = 0; let passCount = 0; let failCount = 0;
 
@@ -793,7 +806,7 @@
                     <td>${s.roll}</td>
                     <td><strong>${s.name}</strong></td>
                     <td style="text-align: center;">
-                        <input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())" style="width: 45px; display:inline-block;">
+                        <input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())">
                     </td>
                     <td style="text-align: center;">${growthHtml}</td>
                     <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
@@ -821,7 +834,7 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let compareExam = document.getElementById("compareExamSelect").value;
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
-            let grades = [...appData.grades].sort((a,b) => b.min - a.min);
+            let grades = getGradesFromUI();
 
             let csv = "Roll No,Name,Mark,Grade,Status,Growth (vs " + (compareExam || 'None') + ")\n";
             let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
@@ -892,7 +905,7 @@
                 
                 let html = `<table class="marks-table"><thead><tr><th>Exam / Subject</th><th style="text-align:center;">Mark</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
                 let total = 0, count = 0;
-                let grades = [...appData.grades].sort((a,b) => b.min - a.min);
+                let grades = getGradesFromUI();
                 
                 cls.exams.forEach(ex => {
                     let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
