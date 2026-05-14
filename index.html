@@ -226,6 +226,17 @@
             
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
             
+            <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleCreateExamPanel()">➕ Create New Exam</button>
+
+            <div id="create-exam-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Create New Exam</h4>
+                <div style="display:flex; gap:8px; margin-bottom:0px;">
+                    <input type="text" id="newExamInput" placeholder="Exam Name" style="margin-bottom:0; flex:2;">
+                    <input type="text" id="newExamSubject" placeholder="Subject (Opt)" style="margin-bottom:0; flex:1.5;">
+                    <button class="btn-primary" onclick="addExam()">Add</button>
+                </div>
+            </div>
+
             <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <label>Select Exam to Enter Marks:</label>
                 <div style="display:flex; gap:8px; margin-bottom: 8px;">
@@ -236,38 +247,29 @@
                 </div>
                 <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
 
+                <div id="edit-exam-settings" class="hidden" style="margin-top:10px; padding:15px; background:var(--card-bg); border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                    <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Mark & Grade Configuration</h4>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <div style="flex:1;">
+                            <label>Total Marks:</label>
+                            <input type="number" id="totalMarkInput" value="100" oninput="updateExamConfig()">
+                        </div>
+                        <div style="flex:1;">
+                            <label>Pass Mark:</label>
+                            <input type="number" id="passMarkInput" value="40" oninput="updateExamConfig()">
+                        </div>
+                    </div>
+
+                    <label style="margin-top:10px;">Grade Index (Minimum mark for grade):</label>
+                    <div id="grades-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                        </div>
+                    <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
+                </div>
+
                 <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
                 <select id="compareExamSelect" onchange="refreshMarksTable()">
                     <option value="">-- None --</option>
                 </select>
-            </div>
-
-            <div id="marks-settings-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
-                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Create New Exam</h4>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input type="text" id="newExamInput" placeholder="Exam Name" style="margin-bottom:0; flex:2;">
-                    <input type="text" id="newExamSubject" placeholder="Subject (Opt)" style="margin-bottom:0; flex:1.5;">
-                    <button class="btn-primary" onclick="addExam()">Add</button>
-                </div>
-                
-                <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
-                
-                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Mark & Grade Configuration</h4>
-                <div style="display:flex; gap:10px; margin-top:5px;">
-                    <div style="flex:1;">
-                        <label>Total Marks:</label>
-                        <input type="number" id="totalMarkInput" value="100" oninput="updateExamConfig()">
-                    </div>
-                    <div style="flex:1;">
-                        <label>Pass Mark:</label>
-                        <input type="number" id="passMarkInput" value="40" oninput="updateExamConfig()">
-                    </div>
-                </div>
-
-                <label style="margin-top:10px;">Grade Index (Minimum mark for grade):</label>
-                <div id="grades-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    </div>
-                <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
             </div>
 
             <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
@@ -759,12 +761,9 @@
             refreshMarksTable();
         }
 
-        function toggleMarksSettings() {
-            const pnl = document.getElementById('marks-settings-panel');
+        function toggleCreateExamPanel() {
+            const pnl = document.getElementById('create-exam-panel');
             pnl.classList.toggle('hidden');
-            if(!pnl.classList.contains('hidden')) {
-                renderGradesUI();
-            }
         }
 
         function renderGradesUI() {
@@ -844,6 +843,7 @@
                 cls.exams.push(examLabel);
                 document.getElementById("newExamInput").value = '';
                 document.getElementById("newExamSubject").value = '';
+                document.getElementById('create-exam-panel').classList.add('hidden');
                 persistData();
                 currentExam = examLabel;
                 refreshMarksView();
@@ -852,9 +852,11 @@
         
         function editCurrentExam() {
             if(!currentExam) return alert("Please select an exam first!");
-            document.getElementById('marks-settings-panel').classList.remove('hidden');
-            renderGradesUI();
-            document.getElementById('marks-settings-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const pnl = document.getElementById('edit-exam-settings');
+            pnl.classList.toggle('hidden');
+            if(!pnl.classList.contains('hidden')) {
+                renderGradesUI();
+            }
         }
 
         function changeExam() {
