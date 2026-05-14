@@ -226,8 +226,6 @@
             
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
             
-            <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleMarksSettings()">⚙️ Exam Setup</button>
-
             <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
                 <label>Select Exam to Enter Marks:</label>
                 <div style="display:flex; gap:8px; margin-bottom: 8px;">
@@ -775,9 +773,9 @@
             appData.grades.forEach((g, i) => {
                 container.innerHTML += `
                     <div style="display:flex; gap:5px; align-items:center;">
-                        <input type="text" value="${g.name}" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" onchange="updateGrade(${i}, 'name', this.value)">
+                        <input type="text" value="${g.name}" class="grade-name" style="width:40px; padding:6px; text-align:center; margin-bottom:0;" onchange="updateGrade(${i}, 'name', this.value)">
                         <span style="font-size:12px; font-weight:bold;">:</span>
-                        <input type="number" value="${g.min}" style="width:60px; padding:6px; margin-bottom:0;" onchange="updateGrade(${i}, 'min', this.value)">
+                        <input type="number" value="${g.min}" class="grade-val" style="width:60px; padding:6px; margin-bottom:0;" onchange="updateGrade(${i}, 'min', this.value)">
                         <button style="background:none; border:none; color:var(--danger-red); cursor:pointer; padding:0; font-size:14px;" onclick="removeGrade(${i})">×</button>
                     </div>
                 `;
@@ -854,10 +852,8 @@
         
         function editCurrentExam() {
             if(!currentExam) return alert("Please select an exam first!");
-            
             document.getElementById('marks-settings-panel').classList.remove('hidden');
             renderGradesUI();
-            
             document.getElementById('marks-settings-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -877,15 +873,7 @@
         }
 
         function getGradesFromUI() {
-            let grades = [];
-            let names = document.querySelectorAll('.grade-name');
-            let vals = document.querySelectorAll('.grade-val');
-            for(let i=0; i<names.length; i++) {
-                let n = names[i].value.trim();
-                let v = parseFloat(vals[i].value);
-                if(n && !isNaN(v)) grades.push({name: n, min: v});
-            }
-            return grades.sort((a,b) => b.min - a.min); 
+            return [...appData.grades].sort((a,b) => b.min - a.min); 
         }
 
         function refreshMarksTable() {
@@ -1313,7 +1301,7 @@
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let csv = "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
             const stats = getStats(m);
-            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.present},${s.absent},${s.leave},${s.total},${s.total?Math.round(((s.present+s.leave)/s.total)*100):0}%\n`; });
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
         }
