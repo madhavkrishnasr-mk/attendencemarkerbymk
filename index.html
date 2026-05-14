@@ -129,7 +129,7 @@
         /* --- HISTORY --- */
         .history-card { background: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid var(--primary-blue); border: 1px solid var(--border-color); }
         .student-list-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px dashed var(--border-color); align-items: center;}
-        .msg-btn { font-size: 10px; padding: 4px 8px; border-radius: 4px; color: white; margin-left: 3px; display: inline-flex; align-items: center; gap: 4px;}
+        .msg-btn { font-size: 10px; padding: 4px 8px; border-radius: 4px; color: white; margin-left: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;}
 
         /* --- SETTINGS TABS --- */
         .settings-tabs { display: flex; gap: 5px; margin-bottom: 20px; }
@@ -140,11 +140,11 @@
         .csv-reminder { font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 10px; }
 
         /* --- MARKS MODULE UI --- */
-        .marks-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; color: var(--text-main); }
-        .marks-table th, .marks-table td { padding: 8px; border: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
-        .marks-table th { background-color: var(--bg-color); }
-        .mark-input { width: 45px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); }
-        .status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 40px; }
+        .marks-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; color: var(--text-main); }
+        .marks-table th, .marks-table td { padding: 4px 2px; border: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
+        .marks-table th { background-color: var(--bg-color); font-size: 11px; }
+        .mark-input { width: 30px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 4px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); font-size: 11px; }
+        .status { padding: 4px 2px; border-radius: 4px; font-size: 9px; font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 35px; }
         .pass { background-color: var(--success-green); }
         .fail { background-color: var(--danger-red); }
         .pending { background-color: var(--text-secondary); }
@@ -153,6 +153,29 @@
         .stat-item { text-align: center; }
         .stat-value { font-size: 20px; font-weight: bold; color: var(--primary-blue); }
         .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
+        
+        /* --- PRINT CSS (HIDES EVERYTHING EXCEPT THE TABLE AND RESIZES FONTS FOR READABILITY) --- */
+        .print-only { display: none; }
+        @media print {
+            @page { margin: 1cm; }
+            body { background: white; margin: 0; padding: 0; color: black; }
+            body * { visibility: hidden; }
+            #mark-report-table-wrapper, #mark-report-table-wrapper * { visibility: visible; }
+            #mark-report-table-wrapper {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .print-only { display: block !important; }
+            button { display: none !important; } /* Hide print button on paper */
+            
+            /* INCREASE FONT SIZE FOR READABILITY IN PRINT */
+            .marks-table th, .marks-table td { font-size: 14px !important; padding: 8px !important; border-color: #000 !important; }
+            .print-only h2 { font-size: 24px !important; margin-bottom: 5px !important; }
+            .print-only h3 { font-size: 18px !important; margin-bottom: 5px !important; }
+            .print-only h4 { font-size: 16px !important; margin-bottom: 15px !important; }
+        }
     </style>
 </head>
 <body>
@@ -163,7 +186,7 @@
             <div id="header-buttons" style="display:flex; align-items:center; gap:5px;">
                 <button onclick="toggleDarkMode()" style="background:none; font-size:22px; padding:0; margin-right:5px;">🌓</button>
                 <button onclick="showPage('marks-page')" class="btn-warning" style="padding: 6px 10px; font-size: 14px;">📝 Marks</button>
-                <button onclick="showPage('settings-page')" class="btn-info" style="padding: 6px 10px; font-size: 14px;">⚙️</button>
+                <button onclick="showPage('settings-page')" class="btn-info" style="padding: 6px 10px; font-size: 14px; font-weight: bold;">⚙️ Settings</button>
             </div>
         </div>
 
@@ -181,6 +204,9 @@
             
             <label>Institution Name:</label>
             <input type="text" id="setup-school-name" placeholder="Institution Name">
+            
+            <label>Headmaster's WhatsApp No. (For Reports):</label>
+            <input type="tel" id="setup-hm-phone" placeholder="e.g. 919876543210">
             
             <label>Preferred Message Language:</label>
             <select id="setup-msg-language">
@@ -292,11 +318,37 @@
                 <select id="compareExamSelect" onchange="refreshMarksTable()">
                     <option value="">-- None --</option>
                 </select>
+                
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                    <label>Bulk Import Marks (CSV):</label>
+                    <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll/Name, Mark</p>
+                    <button class="btn-secondary btn-full" style="margin-top: 0; margin-bottom: 10px; padding: 10px;" onclick="toggleMarkBulkImport()">📤 Open Bulk Import Options</button>
+                </div>
+                
+                <div id="mark-bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
+                    <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
+                        <li><a href="https://docs.google.com/spreadsheets/d/1ng1mdn9VMXHGzJZAXN7b1uLmOg9Fj7Z3F-ko5PR512Q/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
+                        <li>Open it in Google Sheets or Excel</li>
+                        <li>Export it as CSV <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ CSV)</i></li>
+                        <li>Upload it using the option below:</li>
+                    </ul>
+                    
+                    <div style="margin-bottom: 5px; padding-bottom: 5px;">
+                        <label style="margin-bottom: 8px;">Upload CSV</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="file" id="input-marks-csv-upload" accept=".csv" style="margin-bottom: 0; padding: 8px; flex: 1;">
+                            <button class="btn-success" style="padding: 8px 15px;" onclick="importMarksCSV()">Upload</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
             <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
             
+            <button class="btn-warning btn-full" style="margin-bottom: 15px;" onclick="sendExamToHM()">📱 Send Exam Report to HM</button>
+
             <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
             
             <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
@@ -326,13 +378,13 @@
                 <table class="marks-table">
                     <thead>
                         <tr>
-                            <th width="10%">Roll</th>
-                            <th width="20%">Name</th>
+                            <th width="8%">Roll</th>
+                            <th width="22%">Name</th>
                             <th width="12%" style="text-align: center;">Mark</th>
                             <th width="10%" style="text-align: center;">Grade</th>
-                            <th width="13%" style="text-align: center;">Growth</th>
+                            <th width="12%" style="text-align: center;">Grwth</th>
                             <th width="12%" style="text-align: center;">Status</th>
-                            <th width="13%" style="text-align: center;">Notify</th>
+                            <th width="14%" style="text-align: center;">Msg</th>
                             <th width="10%" style="text-align: center;">Act</th>
                         </tr>
                     </thead>
@@ -356,7 +408,7 @@
             <div id="tab-students-section">
                 <label>Manage Students for:</label>
                 <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
-                <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll"><input type="text" id="input-student-name" placeholder="Name"></div>
+                <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll" min="1"><input type="text" id="input-student-name" placeholder="Name"></div>
                 <input type="tel" id="input-student-phone" placeholder="WhatsApp No">
                 <input type="email" id="input-student-email" placeholder="Parent Email">
                 <input type="file" id="input-student-photo" accept="image/*">
@@ -416,6 +468,7 @@
                 <select id="report-month-picker" style="margin-bottom:10px;"></select>
                 <button class="btn-primary btn-full" style="margin-top:0;" onclick="exportReportToCSV()">📥 Download Monthly .csv Report</button>
                 <p class="csv-reminder" style="margin-bottom:0; margin-top:5px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
+                <button class="btn-warning btn-full" style="margin-bottom: 5px;" onclick="sendAttendanceToHM()">📱 Send Attendance Alert to HM</button>
             </div>
             
             <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">All-Time Student Matrix:</h4>
@@ -439,9 +492,10 @@
             if (oc || oh) return { 
                 isSetupComplete: true, 
                 classes: oc || [], 
-                activeClassId: localStorage.getItem("active_class_id") || (oc ? oc[0].id : null), 
+                activeClassId: localStorage.getItem("active_class_id") || (oc && oc.length ? oc[0].id : null), 
                 schoolName: os || "", 
                 language: ol || "en", 
+                hmPhone: "",
                 history: oh || [],
                 msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
                 msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
@@ -456,10 +510,11 @@
 
         let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || { 
             isSetupComplete: false,
-            classes: [{ id: Date.now(), name: "Class 1", roster: [], exams: [] }], 
+            classes: [], 
             activeClassId: null, 
             schoolName: "", 
             language: "en", 
+            hmPhone: "",
             history: [],
             msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
             msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
@@ -477,6 +532,7 @@
         if (!appData.grades) appData.grades = [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}];
         if (appData.totalMark === undefined) appData.totalMark = 100;
         if (appData.passMark === undefined) appData.passMark = 40;
+        if (appData.hmPhone === undefined) appData.hmPhone = "";
         
         appData.classes.forEach(c => {
             if(!c.exams) c.exams = [];
@@ -485,7 +541,7 @@
 
         if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
         
-        if (appData.history.length > 0 || (appData.classes.length && appData.classes[0].roster.length > 0)) {
+        if (appData.history.length > 0 || (appData.classes.length && appData.classes[0] && appData.classes[0].roster.length > 0)) {
             appData.isSetupComplete = true;
         }
 
@@ -506,6 +562,7 @@
                 document.getElementById('setup-welcome-text').classList.remove('hidden');
                 document.getElementById('reset-zone').classList.add('hidden');
                 
+                document.getElementById('setup-hm-phone').value = appData.hmPhone || "";
                 document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
                 document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
                 document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
@@ -524,6 +581,7 @@
             document.getElementById('reset-zone').classList.remove('hidden');
             
             document.getElementById('setup-school-name').value = appData.schoolName;
+            document.getElementById('setup-hm-phone').value = appData.hmPhone || "";
             document.getElementById('setup-msg-language').value = appData.language;
             document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
             document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
@@ -537,6 +595,7 @@
             const sn = document.getElementById('setup-school-name').value;
             if (!sn || sn.trim() === "") return alert("Please enter your institution name to continue.");
             appData.schoolName = sn;
+            appData.hmPhone = document.getElementById('setup-hm-phone').value.trim();
             appData.language = document.getElementById('setup-msg-language').value;
             appData.msgTemplateEn = document.getElementById('setup-msg-en').value;
             appData.msgTemplateMl = document.getElementById('setup-msg-ml').value;
@@ -570,44 +629,57 @@
 
         function refreshViews() {
             if(!appData.isSetupComplete) return;
-            const cls = appData.classes.find(c => c.id == appData.activeClassId) || appData.classes[0];
-            document.getElementById('app-title').innerText = cls.name;
-            document.querySelectorAll('.class-dropdown').forEach(s => { s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join(''); });
+            const cls = appData.classes.find(c => c.id == appData.activeClassId) || (appData.classes.length > 0 ? appData.classes[0] : null);
+            
+            document.getElementById('app-title').innerText = cls ? cls.name : 'Attendance Taker Pro';
+            document.querySelectorAll('.class-dropdown').forEach(s => { 
+                s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join('') || '<option value="">-- No Classes --</option>'; 
+            });
             
             const cont = document.getElementById('attendance-list-container');
-            cont.innerHTML = cls.roster.length ? "" : "<p style='text-align:center; font-size:12px;'>No students. Add in Settings.</p>";
-            cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, idx) => {
-                cont.innerHTML += `
-                <div class="student-item" id="student-item-${s.roll}">
-                    <div class="student-top-row">
-                        <div class="student-meta">
-                            <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
-                            <span>Roll ${s.roll}: ${s.name}</span>
-                        </div>
-                        <div class="attendance-toggle">
-                            <input type="hidden" id="status-val-${idx}" value="Present">
-                            <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div>
-                            <div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Absent')">A</div>
-                        </div>
-                    </div>
-                    <div id="sub-opts-${idx}" class="extra-opts hidden">
-                        <span style="font-size:10px; margin-right:auto; align-self:center;">Reason:</span>
-                        <button id="opt-l-${idx}" class="sub-btn" onclick="markStatus(${idx},'Leave')">Leave</button>
-                        <button id="opt-normal-a-${idx}" class="sub-btn sub-btn-active" style="background:#ddd" onclick="markStatus(${idx},'Absent')">Absent</button>
-                    </div>
+
+            if (!cls || cls.roster.length === 0) {
+                cont.innerHTML = `
+                <div style="background: var(--warning-orange); color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 15px 0;">
+                    <b style="font-size: 16px;">⚠️ Setup Required</b><br><br>
+                    Please click the <b>⚙️ Settings</b> button at the top right to create your classes and add students before taking attendance!
                 </div>`;
-            });
+                document.getElementById('student-list-management').innerHTML = "";
+            } else {
+                cont.innerHTML = "";
+                cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, idx) => {
+                    cont.innerHTML += `
+                    <div class="student-item" id="student-item-${s.roll}">
+                        <div class="student-top-row">
+                            <div class="student-meta">
+                                <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
+                                <span>Roll ${s.roll}: ${s.name}</span>
+                            </div>
+                            <div class="attendance-toggle">
+                                <input type="hidden" id="status-val-${idx}" value="Present">
+                                <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div>
+                                <div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Absent')">A</div>
+                            </div>
+                        </div>
+                        <div id="sub-opts-${idx}" class="extra-opts hidden">
+                            <span style="font-size:10px; margin-right:auto; align-self:center;">Reason:</span>
+                            <button id="opt-l-${idx}" class="sub-btn" onclick="markStatus(${idx},'Leave')">Leave</button>
+                            <button id="opt-normal-a-${idx}" class="sub-btn sub-btn-active" style="background:#ddd" onclick="markStatus(${idx},'Absent')">Absent</button>
+                        </div>
+                    </div>`;
+                });
+
+                document.getElementById('student-list-management').innerHTML = cls.roster.map((s, idx) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid var(--border-color); padding: 5px;">
+                        <span style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px; font-size:14px;">${s.roll}. ${s.name}</span>
+                        <div style="flex-shrink:0;">
+                            <button class="btn-info" style="color:white; padding: 4px 8px; font-size:11px;" onclick="loadStudentForEdit(${idx})">Edit</button>
+                            <button class="btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="removeStudent(${idx})">Del</button>
+                        </div>
+                    </div>`).join('');
+            }
 
             document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;"><span>${c.name}</span><button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button></div>`).join('');
-            
-            document.getElementById('student-list-management').innerHTML = cls.roster.map((s, idx) => `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid var(--border-color); padding: 5px;">
-                    <span style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px; font-size:14px;">${s.roll}. ${s.name}</span>
-                    <div style="flex-shrink:0;">
-                        <button class="btn-info" style="color:white; padding: 4px 8px; font-size:11px;" onclick="loadStudentForEdit(${idx})">Edit</button>
-                        <button class="btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="removeStudent(${idx})">Del</button>
-                    </div>
-                </div>`).join('');
         }
 
         function markStatus(idx, s) {
@@ -631,15 +703,29 @@
         function createNewClass() {
             const n = document.getElementById('input-new-class-name').value;
             if (!n) return;
-            appData.classes.push({ id: Date.now(), name: n, roster: [], exams: [] });
+            const newId = Date.now();
+            appData.classes.push({ id: newId, name: n, roster: [], exams: [] });
+            if (!appData.activeClassId) appData.activeClassId = newId;
             document.getElementById('input-new-class-name').value = ""; persistData(); refreshViews();
         }
 
         function saveStudentObject() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            const r = document.getElementById('input-student-roll').value, n = document.getElementById('input-student-name').value, ph = document.getElementById('input-student-phone').value, em = document.getElementById('input-student-email').value, f = document.getElementById('input-student-photo').files[0];
+            if (!cls) return alert("Please create a class first!");
+            
+            const r = document.getElementById('input-student-roll').value;
+            const rollNum = parseInt(r);
+            if (isNaN(rollNum) || rollNum < 1) return alert("Please enter a valid positive Roll Number (1 or higher).");
+
+            // UNIQUE ROLL NUMBER CHECK
+            const duplicateIdx = cls.roster.findIndex(s => s.roll === rollNum);
+            if (duplicateIdx > -1 && duplicateIdx !== editingIdx) {
+                return alert("Roll Number " + rollNum + " is already assigned to another student in this class!");
+            }
+
+            const n = document.getElementById('input-student-name').value, ph = document.getElementById('input-student-phone').value, em = document.getElementById('input-student-email').value, f = document.getElementById('input-student-photo').files[0];
             const done = (img) => {
-                const s = { roll: parseInt(r), name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {} };
+                const s = { roll: rollNum, name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {} };
                 if (editingIdx > -1) { 
                     s.marks = cls.roster[editingIdx].marks || {}; 
                     cls.roster[editingIdx] = s; 
@@ -654,7 +740,9 @@
         }
 
         function loadStudentForEdit(idx) {
-            const cls = appData.classes.find(c => c.id == appData.activeClassId), s = cls.roster[idx];
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if (!cls) return;
+            const s = cls.roster[idx];
             document.getElementById('input-student-roll').value = s.roll; document.getElementById('input-student-name').value = s.name; document.getElementById('input-student-phone').value = s.phone || ""; document.getElementById('input-student-email').value = s.email || "";
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
@@ -669,11 +757,13 @@
             const file = fileInput.files[0];
             if (!file) return alert("Please select a CSV file first.");
 
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if (!cls) return alert("Please create a class first!");
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const text = e.target.result;
                 const lines = text.split('\n');
-                const cls = appData.classes.find(c => c.id == appData.activeClassId);
                 let addedCount = 0;
 
                 for (let i = 1; i < lines.length; i++) {
@@ -687,7 +777,7 @@
                         const phone = parts.length > 2 ? parts[2].trim() : "";
                         const email = parts.length > 3 ? parts[3].trim() : "";
 
-                        if (!isNaN(roll) && name) {
+                        if (!isNaN(roll) && roll > 0 && name) {
                             const existingIdx = cls.roster.findIndex(s => s.roll === roll);
                             if (existingIdx > -1) {
                                 cls.roster[existingIdx].name = name;
@@ -717,12 +807,14 @@
             const file = fileInput.files[0];
             if (!file) return alert("Please select a PDF file first.");
 
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if (!cls) return alert("Please create a class first!");
+
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     const typedarray = new Uint8Array(e.target.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    const cls = appData.classes.find(c => c.id == appData.activeClassId);
                     let addedCount = 0;
 
                     for (let i = 1; i <= pdf.numPages; i++) {
@@ -745,7 +837,7 @@
                             let parts = rowText.split(/\s+/);
                             if (parts.length >= 2) {
                                 let roll = parseInt(parts[0]);
-                                if (!isNaN(roll)) {
+                                if (!isNaN(roll) && roll > 0) {
                                     let nameParts = [];
                                     let phone = "";
                                     let email = "";
@@ -813,6 +905,7 @@
         }
 
         function editCurrentExam() {
+            if(!appData.activeClassId) return alert("Please create a class first!");
             if(!currentExam) return alert("Please select an exam first!");
             const editPnl = document.getElementById('edit-exam-settings');
             const config = document.getElementById('mark-grade-config-wrapper');
@@ -866,14 +959,21 @@
             const examSelect = document.getElementById("examSelect");
             const compareSelect = document.getElementById("compareExamSelect");
 
-            if (cls && cls.exams && cls.exams.length > 0) {
+            if (!cls) {
+                examSelect.innerHTML = '<option value="">-- Select Exam --</option>';
+                compareSelect.innerHTML = '<option value="">-- None --</option>';
+                refreshMarksTable();
+                return;
+            }
+
+            if (cls.exams && cls.exams.length > 0) {
                 examSelect.innerHTML = '';
             } else {
                 examSelect.innerHTML = '<option value="">-- Select Exam --</option>';
             }
             compareSelect.innerHTML = '<option value="">-- None --</option>';
 
-            if(cls && cls.exams) {
+            if(cls.exams) {
                 if (cls.exams.length > 0 && !cls.exams.includes(currentExam)) {
                     currentExam = cls.exams[0];
                 }
@@ -888,12 +988,13 @@
                     compareSelect.appendChild(optC);
                 });
             }
-            if(cls && (!cls.exams || !cls.exams.includes(currentExam))) currentExam = "";
+            if(!cls.exams || !cls.exams.includes(currentExam)) currentExam = "";
             refreshMarksTable();
         }
 
         function addExam() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return alert("Please create a class first!");
             if(!cls.exams) cls.exams = [];
             let name = document.getElementById("newExamInput").value.trim();
             let subj = document.getElementById("newExamSubject").value.trim();
@@ -917,7 +1018,9 @@
 
         function setMark(roll, value) {
             if(!currentExam) return alert("Select an exam first!");
-            
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
+
             // Mark Validation
             if(value !== "" && value.toUpperCase() !== "AB") {
                 let markVal = parseFloat(value);
@@ -929,12 +1032,80 @@
                 }
             }
 
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const student = cls.roster.find(s => s.roll === roll);
             if(!student.marks) student.marks = {};
             student.marks[currentExam] = value;
             persistData();
             refreshMarksTable();
+        }
+
+        function toggleMarkBulkImport() {
+            document.getElementById('mark-bulk-import-section').classList.toggle('hidden');
+        }
+
+        function importMarksCSV() {
+            if(!currentExam) return alert("Please select an exam first before importing marks.");
+            const fileInput = document.getElementById('input-marks-csv-upload');
+            const file = fileInput.files[0];
+            if (!file) return alert("Please select a CSV file first.");
+
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if (!cls) return alert("Please create a class first!");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let addedCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    let parts = line.split(',');
+                    if (parts.length >= 2) {
+                        let identifier = parts[0].replace(/['"]/g, '').trim(); 
+                        let markVal = parts[1].replace(/['"]/g, '').trim();    
+
+                        let rollMatch = identifier.match(/^\d+/);
+                        let targetRoll = null;
+                        if (rollMatch) {
+                            targetRoll = parseInt(rollMatch[0]);
+                        } else {
+                            let match = cls.roster.find(s => s.name.toLowerCase() === identifier.toLowerCase());
+                            if (match) targetRoll = match.roll;
+                        }
+
+                        if (targetRoll !== null && markVal !== "") {
+                            const student = cls.roster.find(s => s.roll === targetRoll);
+                            if (student) {
+                                if(markVal.toUpperCase() !== "AB") {
+                                    let floatMark = parseFloat(markVal);
+                                    let totalMarkVal = parseFloat(appData.totalMark);
+                                    if(isNaN(floatMark) || floatMark > totalMarkVal) continue;
+                                    markVal = floatMark.toString(); 
+                                } else {
+                                    markVal = "AB";
+                                }
+                                
+                                if(!student.marks) student.marks = {};
+                                student.marks[currentExam] = markVal;
+                                addedCount++;
+                            }
+                        }
+                    }
+                }
+                
+                if (addedCount > 0) {
+                    persistData(); refreshMarksTable();
+                    alert(`Successfully imported marks for ${addedCount} students into ${currentExam}!`);
+                    fileInput.value = ""; 
+                    document.getElementById('mark-bulk-import-section').classList.add('hidden');
+                } else {
+                    alert("No valid marks found. Ensure the CSV has Roll/Name in column 1 and Marks in column 2, and marks don't exceed the total.");
+                }
+            };
+            reader.readAsText(file);
         }
 
         function getGradesFromUI() {
@@ -944,12 +1115,12 @@
         function refreshMarksTable() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let tbody = document.getElementById("marksTableBody");
-            let compareExam = document.getElementById("compareExamSelect").value;
+            let compareExam = document.getElementById("compareExamSelect") ? document.getElementById("compareExamSelect").value : "";
             tbody.innerHTML = '';
             
             document.getElementById('exam-select-warning').style.display = currentExam ? 'none' : 'block';
 
-            if(!currentExam) {
+            if(!currentExam || !cls) {
                 document.getElementById("statAvg").innerText = "0.0";
                 document.getElementById("statPass").innerText = "0";
                 document.getElementById("statFail").innerText = "0";
@@ -1004,9 +1175,9 @@
 
                 let abBtnHtml = '';
                 if (currentMark === 'AB') {
-                    abBtnHtml = `<button style="background:var(--warning-orange); color:white; border:none; border-radius:4px; padding:6px 4px; font-size:9px; cursor:pointer;" onclick="setMark(${s.roll}, '')">Undo AB</button>`;
+                    abBtnHtml = `<button style="background:var(--warning-orange); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="setMark(${s.roll}, '')">Undo</button>`;
                 } else {
-                    abBtnHtml = `<button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 4px; font-size:9px; cursor:pointer;" onclick="setMark(${s.roll}, 'AB')">Mark AB</button>`;
+                    abBtnHtml = `<button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="setMark(${s.roll}, 'AB')">AB</button>`;
                 }
 
                 let tr = document.createElement('tr');
@@ -1020,8 +1191,8 @@
                     <td style="text-align: center;">${growthHtml}</td>
                     <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
                     <td style="text-align: center;">
-                        <button class="msg-btn" style="background:#25D366; padding:4px 6px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
-                        <button class="msg-btn" style="background:#EA4335; padding:4px 6px;" onclick="sendMarkEmail(${s.roll})">${mailIconHTML}</button>
+                        <button class="msg-btn" style="background:#25D366; padding:4px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
+                        <button class="msg-btn" style="background:#EA4335; padding:4px;" onclick="sendMarkEmail(${s.roll})">${mailIconHTML}</button>
                     </td>
                     <td style="text-align: center;">${abBtnHtml}</td>
                 `;
@@ -1041,11 +1212,14 @@
         function exportMarksToCSV() {
             if(!currentExam) return alert("Please select an exam first.");
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
+            
             let compareExam = document.getElementById("compareExamSelect").value;
             let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
             let grades = getGradesFromUI();
 
-            let csv = "Roll No,Name,Mark,Grade,Status,Growth (vs " + (compareExam || 'None') + ")\n";
+            let csv = `Class,${cls.name}\nExam,${currentExam}\n\n`;
+            csv += "Roll No,Name,Mark,Grade,Status,Growth (vs " + (compareExam || 'None') + ")\n";
             let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
             
             sortedRoster.forEach(s => {
@@ -1080,12 +1254,57 @@
             link.click();
         }
 
+        function sendExamToHM() {
+            if(!currentExam) return alert("Please select an exam first.");
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
+            if(!appData.hmPhone || appData.hmPhone.trim() === "") return alert("Please set the Headmaster's WhatsApp number first in Settings > Edit Institution.");
+
+            let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+            let failedList = [];
+            let passed = 0; let failed = 0; let total = 0;
+
+            cls.roster.sort((a,b) => a.roll - b.roll).forEach(s => {
+                let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+                if(mark !== '') {
+                    total++;
+                    if(mark === 'AB') {
+                        failed++;
+                        failedList.push(`${s.roll}. ${s.name} - AB`);
+                    } else {
+                        let markVal = parseFloat(mark);
+                        if(markVal >= passThreshold) {
+                            passed++;
+                        } else {
+                            failed++;
+                            failedList.push(`${s.roll}. ${s.name} - ${mark}`);
+                        }
+                    }
+                }
+            });
+
+            if(total === 0) return alert("No marks entered for this exam yet.");
+
+            let msg = `*Exam Report: ${currentExam}*\n*Class:* ${cls.name}\n\n*Total Students Marked:* ${total}\n*Passed:* ${passed}\n*Failed:* ${failed}\n\n`;
+            if(failedList.length > 0) {
+                msg += `*Failed Students List:*\n` + failedList.join('\n');
+            } else {
+                msg += `*All students passed!* 🎉`;
+            }
+
+            let ct = appData.hmPhone.replace(/\D/g, ''); 
+            if (ct.length === 10) ct = "91" + ct;
+            window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
         function toggleMarkReport() {
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
+            
             const container = document.getElementById('mark-report-container');
             if (container.classList.contains('hidden')) {
                 container.classList.remove('hidden');
                 
-                const cls = appData.classes.find(c => c.id == appData.activeClassId);
                 const filter = document.getElementById('reportStudentFilter');
                 filter.innerHTML = '<option value="">All Students (Class Matrix)</option>';
                 [...cls.roster].sort((a,b) => a.roll - b.roll).forEach(s => {
@@ -1112,7 +1331,13 @@
                 const s = cls.roster.find(st => st.roll == studentFilter);
                 if (!s) return;
                 
-                let html = `<table class="marks-table"><thead><tr><th>Exam / Subject</th><th style="text-align:center;">Mark</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
+                let html = `
+                <div class="print-only" style="text-align:center; margin-bottom:15px;">
+                    <h2 style="margin:0;">${appData.schoolName || 'Institution'}</h2>
+                    <h3 style="margin:5px 0;">Class: ${cls.name}</h3>
+                    <h4 style="margin:0;">Student: ${s.name} (Roll: ${s.roll})</h4>
+                </div>
+                <table class="marks-table"><thead><tr><th>Exam / Subject</th><th style="text-align:center;">Mark</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
                 let total = 0, count = 0;
                 let grades = getGradesFromUI();
                 
@@ -1138,7 +1363,13 @@
                 wrapper.innerHTML = html;
 
             } else {
-                let html = '<table class="marks-table" style="min-width:400px;"><thead><tr><th width="10%">Roll</th><th width="30%">Name</th>';
+                let html = `
+                <div class="print-only" style="text-align:center; margin-bottom:15px;">
+                    <h2 style="margin:0;">${appData.schoolName || 'Institution'}</h2>
+                    <h3 style="margin:5px 0;">Class: ${cls.name}</h3>
+                    <h4 style="margin:0;">Mark List</h4>
+                </div>
+                <table class="marks-table" style="min-width:400px;"><thead><tr><th width="8%">Roll</th><th width="22%">Name</th>`;
                 cls.exams.forEach(ex => {
                     html += `<th style="text-align:center; color:var(--primary-blue);">${ex}</th>`;
                 });
@@ -1176,6 +1407,7 @@
                 });
 
                 html += '</tbody></table>';
+                html += `<button class="btn-success btn-full" style="margin-top:10px; font-size:13px; padding:10px;" onclick="window.print()">🖨️ Print Student Mark List</button>`;
                 wrapper.innerHTML = html;
             }
         }
@@ -1183,6 +1415,7 @@
         function sendMarkWA(roll) {
             if(!currentExam) return alert("Please select an exam first.");
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
             const s = cls.roster.find(st => st.roll === roll);
             let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
 
@@ -1217,6 +1450,7 @@
         function sendMarkEmail(roll) {
             if(!currentExam) return alert("Please select an exam first.");
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
             const s = cls.roster.find(st => st.roll === roll);
             let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
 
@@ -1251,6 +1485,7 @@
         // --- ATTENDANCE SAVING LOGIC ---
         function saveAttendanceData() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return alert("Please create a class first!");
             const d = document.getElementById('attendance-date-input').value;
             if (!d) return alert("Select Date!");
             
@@ -1274,8 +1509,10 @@
         // --- HISTORY VIEW ---
         function renderHistoryView() {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
-            const filtered = appData.history.filter(h => h.classId == cls.id);
             const cont = document.getElementById('history-display-container');
+            if(!cls) { cont.innerHTML = "No class selected."; return; }
+
+            const filtered = appData.history.filter(h => h.classId == cls.id);
             
             cont.innerHTML = filtered.length ? filtered.map(h => {
                 const aL = h.students.filter(s => s.status === 'Absent');
@@ -1303,6 +1540,7 @@
 
         function smartMessage(roll, date, type) {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return;
             const student = cls.roster.find(s => s.roll == roll);
             
             if (!student) return alert("Student not found in roster!");
@@ -1329,9 +1567,17 @@
         function setupMonthPicker() { const p = document.getElementById('report-month-picker'); const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse(); p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>"; }
 
         function refreshReportsView() {
-            const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) {
+                document.getElementById('reports-display-container').innerHTML = "";
+                document.getElementById('trend-analysis').innerText = "No class selected.";
+                return;
+            }
+
             let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent: 0, leave: 0, total: 0 });
-            const history = appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m));
+            
+            // All-time filtering for UI
+            const history = appData.history.filter(h => h.classId == cls.id);
             history.forEach(day => {
                 day.students.forEach(r => {
                     if (stats[r.roll]) {
@@ -1366,9 +1612,45 @@
             }).join('');
         }
 
+        function sendAttendanceToHM() {
+            const m = document.getElementById('report-month-picker').value;
+            if(!m) return alert("No month selected or no data available.");
+            
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if (!cls) return;
+            if (!appData.hmPhone || appData.hmPhone.trim() === "") return alert("Please set the Headmaster's WhatsApp number in Settings > Edit Institution.");
+
+            const stats = getStats(m);
+            let shortageList = [];
+            
+            Object.keys(stats).sort((a,b)=>a-b).forEach(r => {
+                const s = stats[r];
+                if(s.t > 0) {
+                    const activePresent = s.p + s.l;
+                    const per = Math.round((activePresent / s.t) * 100);
+                    if (per < 75) {
+                        shortageList.push(`${r}. ${s.name} - ${per}%`);
+                    }
+                }
+            });
+
+            let msg = `*Attendance Shortage Alert*\n*Class:* ${cls.name}\n*Month:* ${m}\n\n`;
+            if (shortageList.length > 0) {
+                msg += `*Students below 75%:*\n` + shortageList.join('\n');
+            } else {
+                msg += `*All students have 75% or above attendance!* ✅`;
+            }
+
+            let ct = appData.hmPhone.replace(/\D/g, ''); 
+            if (ct.length === 10) ct = "91" + ct;
+            window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
         function exportReportToCSV() {
             const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
-            let csv = "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
+            if(!cls) return;
+            let csv = `Class,${cls.name}\nMonth,${m}\n\n`;
+            csv += "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
             const stats = getStats(m);
             Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1377,6 +1659,7 @@
 
         function getStats(month) {
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if(!cls) return {};
             let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, p: 0, a:0, l:0, t: 0 });
             appData.history.filter(h => h.classId == cls.id && h.date.startsWith(month)).forEach(day => {
                 day.students.forEach(r => { if (s[r.roll]) { s[r.roll].t++; if (r.status === 'Present') s[r.roll].p++; else if (r.status === 'Absent') s[r.roll].a++; else if (r.status === 'Leave') s[r.roll].l++; }});
@@ -1385,8 +1668,11 @@
         }
 
         function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
-        function removeClass(id) { if(appData.classes.length>1 && confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes[0].id; persistData(); refreshViews(); } }
-        function wipeHistoryForCurrentClass() { if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+        function removeClass(id) { if(confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes.length > 0 ? appData.classes[0].id : null; persistData(); refreshViews(); } }
+        function wipeHistoryForCurrentClass() { 
+            if(!appData.activeClassId) return alert("No class selected!");
+            if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } 
+        }
 
         function factoryResetApp() {
             const currentSchool = appData.schoolName;
