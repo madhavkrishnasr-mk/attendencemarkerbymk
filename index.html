@@ -98,6 +98,15 @@
         .btn-warning { background-color: var(--mark-purple); color: white; }
         .btn-secondary { background-color: var(--text-secondary); color: white; }
 
+        /* --- APP TOUR OVERLAY --- */
+        #tour-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; box-sizing: border-box;
+            backdrop-filter: blur(4px);
+        }
+
         /* --- SETUP SCREEN --- */
         .welcome-icon { font-size: 40px; text-align: center; margin-bottom: 10px; display: block; }
 
@@ -179,6 +188,20 @@
     </style>
 </head>
 <body>
+
+    <div id="tour-overlay" class="hidden">
+        <div style="background:var(--card-bg); width:100%; max-width:350px; padding:25px; border-radius:12px; text-align:center; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 id="tour-title" style="margin-top:0; color:var(--primary-blue); font-size:18px;">Title</h3>
+            <p id="tour-text" style="font-size:14px; color:var(--text-secondary); min-height:60px; line-height:1.5;">Text</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                <span id="tour-step-indicator" style="font-size:12px; font-weight:bold; color:var(--text-secondary);">1/6</span>
+                <div style="display:flex; gap:10px;">
+                    <button id="tour-skip-btn" onclick="endTour()" style="background:none; color:var(--text-secondary); font-size:14px; padding:8px;">Skip Tour</button>
+                    <button id="tour-next-btn" onclick="nextTourStep()" class="btn-primary" style="padding:8px 20px; margin-top:0;">Next ➔</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="main-card">
         <div class="header-section" id="main-header">
@@ -330,7 +353,7 @@
                     <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
                         <li><a href="https://docs.google.com/spreadsheets/d/1ng1mdn9VMXHGzJZAXN7b1uLmOg9Fj7Z3F-ko5PR512Q/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
                         <li>Open it in Gnumeric, Google Sheets, or Excel</li>
-                        <li>Export it as CSV <br><i>(Save As ➔ CSV)</i></li>
+                        <li>Export it as CSV <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ CSV)</i></li>
                         <li>Upload it using the option below:</li>
                     </ul>
                     
@@ -487,6 +510,51 @@
         const waIconHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
         const mailIconHTML = `✉️`;
 
+        /* --- APP TOUR LOGIC --- */
+        const tourSteps = [
+            { title: "👋 Welcome!", text: "Welcome to Attendance Taker Pro! Let's take a quick 6-step tour to help you master the app." },
+            { title: "🏫 Step 1: Institution Setup", text: "Before you start, you'll set up your school name and the Headmaster's WhatsApp number for easy reporting." },
+            { title: "⚙️ Step 2: Settings & Classes", text: "Tap the '⚙️ Settings' button to create your classes. You can add students manually or import them instantly from a CSV/PDF!" },
+            { title: "✅ Step 3: Take Attendance", text: "On the Home screen, select your class, pick a date, and tap 'P' or 'A' to mark students. It's lightning fast!" },
+            { title: "📝 Step 4: Marks & Exams", text: "Switch to the '📝 Marks' tab to create exams, customize your grading scale, and send beautiful result cards to parents." },
+            { title: "📊 Step 5: Master Reports", text: "In the 'Reports' section, you can download monthly CSVs or instantly WhatsApp the Headmaster about students with low attendance. You're ready!" }
+        ];
+        let currentTourStep = 0;
+
+        function startTour() {
+            currentTourStep = 0;
+            document.getElementById('tour-overlay').classList.remove('hidden');
+            renderTourStep();
+        }
+
+        function renderTourStep() {
+            document.getElementById('tour-title').innerText = tourSteps[currentTourStep].title;
+            document.getElementById('tour-text').innerText = tourSteps[currentTourStep].text;
+            document.getElementById('tour-step-indicator').innerText = (currentTourStep + 1) + " / " + tourSteps.length;
+            
+            if (currentTourStep === tourSteps.length - 1) {
+                document.getElementById('tour-next-btn').innerText = "Get Started ✓";
+                document.getElementById('tour-skip-btn').classList.add('hidden');
+            } else {
+                document.getElementById('tour-next-btn').innerText = "Next ➔";
+                document.getElementById('tour-skip-btn').classList.remove('hidden');
+            }
+        }
+
+        function nextTourStep() {
+            if (currentTourStep < tourSteps.length - 1) {
+                currentTourStep++;
+                renderTourStep();
+            } else {
+                endTour();
+            }
+        }
+
+        function endTour() {
+            document.getElementById('tour-overlay').classList.add('hidden');
+            localStorage.setItem('pro_tour_seen', 'true');
+        }
+
         function migrateOldData() {
             const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
             if (oc || oh) return { 
@@ -572,6 +640,10 @@
             } else {
                 showPage('home-page');
             }
+
+            if (!localStorage.getItem('pro_tour_seen')) {
+                startTour();
+            }
         }
 
         function openSchoolSettings() {
@@ -610,7 +682,7 @@
         }
 
         function showPage(pId) {
-            document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.main-card > div:not(.header-section):not(#tour-overlay)').forEach(p => p.classList.add('hidden'));
             document.getElementById(pId).classList.remove('hidden');
             
             if (pId !== 'setup-page') {
@@ -1681,7 +1753,7 @@
             const confirmation = prompt(`⚠️ WARNING: This will delete ALL classes, students, and history permanently.\n\nTo confirm, type your institution name exactly as shown:\n"${currentSchool}"`);
             
             if (confirmation === currentSchool) {
-                localStorage.removeItem("pro_attendance_data"); localStorage.removeItem("all_classes"); localStorage.removeItem("attendance_history"); localStorage.removeItem("school_name"); localStorage.removeItem("msg_lang"); localStorage.removeItem("active_class_id");
+                localStorage.removeItem("pro_attendance_data"); localStorage.removeItem("all_classes"); localStorage.removeItem("attendance_history"); localStorage.removeItem("school_name"); localStorage.removeItem("msg_lang"); localStorage.removeItem("active_class_id"); localStorage.removeItem("pro_tour_seen");
                 alert("App has been successfully reset to factory defaults."); location.reload(); 
             } else if (confirmation !== null) {
                 alert("Institution name did not match. Reset cancelled.");
