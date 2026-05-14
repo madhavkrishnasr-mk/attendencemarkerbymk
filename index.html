@@ -108,6 +108,8 @@
         .student-meta { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; padding-right: 10px; }
         .student-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
         
+        .student-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-blue); flex-shrink: 0; }
+        
         .attendance-toggle { display: flex; width: 100px; height: 35px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
         .toggle-opt { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; background-color: var(--card-bg); color: var(--text-main); cursor: pointer; }
         .toggle-opt.p-active { background-color: var(--success-green); color: white; }
@@ -360,10 +362,20 @@
                 <input type="file" id="input-student-photo" accept="image/*">
                 <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
                 
-                <div id="bulk-import-section" style="margin-top: 15px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
-                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">Bulk Import Students:</h4>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                    <label>Bulk Import Students (CSV or PDF):</label>
                     <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll No, Name, Phone, Email</p>
-                    <button class="btn-info btn-full" style="margin-bottom: 15px; padding: 8px; font-size: 13px;" onclick="downloadSheetTemplate()">📄 Download CSV Template</button>
+                    <button class="btn-secondary btn-full" style="margin-top: 0; margin-bottom: 10px; padding: 10px;" onclick="toggleBulkImport()">📤 Open Bulk Import Options</button>
+                </div>
+                
+                <div id="bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
+                    <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
+                        <li><a href="https://docs.google.com/spreadsheets/d/1hozh8SC0W2v18oWwEiC6ks3XiliCrYSPnROPTBAoISQ/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
+                        <li>Open it in Google Sheets or Excel</li>
+                        <li>Export it as CSV or PDF <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ PDF or CSV)</i></li>
+                        <li>Upload it using the options below:</li>
+                    </ul>
                     
                     <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
                         <label style="margin-bottom: 8px;">Upload CSV</label>
@@ -647,15 +659,9 @@
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
         }
 
-        function downloadSheetTemplate() {
-            let iframe = document.getElementById('silent-download-frame');
-            if(!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'silent-download-frame';
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
-            }
-            iframe.src = "https://docs.google.com/spreadsheets/d/1hozh8SC0W2v18oWwEiC6ks3XiliCrYSPnROPTBAoISQ/export?format=csv";
+        function toggleBulkImport() {
+            const section = document.getElementById('bulk-import-section');
+            section.classList.toggle('hidden');
         }
 
         function importStudentListCSV() {
@@ -1323,11 +1329,9 @@
         function setupMonthPicker() { const p = document.getElementById('report-month-picker'); const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse(); p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>"; }
 
         function refreshReportsView() {
-            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent: 0, leave: 0, total: 0 });
-            
-            // All-time filtering for UI
-            const history = appData.history.filter(h => h.classId == cls.id);
+            const history = appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m));
             history.forEach(day => {
                 day.students.forEach(r => {
                     if (stats[r.roll]) {
