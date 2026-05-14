@@ -184,13 +184,25 @@
 
             <div style="margin-top: 20px;">
                 <label>Custom Absence Message (English):</label>
-                <textarea id="setup-msg-en" rows="4" placeholder="Type your English message template here..."></textarea>
+                <textarea id="setup-msg-en" rows="4" placeholder="Type your English absence message template here..."></textarea>
                 
                 <label>Custom Absence Message (Malayalam):</label>
-                <textarea id="setup-msg-ml" rows="4" placeholder="Type your Malayalam message template here..."></textarea>
+                <textarea id="setup-msg-ml" rows="4" placeholder="Type your Malayalam absence message template here..."></textarea>
                 
                 <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
                     <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{roll}</span>, <span style="color:var(--primary-blue)">{date}</span>, <span style="color:var(--primary-blue)">{school}</span>
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <label>Custom Exam Result Message (English):</label>
+                <textarea id="setup-exam-msg-en" rows="4" placeholder="Type your English exam message template here..."></textarea>
+                
+                <label>Custom Exam Result Message (Malayalam):</label>
+                <textarea id="setup-exam-msg-ml" rows="4" placeholder="Type your Malayalam exam message template here..."></textarea>
+                
+                <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
+                    <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{exam}</span>, <span style="color:var(--primary-blue)">{mark}</span>, <span style="color:var(--primary-blue)">{total}</span>, <span style="color:var(--primary-blue)">{status}</span>
                 </p>
             </div>
             
@@ -347,17 +359,9 @@
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
                     <label>Bulk Import Students (CSV or PDF):</label>
                     <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll No, Name, Phone, Email</p>
-                    <button class="btn-secondary btn-full" style="margin-top: 0; margin-bottom: 10px; padding: 10px;" onclick="toggleBulkImport()">📤 Open Bulk Import Options</button>
-                </div>
-                
-                <div id="bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
-                    <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
-                    <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
-                        <li><a href="https://docs.google.com/spreadsheets/d/1hozh8SC0W2v18oWwEiC6ks3XiliCrYSPnROPTBAoISQ/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
-                        <li>Open it in Google Sheets or Excel</li>
-                        <li>Export it as CSV or PDF <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ PDF or CSV)</i></li>
-                        <li>Upload it using the options below:</li>
-                    </ul>
+                    <p style="font-size:11px; margin-top:0; margin-bottom:10px;">
+                        <a href="https://docs.google.com/spreadsheets/d/1hozh8SC0W2v18oWwEiC6ks3XiliCrYSPnROPTBAoISQ/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">📄 Download CSV Template File</a>
+                    </p>
                     
                     <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
                         <label style="margin-bottom: 8px;">Upload CSV</label>
@@ -388,15 +392,20 @@
         </div>
 
         <div id="reports-page" class="hidden">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3>📊 Reports</h3><button onclick="showPage('home-page')" class="btn-secondary">Back</button></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3>📊 All-Time Reports</h3><button onclick="showPage('home-page')" class="btn-secondary">Back</button></div>
             <select class="class-dropdown" onchange="handleClassChange(this.value); refreshReportsView();"></select>
-            <select id="report-month-picker" onchange="refreshReportsView()"></select>
+            
             <div id="trend-analysis" class="trend-box"></div>
             
-            <button class="btn-primary btn-full" onclick="exportReportToCSV()">📥 Download .csv Report</button>
-            <p class="csv-reminder">⚠️ Ensure filename ends with .csv before clicking Save</p>
+            <div style="background:var(--bg-color); padding:10px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <label>Select Month for CSV Export:</label>
+                <select id="report-month-picker" style="margin-bottom:10px;"></select>
+                <button class="btn-primary btn-full" style="margin-top:0;" onclick="exportReportToCSV()">📥 Download Monthly .csv Report</button>
+                <p class="csv-reminder" style="margin-bottom:0; margin-top:5px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
+            </div>
             
-            <div id="reports-display-container" style="margin-top: 15px;"></div>
+            <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">All-Time Student Matrix:</h4>
+            <div id="reports-display-container"></div>
         </div>
 
         <div id="history-page" class="hidden">
@@ -424,7 +433,9 @@
                 msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
                 grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
                 totalMark: 100,
-                passMark: 40
+                passMark: 40,
+                examMsgTemplateEn: "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher",
+                examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ"
             };
             return null;
         }
@@ -440,11 +451,15 @@
             msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
             grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
             totalMark: 100,
-            passMark: 40
+            passMark: 40,
+            examMsgTemplateEn: "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher",
+            examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ"
         };
 
         if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
         if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
+        if (!appData.examMsgTemplateEn) appData.examMsgTemplateEn = "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher";
+        if (!appData.examMsgTemplateMl) appData.examMsgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
         if (!appData.grades) appData.grades = [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}];
         if (appData.totalMark === undefined) appData.totalMark = 100;
         if (appData.passMark === undefined) appData.passMark = 40;
@@ -479,6 +494,8 @@
                 
                 document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
                 document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
+                document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
+                document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
 
                 showPage('setup-page');
             } else {
@@ -496,6 +513,8 @@
             document.getElementById('setup-msg-language').value = appData.language;
             document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
             document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
+            document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
+            document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
             
             showPage('setup-page');
         }
@@ -507,6 +526,8 @@
             appData.language = document.getElementById('setup-msg-language').value;
             appData.msgTemplateEn = document.getElementById('setup-msg-en').value;
             appData.msgTemplateMl = document.getElementById('setup-msg-ml').value;
+            appData.examMsgTemplateEn = document.getElementById('setup-exam-msg-en').value;
+            appData.examMsgTemplateMl = document.getElementById('setup-exam-msg-ml').value;
             appData.isSetupComplete = true;
             persistData();
             
@@ -622,11 +643,6 @@
             const cls = appData.classes.find(c => c.id == appData.activeClassId), s = cls.roster[idx];
             document.getElementById('input-student-roll').value = s.roll; document.getElementById('input-student-name').value = s.name; document.getElementById('input-student-phone').value = s.phone || ""; document.getElementById('input-student-email').value = s.email || "";
             document.getElementById('submit-student-btn').innerText = "Update"; editingIdx = idx;
-        }
-
-        function toggleBulkImport() {
-            const section = document.getElementById('bulk-import-section');
-            section.classList.toggle('hidden');
         }
 
         function importStudentListCSV() {
@@ -882,6 +898,18 @@
 
         function setMark(roll, value) {
             if(!currentExam) return alert("Select an exam first!");
+            
+            // Mark Validation
+            if(value !== "" && value.toUpperCase() !== "AB") {
+                let markVal = parseFloat(value);
+                let totalMarkVal = parseFloat(appData.totalMark);
+                if(!isNaN(markVal) && markVal > totalMarkVal) {
+                    alert("Mark cannot be greater than Total Marks (" + totalMarkVal + ")!");
+                    refreshMarksTable(); // Resets input to previous valid value
+                    return;
+                }
+            }
+
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const student = cls.roster.find(s => s.roll === roll);
             if(!student.marks) student.marks = {};
@@ -1134,7 +1162,7 @@
         }
 
         function sendMarkWA(roll) {
-            if(!currentExam) return;
+            if(!currentExam) return alert("Please select an exam first.");
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const s = cls.roster.find(st => st.roll === roll);
             let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
@@ -1147,18 +1175,20 @@
             
             let isPass = false;
             let statusText = "";
-            let parentNote = "";
 
             if (currentMark === 'AB') {
                 statusText = "Absent";
-                parentNote = "Please ensure the student attends the re-test.";
             } else {
                 isPass = parseFloat(currentMark) >= passThreshold;
                 statusText = isPass ? "Passed" : "Failed";
-                parentNote = isPass ? "Congratulations!" : "Please work hard for the next exam.";
             }
 
-            let text = `Dear Parents of *${s.name}*,\n\nThe result for *${currentExam}* (${cls.name}) has been entered.\n\n*Mark Obtained:* ${currentMark} / ${total}\n*Status:* ${statusText}\n\n_${parentNote}_\n\nRegards,\nClass Teacher`;
+            let template = appData.language === 'ml' ? appData.examMsgTemplateMl : appData.examMsgTemplateEn;
+            let text = template.replace(/{name}/g, s.name)
+                               .replace(/{exam}/g, currentExam)
+                               .replace(/{mark}/g, currentMark)
+                               .replace(/{total}/g, total)
+                               .replace(/{status}/g, statusText);
             
             let ct = s.phone.replace(/\D/g, ''); 
             if (ct.length === 10) ct = "91" + ct;
@@ -1166,7 +1196,7 @@
         }
 
         function sendMarkEmail(roll) {
-            if(!currentExam) return;
+            if(!currentExam) return alert("Please select an exam first.");
             const cls = appData.classes.find(c => c.id == appData.activeClassId);
             const s = cls.roster.find(st => st.roll === roll);
             let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
@@ -1179,20 +1209,22 @@
             
             let isPass = false;
             let statusText = "";
-            let parentNote = "";
 
             if (currentMark === 'AB') {
                 statusText = "Absent";
-                parentNote = "Please ensure the student attends the re-test.";
             } else {
                 isPass = parseFloat(currentMark) >= passThreshold;
                 statusText = isPass ? "Passed" : "Failed";
-                parentNote = isPass ? "Congratulations!" : "Please work hard for the next exam.";
             }
 
-            let subject = `Exam Result for ${s.name}: ${currentExam}`;
-            let body = `Dear Parents of ${s.name},\n\nThe result for ${currentExam} (${cls.name}) has been entered.\n\nMark Obtained: ${currentMark} / ${total}\nStatus: ${statusText}\n\n${parentNote}\n\nRegards,\nClass Teacher`;
+            let template = appData.language === 'ml' ? appData.examMsgTemplateMl : appData.examMsgTemplateEn;
+            let body = template.replace(/{name}/g, s.name)
+                               .replace(/{exam}/g, currentExam)
+                               .replace(/{mark}/g, currentMark)
+                               .replace(/{total}/g, total)
+                               .replace(/{status}/g, statusText);
             
+            let subject = `Exam Result for ${s.name}: ${currentExam}`;
             window.location.href = `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
@@ -1278,9 +1310,11 @@
         function setupMonthPicker() { const p = document.getElementById('report-month-picker'); const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse(); p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>"; }
 
         function refreshReportsView() {
-            const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
             let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent: 0, leave: 0, total: 0 });
-            const history = appData.history.filter(h => h.classId == cls.id && h.date.startsWith(m));
+            
+            // All-time filtering for UI
+            const history = appData.history.filter(h => h.classId == cls.id);
             history.forEach(day => {
                 day.students.forEach(r => {
                     if (stats[r.roll]) {
