@@ -1773,10 +1773,18 @@
         }
 
         // Add slashes here to force the video to show every time you refresh!
+      /* --- INTRO VIDEO LOGIC --- */
+        function closeVideoIntro() {
+            document.getElementById('video-intro-overlay').style.display = 'none';
+            localStorage.setItem('pro_video_seen', 'true');
+        }
+
+        // Show the video if they haven't seen it yet
         if (!localStorage.getItem('pro_video_seen')) {
-          document.getElementById('video-intro-overlay').style.display = 'flex';
-        // }
+            document.getElementById('video-intro-overlay').style.display = 'flex';
+        }
         
+        initApp();
         initApp();
      
     </script>
