@@ -1791,7 +1791,99 @@
         if (!localStorage.getItem('pro_video_seen')) {
             document.getElementById('video-intro-overlay').style.display = 'flex';
         }
-        
+        /* --- SCROLL HINT ARROW MODULE --- */
+        (function() {
+            // 1. Inject the Animation CSS
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes bounceDown { 0%, 100% { transform: translateY(0) translateX(-50%); } 50% { transform: translateY(10px) translateX(-50%); } }
+                #scroll-hint { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--primary-blue); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: bold; box-shadow: 0 8px 25px rgba(0,0,0,0.4); z-index: 10006; display: none; flex-direction: column; align-items: center; cursor: pointer; animation: bounceDown 1.5s infinite; border: 2px solid white; text-align: center; }
+            `;
+            document.head.appendChild(style);
+
+            // 2. Inject the HTML Button
+            const hintBtn = document.createElement('div');
+            hintBtn.id = 'scroll-hint';
+            hintBtn.innerHTML = 'Scroll down to enter marks <span style="font-size: 20px; margin-top: 5px;">⬇️</span>';
+            
+            // Hide instantly when clicked, stop timers, then scroll
+            hintBtn.onclick = () => {
+                stopCycle();
+                document.querySelector('.marks-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            document.body.appendChild(hintBtn);
+
+            // 3. Timer Cycle Variables
+            let cycleInterval = null;
+            let hideTimeout = null;
+            let isCycling = false;
+
+            function stopCycle() {
+                isCycling = false;
+                clearInterval(cycleInterval);
+                clearTimeout(hideTimeout);
+                hintBtn.style.display = 'none';
+            }
+
+            function startCycle() {
+                if (isCycling) return; // Don't start multiple loops!
+                isCycling = true;
+                
+                function runCycle() {
+                    hintBtn.style.display = 'flex'; // Show the arrow
+                    
+                    hideTimeout = setTimeout(() => {
+                        hintBtn.style.display = 'none'; // Hide it after 3 seconds
+                    }, 3000);
+                }
+                
+                runCycle(); // Run it immediately the first time
+                cycleInterval = setInterval(runCycle, 8000); // 3s show + 5s hide = 8 seconds total loop
+            }
+
+            // 4. Logic to Check Conditions
+            function checkScroll() {
+                const marksPage = document.getElementById('marks-page');
+                
+                // Stop cycle if not on marks page OR no exam selected
+                if (!marksPage || marksPage.classList.contains('hidden') || !currentExam) {
+                    stopCycle();
+                    return;
+                }
+
+                // Stop cycle if ANY marks are already entered for this exam
+                const cls = appData.classes.find(c => c.id == appData.activeClassId);
+                if (cls) {
+                    const hasMarks = cls.roster.some(s => s.marks && s.marks[currentExam] && s.marks[currentExam] !== "");
+                    if (hasMarks) {
+                        stopCycle();
+                        return; 
+                    }
+                }
+
+                // Stop cycle INSTANTLY IF THE USER SCROLLS DOWN AT ALL
+                if (window.scrollY > 60) {
+                    stopCycle();
+                    return;
+                }
+
+                // Start the cycle ONLY if the table is still at the very bottom of the screen
+                const table = document.querySelector('.marks-table');
+                if (table) {
+                    const rect = table.getBoundingClientRect();
+                    if (rect.top > window.innerHeight - 150) {
+                        startCycle(); 
+                    } else {
+                        stopCycle();
+                    }
+                }
+            }
+
+            // Listen for scrolling, resizing, and clicks
+            window.addEventListener('scroll', checkScroll);
+            window.addEventListener('resize', checkScroll);
+            window.addEventListener('click', () => setTimeout(checkScroll, 100)); 
+        })();
         initApp();
         initApp();
      
