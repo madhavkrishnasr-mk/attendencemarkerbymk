@@ -10,8 +10,6 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
 
-    <!-- BUG FIX 1: Firebase scripts were incorrectly placed INSIDE the <style> block in the original,
-         breaking all CSS from the print section onward. They are now correctly placed here in <head>. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -103,9 +101,6 @@
         .btn-warning { background-color: var(--mark-purple); color: white; }
         .btn-secondary { background-color: var(--text-secondary); color: white; }
 
-        /* --- APP TOUR OVERLAY --- */
-        /* BUG FIX 4: Tour overlay moved OUTSIDE .main-card in HTML so position:fixed
-           works correctly without being clipped by the card's overflow:hidden */
         #tour-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 9999;
@@ -171,7 +166,6 @@
         .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
         
         /* --- PRINT CSS --- */
-        /* BUG FIX 5: Print CSS block had a missing closing brace } — now fixed */
         .print-only { display: none; }
         @media print {
             @page { margin: 1cm; }
@@ -197,17 +191,13 @@
 
 <div id="video-intro-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
     <h3 style="color: white; margin-bottom: 15px; text-align: center;">Welcome! Watch this quick tour:</h3>
-    
     <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    
     <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap; justify-content: center;">
         <button onclick="closeVideoIntro()" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">Start Using App ➔</button>
-        
         <button onclick="printUserManual()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 2px solid white; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">📄 Save User Manual</button>
     </div>
 </div>
 
-<!-- BUG FIX 4: Tour overlay moved OUTSIDE .main-card so position:fixed is not clipped -->
 <div id="tour-overlay" class="hidden">
     <div style="background:var(--card-bg); width:100%; max-width:350px; padding:25px; border-radius:12px; text-align:center; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <h3 id="tour-title" style="margin-top:0; color:var(--primary-blue); font-size:18px;">Title</h3>
@@ -339,7 +329,6 @@
         </div>
         
         <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
-        
         <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleCreateExamPanel()">➕ Create New Exam</button>
 
         <div id="create-exam-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
@@ -560,7 +549,6 @@
     const waIconHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
     const mailIconHTML = `✉️`;
 
-    /* --- APP TOUR LOGIC (heartbeat pulse animation removed; tour itself retained) --- */
     const tourSteps = [
         { title: "👋 Welcome!", text: "Welcome to Attendance Taker Pro! Let's take a quick 6-step tour to help you master the app." },
         { title: "🏫 Step 1: Institution Setup", text: "Before you start, you'll set up your school name and the Headmaster's WhatsApp number for easy reporting." },
@@ -615,12 +603,12 @@
             hmPhone: "",
             history: oh || [],
             msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
-            msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
+            msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
             grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
             totalMark: 100,
             passMark: 40,
             examMsgTemplateEn: "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher",
-            examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ"
+            examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher"
         };
         return null;
     }
@@ -634,18 +622,18 @@
         hmPhone: "",
         history: [],
         msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
-        msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ",
+        msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
         grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
         totalMark: 100,
         passMark: 40,
         examMsgTemplateEn: "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher",
-        examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ"
+        examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher"
     };
 
     if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
-    if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
+    if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher";
     if (!appData.examMsgTemplateEn) appData.examMsgTemplateEn = "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher";
-    if (!appData.examMsgTemplateMl) appData.examMsgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nസ്നേഹത്തോടെ,\nക്ലാസ്സ് ടീച്ചർ";
+    if (!appData.examMsgTemplateMl) appData.examMsgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher";
     if (!appData.grades) appData.grades = [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}];
     if (appData.totalMark === undefined) appData.totalMark = 100;
     if (appData.passMark === undefined) appData.passMark = 40;
@@ -657,7 +645,6 @@
     });
 
     if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
-
     if (appData.history.length > 0 || (appData.classes.length && appData.classes[0] && appData.classes[0].roster.length > 0)) {
         appData.isSetupComplete = true;
     }
@@ -1474,7 +1461,7 @@
             if(s.t > 0) { const activePresent = s.p + s.l; const per = Math.round((activePresent / s.t) * 100); if (per < 75) shortageList.push(`${r}. ${s.name} - ${per}%`); }
         });
         let msg = `*Attendance Shortage Alert*\n*Class:* ${cls.name}\n*Month:* ${m}\n\n`;
-        if (shortageList.length > 0) { msg += `*Students below 75%:*\n` + shortageList.join('\n'); } 
+        if (shortageList.length > 0) { msg += `*Students below 75%:\n*` + shortageList.join('\n'); } 
         else { msg += `*All students have 75% or above attendance!* ✅`; }
         let ct = appData.hmPhone.replace(/\D/g, ''); if (ct.length === 10) ct = "91" + ct;
         window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1507,13 +1494,12 @@
         const currentSchool = appData.schoolName;
         const confirmation = prompt(`⚠️ WARNING: This will delete ALL classes, students, and history permanently.\n\nTo confirm, type your institution name exactly as shown:\n"${currentSchool}"`);
         if (confirmation === currentSchool) {
-            localStorage.removeItem("pro_attendance_data"); localStorage.removeItem("all_classes"); localStorage.removeItem("attendance_history"); localStorage.removeItem("school_name"); localStorage.removeItem("msg_lang"); localStorage.removeItem("active_class_id"); localStorage.removeItem("pro_tour_seen");
+            localStorage.clear();
             alert("App has been successfully reset to factory defaults."); location.reload();
         } else if (confirmation !== null) { alert("Institution name did not match. Reset cancelled."); }
     }
 
     /* --- INTRO VIDEO LOGIC --- */
-    /* BUG FIX 2: closeVideoIntro() was defined twice. Now defined only once. */
     function closeVideoIntro() {
         document.getElementById('video-intro-overlay').style.display = 'none';
         localStorage.setItem('pro_video_seen', 'true');
@@ -1592,8 +1578,8 @@
         window.addEventListener('click', () => setTimeout(checkScroll, 100));
     })();
 
-    /* BUG FIX 3: initApp() was called twice. Now called only once. */
     /* --- USER MANUAL GENERATOR --- */
+   /* --- USER MANUAL GENERATOR --- */
     function printUserManual() {
         const manualContent = `
         <!DOCTYPE html>
@@ -1601,38 +1587,74 @@
         <head>
             <title>Attendance Taker Pro - Manual</title>
             <style>
-                body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; padding-top: 80px; }
                 h1 { color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; }
                 h2 { color: #17a2b8; margin-top: 30px; }
                 .box { background: #e8f4fd; border-left: 4px solid #0056b3; padding: 15px; margin: 20px 0; border-radius: 4px; }
                 ul { margin-top: 5px; }
                 li { margin-bottom: 8px; }
+                
+                /* Fixed Navigation Header Actions */
+                .manual-actions-bar {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: #ffffff;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    padding: 12px 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    z-index: 10000;
+                }
+                .manual-btn {
+                    padding: 10px 18px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    transition: background 0.2s;
+                }
+                .btn-back { background: #606770; color: white; }
+                .btn-back:hover { background: #4a4f55; }
+                .btn-print { background: #0056b3; color: white; }
+                .btn-print:hover { background: #004085; }
+
+                /* Prevent action tools from printing on paper/PDF */
+                @media print {
+                    .manual-actions-bar { display: none !important; }
+                    body { padding-top: 0px; }
+                }
             </style>
         </head>
         <body>
+            <div class="manual-actions-bar">
+                <button class="manual-btn btn-back" onclick="window.close()">⬅️ Back to App</button>
+                <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+            </div>
+
             <div style="text-align: center; margin-bottom: 40px;">
                 <h1 style="border: none; font-size: 2.5em; margin-bottom: 5px;">Attendance Taker Pro</h1>
                 <h3 style="color: #666; margin-top: 0;">Ultimate Teacher Edition - User Manual</h3>
                 <p>Created by Madhav Krishna RS</p>
             </div>
-
             <h2>1. Initial Setup</h2>
             <p>When you open the app, enter your <b>Institution Name</b> and <b>Headmaster's WhatsApp Number</b> (include your country code, e.g., 919876543210). You can also customize the exact text that gets sent to parents for absences and exam results.</p>
-
             <h2>2. Managing Classes & Students</h2>
             <ul>
                 <li><b>Create a Class:</b> Go to <b>⚙️ Settings > Classes</b> tab. Type a name and click Add.</li>
                 <li><b>Add Students manually:</b> Go to the <b>Students</b> tab and fill in their details.</li>
                 <li><b>Bulk Import:</b> Click "Open Bulk Import Options". You can upload a PDF containing your student list, or download the CSV template, fill it out, and upload it to instantly add the whole class.</li>
             </ul>
-
             <h2>3. Taking Daily Attendance</h2>
             <ul>
                 <li>On the Home screen, select your Class and Date.</li>
                 <li>Tap <b>P</b> (Present) or <b>A</b> (Absent). If Absent, you can specify if it is an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
                 <li>Click <b>Save Attendance Record</b>.</li>
             </ul>
-
             <h2>4. Marks, Exams & Parent Alerts</h2>
             <ul>
                 <li>Switch to the <b>📝 Marks</b> tab and click <b>+ Create New Exam</b>.</li>
@@ -1640,13 +1662,11 @@
                 <li>Click the green <b>WhatsApp icon</b> next to a student to instantly send their beautiful result card to their parent.</li>
                 <li>Click <b>📱 Send Exam Report to HM</b> to WhatsApp the overall class pass/fail statistics to your Headmaster.</li>
             </ul>
-
             <h2>5. Reports & History</h2>
             <ul>
                 <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day.</li>
                 <li><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
             </ul>
-
             <h2>6. Cloud Device Sync</h2>
             <div class="box">
                 Because this app stores data locally for maximum privacy and offline speed, you use the Cloud Sync to move data to a new phone or computer.
@@ -1657,22 +1677,22 @@
                 <li>Open the app on your new device, go to the exact same menu, type in the 9-digit key, and click <b>⬇️ Connect</b> to pull all your data down!</li>
             </ul>
         </body>
-        </html>
-        `;
+        </html>`;
         
-        // Open a hidden window and inject the manual
         const printWindow = window.open('', '_blank');
         printWindow.document.write(manualContent);
         printWindow.document.close();
         printWindow.focus();
         
-        // Trigger the print dialogue so they can save as PDF
         setTimeout(() => {
-            alert("Tip: In the menu that appears next, select 'Save as PDF' to download this manual to your device!");
+            alert("Tip: Click 'Back to App' at the top left anytime to exit the manual view. Select 'Save as PDF' in your system dialogue to download a copy!");
             printWindow.print();
         }, 500);
     }
-    initApp();
+    // Ensure DOM is fully loaded before launching the view handlers
+    document.addEventListener("DOMContentLoaded", function() {
+        initApp();
+    });
 </script>
 </body>
 </html>
