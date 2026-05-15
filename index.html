@@ -195,11 +195,16 @@
 </head>
 <body>
 
-<!-- Video Intro Overlay -->
 <div id="video-intro-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-    <h3 style="color: white; margin-bottom: 15px;">Welcome! Watch this quick tour:</h3>
- <iframe width="560" height="315" src="https://www.youtube.com/embed/ddWEhKCt4IY?si=ajvUrWaYbwzO0Rbu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-    <button onclick="closeVideoIntro()" style="margin-top: 20px; padding: 10px 25px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">Start Using App ➔</button>
+    <h3 style="color: white; margin-bottom: 15px; text-align: center;">Welcome! Watch this quick tour:</h3>
+    
+    <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    
+    <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap; justify-content: center;">
+        <button onclick="closeVideoIntro()" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">Start Using App ➔</button>
+        
+        <button onclick="printUserManual()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 2px solid white; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">📄 Save User Manual</button>
+    </div>
 </div>
 
 <!-- BUG FIX 4: Tour overlay moved OUTSIDE .main-card so position:fixed is not clipped -->
@@ -1588,6 +1593,85 @@
     })();
 
     /* BUG FIX 3: initApp() was called twice. Now called only once. */
+    /* --- USER MANUAL GENERATOR --- */
+    function printUserManual() {
+        const manualContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Attendance Taker Pro - Manual</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+                h1 { color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                h2 { color: #17a2b8; margin-top: 30px; }
+                .box { background: #e8f4fd; border-left: 4px solid #0056b3; padding: 15px; margin: 20px 0; border-radius: 4px; }
+                ul { margin-top: 5px; }
+                li { margin-bottom: 8px; }
+            </style>
+        </head>
+        <body>
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="border: none; font-size: 2.5em; margin-bottom: 5px;">Attendance Taker Pro</h1>
+                <h3 style="color: #666; margin-top: 0;">Ultimate Teacher Edition - User Manual</h3>
+                <p>Created by Madhav Krishna RS</p>
+            </div>
+
+            <h2>1. Initial Setup</h2>
+            <p>When you open the app, enter your <b>Institution Name</b> and <b>Headmaster's WhatsApp Number</b> (include your country code, e.g., 919876543210). You can also customize the exact text that gets sent to parents for absences and exam results.</p>
+
+            <h2>2. Managing Classes & Students</h2>
+            <ul>
+                <li><b>Create a Class:</b> Go to <b>⚙️ Settings > Classes</b> tab. Type a name and click Add.</li>
+                <li><b>Add Students manually:</b> Go to the <b>Students</b> tab and fill in their details.</li>
+                <li><b>Bulk Import:</b> Click "Open Bulk Import Options". You can upload a PDF containing your student list, or download the CSV template, fill it out, and upload it to instantly add the whole class.</li>
+            </ul>
+
+            <h2>3. Taking Daily Attendance</h2>
+            <ul>
+                <li>On the Home screen, select your Class and Date.</li>
+                <li>Tap <b>P</b> (Present) or <b>A</b> (Absent). If Absent, you can specify if it is an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
+                <li>Click <b>Save Attendance Record</b>.</li>
+            </ul>
+
+            <h2>4. Marks, Exams & Parent Alerts</h2>
+            <ul>
+                <li>Switch to the <b>📝 Marks</b> tab and click <b>+ Create New Exam</b>.</li>
+                <li>Enter marks for each student. The app automatically calculates their Grade and Pass/Fail status.</li>
+                <li>Click the green <b>WhatsApp icon</b> next to a student to instantly send their beautiful result card to their parent.</li>
+                <li>Click <b>📱 Send Exam Report to HM</b> to WhatsApp the overall class pass/fail statistics to your Headmaster.</li>
+            </ul>
+
+            <h2>5. Reports & History</h2>
+            <ul>
+                <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day.</li>
+                <li><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
+            </ul>
+
+            <h2>6. Cloud Device Sync</h2>
+            <div class="box">
+                Because this app stores data locally for maximum privacy and offline speed, you use the Cloud Sync to move data to a new phone or computer.
+            </div>
+            <ul>
+                <li>On your main device, go to <b>⚙️ Settings > 🏫 Edit Institution</b> and scroll to Cloud Device Sync.</li>
+                <li>Click <b>⬆️ Generate Sync Code</b>. You will get a temporary 9-digit key.</li>
+                <li>Open the app on your new device, go to the exact same menu, type in the 9-digit key, and click <b>⬇️ Connect</b> to pull all your data down!</li>
+            </ul>
+        </body>
+        </html>
+        `;
+        
+        // Open a hidden window and inject the manual
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(manualContent);
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Trigger the print dialogue so they can save as PDF
+        setTimeout(() => {
+            alert("Tip: In the menu that appears next, select 'Save as PDF' to download this manual to your device!");
+            printWindow.print();
+        }, 500);
+    }
     initApp();
 </script>
 </body>
