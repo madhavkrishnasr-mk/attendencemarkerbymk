@@ -271,25 +271,34 @@
         </div>
 
         <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color); padding-bottom: 15px;">
-            <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Device Sync (Smart Merge)</h4>
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Generate a code on another device, then enter it here to safely merge data. Your local data will <b>not</b> be deleted.</p>
+            <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Co-Teacher Sync</h4>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Your persistent Sync Account. Share these with your co-teacher to safely merge your classrooms.</p>
 
-            <button class="btn-info btn-full" style="margin-bottom: 15px; padding: 10px;" onclick="generateCloudCode()">⬆️ Generate 9-Digit Sync Code</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#e8f4fd; padding:12px; border-radius:8px; border:1px solid var(--primary-blue); margin-bottom:15px;">
+                <div>
+                    <span style="font-size:10px; color:var(--text-secondary); display:block; font-weight:bold; text-transform:uppercase;">Account ID:</span>
+                    <b style="font-size:18px; color:var(--primary-blue); letter-spacing:1px;" id="display-sync-id">---</b>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:10px; color:var(--text-secondary); display:block; font-weight:bold; text-transform:uppercase;">PIN:</span>
+                    <b style="font-size:18px; color:var(--danger-red); letter-spacing:1px;" id="display-sync-pin">---</b>
+                </div>
+            </div>
+
+            <button class="btn-primary btn-full" style="margin-bottom: 15px; padding: 12px; font-size:14px;" onclick="performSmartSync()">🔄 Sync Data Now</button>
+            <p style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top:-5px; margin-bottom:15px;">Click Sync to safely merge changes between devices.</p>
+
+            <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
             
-            <div id="cloud-code-display" class="hidden" style="text-align:center; padding:15px; background:#e8f4fd; border-radius:8px; margin-bottom:15px; border: 2px dashed var(--primary-blue);">
-                <p style="font-size:12px; margin:0 0 5px 0; color:var(--text-secondary);">Your Temporary Sync Code:</p>
-                <h2 id="generated-code-text" style="margin:0; color:var(--primary-blue); letter-spacing: 2px;">--- --- ---</h2>
-                <p style="font-size:11px; margin:5px 0 0 0; color:var(--danger-red);">Code expires quickly. Enter it on your other device now.</p>
+            <label style="margin-bottom: 5px;">Connect to Co-Teacher's Account:</label>
+            <div style="display:flex; gap:8px; margin-bottom:5px;">
+                <input type="number" id="link-sync-id" placeholder="9-Digit ID" style="margin-bottom: 0; padding: 8px; flex: 2; font-size:13px; letter-spacing:1px;">
+                <input type="number" id="link-sync-pin" placeholder="PIN" style="margin-bottom: 0; padding: 8px; flex: 1; font-size:13px; letter-spacing:1px;">
             </div>
-
-            <label style="margin-bottom: 5px;">Enter Code from other device:</label>
-            <div style="display:flex; gap:8px;">
-                <input type="number" id="input-sync-code" placeholder="e.g. 123456789" style="margin-bottom: 0; padding: 8px; flex: 1; letter-spacing: 1px;">
-                <button class="btn-warning" style="padding: 8px 15px;" onclick="receiveCloudData()">⬇️ Smart Connect</button>
-            </div>
+            <button class="btn-warning btn-full" style="padding: 10px; font-size:13px; margin-top:5px;" onclick="linkCoTeacherAccount()">🔗 Link & Merge Devices</button>
         </div>
 
-        <button class="btn-primary btn-full" onclick="completeSetup()">Save Institution Details</button>
+        <button class="btn-success btn-full" style="padding:15px; margin-top:20px;" onclick="completeSetup()">Save Institution Details</button>
 
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border-color); text-align: center;">
             <h4 style="margin: 0 0 8px 0; color: var(--primary-blue); font-size: 14px;">About Attendance Taker Pro</h4>
@@ -651,6 +660,16 @@
     if (appData.hmPhone === undefined) appData.hmPhone = "";
     if (!appData.trash) appData.trash = { students: [], classes: [] };
 
+    // --- NEW: Persistent Sync Credentials ---
+    if (!appData.syncId) {
+        appData.syncId = Math.floor(100000000 + Math.random() * 900000000).toString();
+        persistData();
+    }
+    if (!appData.syncPin) {
+        appData.syncPin = Math.floor(1000 + Math.random() * 9000).toString();
+        persistData();
+    }
+
     appData.classes.forEach(c => {
         if(!c.exams) c.exams = [];
         c.roster.forEach(s => { if(!s.marks) s.marks = {}; });
@@ -682,6 +701,11 @@
             document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
             document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
             document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
+            
+            // Show new sync credentials
+            document.getElementById('display-sync-id').innerText = appData.syncId.match(/.{1,3}/g).join('-');
+            document.getElementById('display-sync-pin').innerText = appData.syncPin;
+
             showPage('setup-page');
         } else {
             showPage('home-page');
@@ -704,6 +728,11 @@
         document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
         document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
         document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
+        
+        // Show new sync credentials
+        document.getElementById('display-sync-id').innerText = appData.syncId.match(/.{1,3}/g).join('-');
+        document.getElementById('display-sync-pin').innerText = appData.syncPin;
+
         showPage('setup-page');
     }
 
@@ -1422,7 +1451,6 @@
             </div>`}).join('') : "No History.";
     }
 
-    /* --- NEW FEATURE: EXPORT DAILY HISTORY (NO PHONE/EMAIL) --- */
     function exportDailyHistoryCSV(hId) {
         const entry = appData.history.find(h => h.id === hId);
         if (!entry) return alert("History entry not found.");
@@ -1622,36 +1650,27 @@
     }
 
     /* --- CLOUD SYNC (SMART MERGE) LOGIC --- */
-    async function generateCloudCode() {
-        const localData = localStorage.getItem("pro_attendance_data");
-        if (!localData) return alert("No data to sync!");
-        const syncCode = Math.floor(100000000 + Math.random() * 900000000).toString();
-        document.getElementById('cloud-code-display').classList.remove('hidden');
-        document.getElementById('generated-code-text').innerText = "Pushing to Cloud...";
-        try {
-            await db.collection("sync_codes").doc(syncCode).set({ payload: localData, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-            document.getElementById('generated-code-text').innerText = syncCode.match(/.{1,3}/g).join('-');
-        } catch (error) {
-            console.error("Firebase Error:", error);
-            document.getElementById('generated-code-text').innerText = "ERROR";
-            alert("Failed to connect to cloud. Check your internet.");
-        }
-    }
+    async function performSmartSync() {
+        const syncId = appData.syncId;
+        const syncPin = appData.syncPin;
+        const docRef = db.collection("persistent_sync").doc(syncId);
+        const btn = document.activeElement;
+        const originalText = btn.innerText;
+        btn.innerText = "Syncing... Please wait";
 
-    async function receiveCloudData() {
-        let codeInput = document.getElementById('input-sync-code').value;
-        let cleanCode = codeInput.replace(/[^0-9]/g, '');
-        if (cleanCode.length !== 9) return alert("Please enter a valid 9-digit code.");
-        
-        if (!confirm("🔄 SMART MERGE: This will combine the cloud data with your current phone data. Existing local data will NOT be deleted. Continue?")) return;
-        
         try {
-            const docRef = db.collection("sync_codes").doc(cleanCode);
             const docSnap = await docRef.get();
+            let localData = appData; 
+
             if (docSnap.exists) {
-                const cloudDataString = docSnap.data().payload;
-                const cloudData = JSON.parse(cloudDataString);
-                let localData = appData;
+                const cloudRecord = docSnap.data();
+                if (cloudRecord.pin !== syncPin) {
+                    alert("❌ Authentication Error: The PIN for this Sync ID does not match.");
+                    btn.innerText = originalText;
+                    return;
+                }
+                
+                const cloudData = JSON.parse(cloudRecord.payload);
                 
                 if(cloudData.classes) {
                     cloudData.classes.forEach(cloudClass => {
@@ -1690,16 +1709,55 @@
                     });
                     localData.history = uniqueHistory;
                 }
-
-                localStorage.setItem("pro_attendance_data", JSON.stringify(localData));
-                alert("✅ Smart Merge Complete! Your data has been combined successfully.");
-                location.reload();
-            } else { 
-                alert("❌ Invalid or Expired Code. Please generate a new one on the other device."); 
             }
-        } catch (error) { 
-            console.error("Firebase Error:", error); 
-            alert("Failed to download data. Check your internet connection."); 
+
+            await docRef.set({
+                pin: syncPin,
+                payload: JSON.stringify(localData),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            localStorage.setItem("pro_attendance_data", JSON.stringify(localData));
+            alert("✅ Smart Sync Complete!");
+            location.reload();
+
+        } catch (error) {
+            console.error("Sync Error:", error);
+            alert("Failed to sync. Check your internet connection.");
+            btn.innerText = originalText;
+        }
+    }
+
+    async function linkCoTeacherAccount() {
+        let idInput = document.getElementById('link-sync-id').value.replace(/[^0-9]/g, '');
+        let pinInput = document.getElementById('link-sync-pin').value.replace(/[^0-9]/g, '');
+
+        if (idInput.length !== 9) return alert("Please enter a valid 9-digit Sync ID.");
+        if (!pinInput) return alert("Please enter the PIN.");
+
+        if (!confirm("⚠️ This will permanently link your app to this Sync ID and perform a Smart Merge. Continue?")) return;
+
+        try {
+            const docRef = db.collection("persistent_sync").doc(idInput);
+            const docSnap = await docRef.get();
+
+            if (docSnap.exists) {
+                if (docSnap.data().pin !== pinInput) {
+                    return alert("❌ Incorrect PIN for this Sync ID.");
+                }
+            } else {
+                return alert("❌ Account not found. Ensure your co-teacher has synced at least once.");
+            }
+
+            appData.syncId = idInput;
+            appData.syncPin = pinInput;
+            persistData();
+
+            await performSmartSync();
+
+        } catch (error) {
+            console.error(error);
+            alert("Failed to verify account. Check internet connection.");
         }
     }
 
@@ -1834,8 +1892,8 @@
             </div>
             <ul>
                 <li>On your main device, go to <b>⚙️ Settings > 🏫 Edit Institution</b> and scroll to Cloud Device Sync.</li>
-                <li>Click <b>⬆️ Generate Sync Code</b>. You will get a temporary 9-digit key.</li>
-                <li>Open the app on your new device, go to the exact same menu, type in the 9-digit key, and click <b>⬇️ Smart Connect</b>. It will merge the new data without losing your local work!</li>
+                <li>Click <b>🔄 Sync Data Now</b> to push your current data to the cloud.</li>
+                <li>Open the app on your new device, go to the exact same menu, type in your 9-digit ID and PIN, and click <b>🔗 Link & Merge Devices</b>. It will merge the data without losing your local work!</li>
             </ul>
         </body>
         </html>`;
