@@ -271,8 +271,8 @@
         </div>
 
         <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color); padding-bottom: 15px;">
-            <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Device Sync</h4>
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Generate a code on your main device, then enter it here to instantly pull all data.</p>
+            <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Device Sync (Smart Merge)</h4>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Generate a code on another device, then enter it here to safely merge data. Your local data will <b>not</b> be deleted.</p>
 
             <button class="btn-info btn-full" style="margin-bottom: 15px; padding: 10px;" onclick="generateCloudCode()">⬆️ Generate 9-Digit Sync Code</button>
             
@@ -285,7 +285,7 @@
             <label style="margin-bottom: 5px;">Enter Code from other device:</label>
             <div style="display:flex; gap:8px;">
                 <input type="number" id="input-sync-code" placeholder="e.g. 123456789" style="margin-bottom: 0; padding: 8px; flex: 1; letter-spacing: 1px;">
-                <button class="btn-warning" style="padding: 8px 15px;" onclick="receiveCloudData()">⬇️ Connect</button>
+                <button class="btn-warning" style="padding: 8px 15px;" onclick="receiveCloudData()">⬇️ Smart Connect</button>
             </div>
         </div>
 
@@ -294,9 +294,9 @@
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border-color); text-align: center;">
             <h4 style="margin: 0 0 8px 0; color: var(--primary-blue); font-size: 14px;">About Attendance Taker Pro</h4>
             <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
-                <b>Version 1.0 (Ultimate Teacher Edition) Created by Madhav Krishna RS</b><br>
+                <b>Version 1.0 (Ultimate Collab Edition) Created by Madhav Krishna RS</b><br>
                 A smart, offline-ready tool designed to simplify attendance, grading, and automated reporting for modern educators.<br>
-                <i>Your data stays 100% private and secure on your device.</i>
+                <i>Your data stays private on your device, and merges safely via cloud.</i>
             </p>
         </div>
 
@@ -1621,7 +1621,7 @@
         document.getElementById('video-intro-overlay').style.display = 'flex';
     }
 
-    /* --- CLOUD SYNC LOGIC --- */
+    /* --- CLOUD SYNC (SMART MERGE) LOGIC --- */
     async function generateCloudCode() {
         const localData = localStorage.getItem("pro_attendance_data");
         if (!localData) return alert("No data to sync!");
@@ -1642,17 +1642,65 @@
         let codeInput = document.getElementById('input-sync-code').value;
         let cleanCode = codeInput.replace(/[^0-9]/g, '');
         if (cleanCode.length !== 9) return alert("Please enter a valid 9-digit code.");
-        if (!confirm("⚠️ WARNING: This will overwrite ALL data on this device with the cloud data. Continue?")) return;
+        
+        if (!confirm("🔄 SMART MERGE: This will combine the cloud data with your current phone data. Existing local data will NOT be deleted. Continue?")) return;
+        
         try {
             const docRef = db.collection("sync_codes").doc(cleanCode);
             const docSnap = await docRef.get();
             if (docSnap.exists) {
-                const cloudData = docSnap.data().payload;
-                localStorage.setItem("pro_attendance_data", cloudData);
-                alert("✅ Sync Complete! The app will now reload with your data.");
+                const cloudDataString = docSnap.data().payload;
+                const cloudData = JSON.parse(cloudDataString);
+                let localData = appData;
+                
+                if(cloudData.classes) {
+                    cloudData.classes.forEach(cloudClass => {
+                        let localClass = localData.classes.find(c => c.id === cloudClass.id);
+                        if (!localClass) {
+                            localData.classes.push(cloudClass);
+                        } else {
+                            if(cloudClass.exams) localClass.exams = [...new Set([...(localClass.exams||[]), ...cloudClass.exams])];
+                            cloudClass.roster.forEach(cloudStudent => {
+                                let localStudent = localClass.roster.find(s => s.roll === cloudStudent.roll);
+                                if (!localStudent) {
+                                    localClass.roster.push(cloudStudent);
+                                } else {
+                                    if (!localStudent.phone && cloudStudent.phone) localStudent.phone = cloudStudent.phone;
+                                    if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
+                                    if(!localStudent.marks) localStudent.marks = {};
+                                    if(cloudStudent.marks) {
+                                        localStudent.marks = { ...cloudStudent.marks, ...localStudent.marks };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if(cloudData.history) {
+                    const combinedHistory = [...localData.history, ...cloudData.history];
+                    const uniqueHistory = [];
+                    const historyMap = new Set();
+                    combinedHistory.sort((a,b) => b.id - a.id).forEach(entry => {
+                        const key = entry.classId + "_" + entry.date;
+                        if (!historyMap.has(key)) {
+                            historyMap.add(key);
+                            uniqueHistory.push(entry);
+                        }
+                    });
+                    localData.history = uniqueHistory;
+                }
+
+                localStorage.setItem("pro_attendance_data", JSON.stringify(localData));
+                alert("✅ Smart Merge Complete! Your data has been combined successfully.");
                 location.reload();
-            } else { alert("❌ Invalid or Expired Code. Please generate a new one on your other device."); }
-        } catch (error) { console.error("Firebase Error:", error); alert("Failed to download data. Check your internet connection."); }
+            } else { 
+                alert("❌ Invalid or Expired Code. Please generate a new one on the other device."); 
+            }
+        } catch (error) { 
+            console.error("Firebase Error:", error); 
+            alert("Failed to download data. Check your internet connection."); 
+        }
     }
 
     /* --- SCROLL HINT ARROW MODULE --- */
@@ -1780,14 +1828,14 @@
                 <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day. Click <b>📥 Download CSV</b> to export a clean spreadsheet of the day's attendance.</li>
                 <li><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
             </ul>
-            <h2>6. Cloud Device Sync</h2>
+            <h2>6. Cloud Device Sync (Smart Merge)</h2>
             <div class="box">
-                Because this app stores data locally for maximum privacy and offline speed, you use the Cloud Sync to move data to a new phone or computer.
+                Because this app stores data locally for maximum privacy and offline speed, you use the Cloud Sync to safely merge data between multiple devices or co-teachers.
             </div>
             <ul>
                 <li>On your main device, go to <b>⚙️ Settings > 🏫 Edit Institution</b> and scroll to Cloud Device Sync.</li>
                 <li>Click <b>⬆️ Generate Sync Code</b>. You will get a temporary 9-digit key.</li>
-                <li>Open the app on your new device, go to the exact same menu, type in the 9-digit key, and click <b>⬇️ Connect</b> to pull all your data down!</li>
+                <li>Open the app on your new device, go to the exact same menu, type in the 9-digit key, and click <b>⬇️ Smart Connect</b>. It will merge the new data without losing your local work!</li>
             </ul>
         </body>
         </html>`;
