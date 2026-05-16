@@ -194,7 +194,7 @@
     <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY?si=ajvUrWaYbwzO0Rbu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap; justify-content: center;">
         <button onclick="closeVideoIntro()" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">Start Using App ➔</button>
-        <button onclick="printUserManual()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 2px solid white; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">📄 Read User Manual</button>
+        <button onclick="printUserManual()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 2px solid white; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">📄 Save User Manual</button>
     </div>
 </div>
 
@@ -309,7 +309,7 @@
                 <input type="number" id="link-sync-id" placeholder="9-Digit ID" style="margin-bottom: 0; padding: 8px; flex: 2; font-size:13px; letter-spacing:1px;">
                 <input type="number" id="link-sync-pin" placeholder="PIN" style="margin-bottom: 0; padding: 8px; flex: 1; font-size:13px; letter-spacing:1px;">
             </div>
-            <button class="btn-warning btn-full" style="padding: 10px; font-size:13px; margin-top:5px;" onclick="linkCoTeacherAccount()">🔗 Link Devices</button>
+            <button class="btn-warning btn-full" style="padding: 10px; font-size:13px; margin-top:5px;" onclick="linkCoTeacherAccount()">🔗 Link & Merge Devices</button>
         </div>
 
         <button class="btn-success btn-full" style="padding:15px; margin-top:20px;" onclick="completeSetup()">Save Institution Details</button>
@@ -425,20 +425,6 @@
             </div>
         </div>
 
-        <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
-        <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
-        
-        <button class="btn-warning btn-full" style="margin-bottom: 15px;" onclick="sendExamToHM()">📱 Send Exam Report to HM</button>
-        <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
-        
-        <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
-            <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                <label style="margin-bottom:0; flex:1;">Student Filter:</label>
-                <select id="reportStudentFilter" onchange="renderMarkReport()" style="flex:2; padding:6px; margin-bottom:0;"></select>
-            </div>
-            <div id="mark-report-table-wrapper" style="overflow-x: auto;"></div>
-        </div>
-
         <div class="stats-box">
             <div class="stat-item">
                 <div class="stat-value" id="statAvg">0.0</div>
@@ -454,7 +440,7 @@
             </div>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div style="overflow-x: auto; margin-bottom: 15px;">
             <table class="marks-table">
                 <thead>
                     <tr>
@@ -470,6 +456,19 @@
                 </thead>
                 <tbody id="marksTableBody"></tbody>
             </table>
+        </div>
+        <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+        <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
+        
+        <button class="btn-warning btn-full" style="margin-bottom: 15px;" onclick="sendExamToHM()">📱 Send Exam Report to HM</button>
+        <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
+        
+        <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+            <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin-bottom:0; flex:1;">Student Filter:</label>
+                <select id="reportStudentFilter" onchange="renderMarkReport()" style="flex:2; padding:6px; margin-bottom:0;"></select>
+            </div>
+            <div id="mark-report-table-wrapper" style="overflow-x: auto;"></div>
         </div>
     </div>
 
@@ -726,7 +725,6 @@
             document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
             document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
             
-            // Show sync credentials (Dashes removed)
             document.getElementById('display-sync-id').innerText = appData.syncId;
             document.getElementById('display-sync-pin').innerText = appData.syncPin;
 
@@ -761,7 +759,6 @@
         document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
         document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
         
-        // Show sync credentials (Dashes removed)
         document.getElementById('display-sync-id').innerText = appData.syncId;
         document.getElementById('display-sync-pin').innerText = appData.syncPin;
 
@@ -1695,32 +1692,34 @@
         const syncPin = appData.syncPin;
         const docRef = db.collection("persistent_sync").doc(syncId);
         const btn = document.activeElement;
-        const originalText = btn.innerText;
-        btn.innerText = "Syncing... Please wait";
+        const originalText = btn ? btn.innerText : "Sync";
+        if(btn) btn.innerText = "Syncing... Please wait";
 
         try {
             const docSnap = await docRef.get();
-            let localData = appData; 
+            let localData = JSON.parse(localStorage.getItem("pro_attendance_data"));
+            if(!localData) localData = appData;
 
             if (docSnap.exists) {
                 const cloudRecord = docSnap.data();
                 if (cloudRecord.pin !== syncPin) {
                     alert("❌ Authentication Error: The PIN for this Sync ID does not match.");
-                    btn.innerText = originalText;
+                    if(btn) btn.innerText = originalText;
                     return;
                 }
                 
                 const cloudData = JSON.parse(cloudRecord.payload);
                 
+                // Smart Merge Logic based on NAMES
                 if(cloudData.classes) {
                     cloudData.classes.forEach(cloudClass => {
-                        let localClass = localData.classes.find(c => c.id === cloudClass.id);
+                        let localClass = localData.classes.find(c => c.name.toLowerCase().trim() === cloudClass.name.toLowerCase().trim());
                         if (!localClass) {
                             localData.classes.push(cloudClass);
                         } else {
                             if(cloudClass.exams) localClass.exams = [...new Set([...(localClass.exams||[]), ...cloudClass.exams])];
                             cloudClass.roster.forEach(cloudStudent => {
-                                let localStudent = localClass.roster.find(s => s.roll === cloudStudent.roll);
+                                let localStudent = localClass.roster.find(s => s.roll === cloudStudent.roll || s.name.toLowerCase() === cloudStudent.name.toLowerCase());
                                 if (!localStudent) {
                                     localClass.roster.push(cloudStudent);
                                 } else {
@@ -1728,7 +1727,7 @@
                                     if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
                                     if(!localStudent.marks) localStudent.marks = {};
                                     if(cloudStudent.marks) {
-                                        localStudent.marks = { ...cloudStudent.marks, ...localStudent.marks };
+                                        localStudent.marks = { ...localStudent.marks, ...cloudStudent.marks };
                                     }
                                 }
                             });
@@ -1741,7 +1740,8 @@
                     const uniqueHistory = [];
                     const historyMap = new Set();
                     combinedHistory.sort((a,b) => b.id - a.id).forEach(entry => {
-                        const key = entry.classId + "_" + entry.date;
+                        const className = entry.className || "";
+                        const key = className.toLowerCase() + "_" + entry.date;
                         if (!historyMap.has(key)) {
                             historyMap.add(key);
                             uniqueHistory.push(entry);
@@ -1753,20 +1753,20 @@
 
             await docRef.set({
                 pin: syncPin,
-                userName: localData.userName,
-                userRole: localData.userRole,
+                userName: localData.userName || "",
+                userRole: localData.userRole || "",
                 payload: JSON.stringify(localData),
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             localStorage.setItem("pro_attendance_data", JSON.stringify(localData));
-            alert("✅ Smart Sync Complete!");
+            alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged. The page will now refresh to show updates.");
             location.reload();
 
         } catch (error) {
             console.error("Sync Error:", error);
             alert("Failed to sync. Check your internet connection.");
-            btn.innerText = originalText;
+            if(btn) btn.innerText = originalText;
         }
     }
 
@@ -1777,7 +1777,7 @@
         if (idInput.length !== 9) return alert("Please enter a valid 9-digit Sync ID.");
         if (!pinInput) return alert("Please enter the PIN.");
 
-        if (!confirm("⚠️ This will permanently link your app to this Sync ID. Continue?")) return;
+        if (!confirm("⚠️ This will permanently link your app to this Sync ID and perform a Smart Merge. Continue?")) return;
 
         try {
             const docRef = db.collection("persistent_sync").doc(idInput);
@@ -1788,22 +1788,18 @@
                     return alert("❌ Incorrect PIN for this Sync ID.");
                 }
             } else {
-                return alert("❌ Account not found. Ensure your co-teacher has clicked 'Sync Data Now' at least once.");
+                return alert("❌ Account not found. Ensure the original Master account has clicked 'Sync Data Now' at least once.");
             }
 
             appData.syncId = idInput;
             appData.syncPin = pinInput;
             
-            // Save the name of the master account to display it
             let masterName = docSnap.data().userName || "Co-Teacher";
             let masterRole = docSnap.data().userRole || "";
             appData.linkedToName = masterName + (masterRole ? ` (${masterRole})` : "");
             
             persistData();
-
-            // DO NOT SYNC AUTOMATICALLY. Just link.
-            alert("✅ Account Linked! Your devices are connected. Click 'Sync Data Now' whenever you want to merge data.");
-            location.reload();
+            await performSmartSync();
 
         } catch (error) {
             console.error(error);
@@ -1847,81 +1843,117 @@
         window.addEventListener('click', () => setTimeout(checkScroll, 100));
     })();
 
-   /* --- IN-APP USER MANUAL GENERATOR --- */
+   /* --- USER MANUAL GENERATOR --- */
     function printUserManual() {
-        let overlay = document.getElementById('manual-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'manual-overlay';
-            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:999999; overflow-y:auto;';
-            
-            overlay.innerHTML = `
+        const manualContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Attendance Taker Pro - Manual</title>
             <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; padding-top: 80px; }
+                h1 { color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                h2 { color: #17a2b8; margin-top: 30px; }
+                .box { background: #e8f4fd; border-left: 4px solid #0056b3; padding: 15px; margin: 20px 0; border-radius: 4px; }
+                ul { margin-top: 5px; }
+                li { margin-bottom: 8px; }
+                
+                /* Fixed Navigation Header Actions */
+                .manual-actions-bar {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: #ffffff;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    padding: 12px 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    z-index: 10000;
+                }
+                .manual-btn {
+                    padding: 10px 18px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    transition: background 0.2s;
+                }
+                .btn-back { background: #606770; color: white; }
+                .btn-back:hover { background: #4a4f55; }
+                .btn-print { background: #0056b3; color: white; }
+                .btn-print:hover { background: #004085; }
+
+                /* Prevent action tools from printing on paper/PDF */
                 @media print {
-                    body.printing-manual > *:not(#manual-overlay) { display: none !important; }
                     .manual-actions-bar { display: none !important; }
+                    body { padding-top: 0px; }
                 }
             </style>
-            <div class="manual-actions-bar" style="position:fixed; top:0; left:0; right:0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.1); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; z-index:10000;">
-                <button style="padding:10px 18px; font-size:14px; font-weight:600; border:none; border-radius:6px; cursor:pointer; background:#606770; color:white;" onclick="closeManual()">⬅️ Back to App</button>
-                <button style="padding:10px 18px; font-size:14px; font-weight:600; border:none; border-radius:6px; cursor:pointer; background:#0056b3; color:white;" onclick="window.print()">🖨️ Print / Save PDF</button>
+        </head>
+        <body>
+            <div class="manual-actions-bar">
+                <button class="manual-btn btn-back" onclick="window.history.back(); window.close();">⬅️ Back to App</button>
+                <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
             </div>
-            <div style="padding: 80px 20px 20px 20px; max-width:800px; margin:0 auto; font-family:'Segoe UI', Tahoma, sans-serif; color:#333; line-height:1.6;">
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h1 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 2.5em; margin-bottom: 5px;">Attendance Taker Pro</h1>
-                    <h3 style="color: #666; margin-top: 0;">Ultimate Teacher Edition - User Manual</h3>
-                    <p>Created by Madhav Krishna RS</p>
-                </div>
-                <h2 style="color: #17a2b8; margin-top: 30px;">1. Initial Setup</h2>
-                <p>When you open the app, enter your <b>Name and Role</b>, along with your <b>Institution Name</b> and <b>Headmaster's WhatsApp Number</b> (include your country code, e.g., 919876543210). You can also customize the exact text that gets sent to parents for absences and exam results.</p>
-                <h2 style="color: #17a2b8; margin-top: 30px;">2. Managing Classes & Students</h2>
-                <ul style="margin-top: 5px;">
-                    <li style="margin-bottom: 8px;"><b>Create a Class:</b> Go to <b>⚙️ Settings > Classes</b> tab. Type a name and click Add.</li>
-                    <li style="margin-bottom: 8px;"><b>Add Students manually:</b> Go to the <b>Students</b> tab and fill in their details.</li>
-                    <li style="margin-bottom: 8px;"><b>Bulk Import:</b> Click "Open Bulk Import Options". You can upload a PDF containing your student list, or download the CSV template, fill it out, and upload it to instantly add the whole class.</li>
-                    <li style="margin-bottom: 8px;"><b>Trash Bin:</b> Accidentally deleted a student or class? Check the <b>🗑️ Trash</b> tab in Settings to restore them instantly!</li>
-                </ul>
-                <h2 style="color: #17a2b8; margin-top: 30px;">3. Taking Daily Attendance</h2>
-                <ul style="margin-top: 5px;">
-                    <li style="margin-bottom: 8px;">On the Home screen, select your Class and Date.</li>
-                    <li style="margin-bottom: 8px;">Tap <b>P</b> (Present) or <b>A</b> (Absent). If Absent, you can specify if it is an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
-                    <li style="margin-bottom: 8px;">Click <b>Save Attendance Record</b>.</li>
-                </ul>
-                <h2 style="color: #17a2b8; margin-top: 30px;">4. Marks, Exams & Parent Alerts</h2>
-                <ul style="margin-top: 5px;">
-                    <li style="margin-bottom: 8px;">Switch to the <b>📝 Marks</b> tab and click <b>+ Create New Exam</b>.</li>
-                    <li style="margin-bottom: 8px;">Enter marks for each student. The app automatically calculates their Grade and Pass/Fail status.</li>
-                    <li style="margin-bottom: 8px;">Click the green <b>WhatsApp icon</b> next to a student to instantly send their beautiful result card to their parent.</li>
-                    <li style="margin-bottom: 8px;">Click <b>📱 Send Exam Report to HM</b> to WhatsApp the overall class pass/fail statistics to your Headmaster.</li>
-                </ul>
-                <h2 style="color: #17a2b8; margin-top: 30px;">5. Reports & History</h2>
-                <ul style="margin-top: 5px;">
-                    <li style="margin-bottom: 8px;"><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day. Click <b>📥 Download CSV</b> to export a clean spreadsheet of the day's attendance.</li>
-                    <li style="margin-bottom: 8px;"><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
-                </ul>
-                <h2 style="color: #17a2b8; margin-top: 30px;">6. Co-Teacher Cloud Sync (Multi-Device Network)</h2>
-                <div style="background: #e8f4fd; border-left: 4px solid #0056b3; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                    Create a secure "Classroom Network" by linking multiple phones, tablets, or laptops to a single database. This allows co-teachers to collaborate safely without erasing each other's work!
-                </div>
-                <ul style="margin-top: 5px;">
-                    <li style="margin-bottom: 8px;"><b>Find your Credentials:</b> The Master device goes to <b>⚙️ Settings > 🏫 Edit Institution</b> to find the permanent 9-Digit Account ID and PIN.</li>
-                    <li style="margin-bottom: 8px;"><b>Start the Sync:</b> The Master device MUST click <b>🔄 Sync Data Now</b> to establish the cloud link first.</li>
-                    <li style="margin-bottom: 8px;"><b>Link Devices:</b> Have your co-teachers (or your other devices) open the app, enter that Master ID and PIN, and click <b>🔗 Link Devices</b>.</li>
-                    <li style="margin-bottom: 8px;"><b>How to Collaborate:</b> Whenever anyone clicks <b>🔄 Sync Data Now</b>, the app pushes their new attendance and marks to the cloud and instantly downloads everyone else's work, merging it all together seamlessly!</li>
-                </ul>
-            </div>
-            `;
-            document.body.appendChild(overlay);
-        }
-        
-        document.body.classList.add('printing-manual');
-        overlay.style.display = 'block';
-    }
 
-    function closeManual() {
-        const overlay = document.getElementById('manual-overlay');
-        if(overlay) overlay.style.display = 'none';
-        document.body.classList.remove('printing-manual');
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="border: none; font-size: 2.5em; margin-bottom: 5px;">Attendance Taker Pro</h1>
+                <h3 style="color: #666; margin-top: 0;">Ultimate Teacher Edition - User Manual</h3>
+                <p>Created by Madhav Krishna RS</p>
+            </div>
+            <h2>1. Initial Setup</h2>
+            <p>When you open the app, enter your <b>Name and Role</b>, along with your <b>Institution Name</b> and <b>Headmaster's WhatsApp Number</b> (include your country code, e.g., 919876543210). You can also customize the exact text that gets sent to parents for absences and exam results.</p>
+            <h2>2. Managing Classes & Students</h2>
+            <ul>
+                <li><b>Create a Class:</b> Go to <b>⚙️ Settings > Classes</b> tab. Type a name and click Add.</li>
+                <li><b>Add Students manually:</b> Go to the <b>Students</b> tab and fill in their details.</li>
+                <li><b>Bulk Import:</b> Click "Open Bulk Import Options". You can upload a PDF containing your student list, or download the CSV template, fill it out, and upload it to instantly add the whole class.</li>
+                <li><b>Trash Bin:</b> Accidentally deleted a student or class? Check the <b>🗑️ Trash</b> tab in Settings to restore them instantly!</li>
+            </ul>
+            <h2>3. Taking Daily Attendance</h2>
+            <ul>
+                <li>On the Home screen, select your Class and Date.</li>
+                <li>Tap <b>P</b> (Present) or <b>A</b> (Absent). If Absent, you can specify if it is an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
+                <li>Click <b>Save Attendance Record</b>.</li>
+            </ul>
+            <h2>4. Marks, Exams & Parent Alerts</h2>
+            <ul>
+                <li>Switch to the <b>📝 Marks</b> tab and click <b>+ Create New Exam</b>.</li>
+                <li>Enter marks for each student. The app automatically calculates their Grade and Pass/Fail status.</li>
+                <li>Click the green <b>WhatsApp icon</b> next to a student to instantly send their beautiful result card to their parent.</li>
+                <li>Click <b>📱 Send Exam Report to HM</b> to WhatsApp the overall class pass/fail statistics to your Headmaster.</li>
+            </ul>
+            <h2>5. Reports & History</h2>
+            <ul>
+                <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day. Click <b>📥 Download CSV</b> to export a clean spreadsheet of the day's attendance.</li>
+                <li><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
+            </ul>
+            <h2>6. Co-Teacher Cloud Sync (Multi-Device Network)</h2>
+            <div class="box">
+                Create a secure "Classroom Network" by linking multiple phones, tablets, or laptops to a single database. This allows co-teachers to collaborate safely without erasing each other's work!
+            </div>
+            <ul>
+                <li><b>Find your Credentials:</b> The Master device goes to <b>⚙️ Settings > 🏫 Edit Institution</b> to find the permanent 9-Digit Account ID and PIN.</li>
+                <li><b>Start the Sync:</b> The Master device MUST click <b>🔄 Sync Data Now</b> to establish the cloud link first.</li>
+                <li><b>Link Devices:</b> Have your co-teachers (or your other devices) open the app, enter that Master ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
+                <li><b>How to Collaborate:</b> Whenever anyone clicks <b>🔄 Sync Data Now</b>, the app pushes their new attendance and marks to the cloud and instantly downloads everyone else's work, merging it all together seamlessly!</li>
+            </ul>
+        </body>
+        </html>`;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(manualContent);
+        printWindow.document.close();
+        printWindow.focus();
+        
+        setTimeout(() => {
+            alert("Tip: Click 'Back to App' at the top left anytime to exit the manual view. Select 'Save as PDF' in your system dialogue to download a copy!");
+            printWindow.print();
+        }, 500);
     }
     
     // Ensure DOM is fully loaded before launching the view handlers
