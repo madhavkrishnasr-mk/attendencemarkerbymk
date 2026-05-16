@@ -234,55 +234,65 @@
             <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your profile and institution details.</p>
         </div>
 
-        <div style="background:var(--card-bg); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
-            <h4 style="margin-top:0; margin-bottom:10px; color:var(--primary-blue);">👤 Your Profile</h4>
-            <label>Your Name:</label>
-            <input type="text" id="setup-user-name" placeholder="e.g. Madhav Krishna">
+        <div id="setup-tabs-nav" class="settings-tabs" style="margin-bottom: 15px;">
+            <button id="btn-setup-tab-profile" class="tab-btn active" onclick="switchSetupTab('profile')">Profile</button>
+            <button id="btn-setup-tab-templates" class="tab-btn" onclick="switchSetupTab('templates')">Templates</button>
+            <button id="btn-setup-tab-sync" class="tab-btn" onclick="switchSetupTab('sync')">☁️ Sync</button>
+        </div>
+
+        <div id="setup-tab-profile">
+            <div style="background:var(--card-bg); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <h4 style="margin-top:0; margin-bottom:10px; color:var(--primary-blue);">👤 Your Profile</h4>
+                <label>Your Name:</label>
+                <input type="text" id="setup-user-name" placeholder="e.g. Madhav Krishna">
+                
+                <label>Your Role:</label>
+                <select id="setup-user-role">
+                    <option value="Teacher">Teacher</option>
+                    <option value="Head">Head / Principal</option>
+                </select>
+            </div>
             
-            <label>Your Role:</label>
-            <select id="setup-user-role">
-                <option value="Teacher">Teacher</option>
-                <option value="Head">Head / Principal</option>
+            <label>Institution Name:</label>
+            <input type="text" id="setup-school-name" placeholder="Institution Name">
+            
+            <label>Headmaster's WhatsApp No. (For Reports):</label>
+            <input type="tel" id="setup-hm-phone" placeholder="e.g. 919876543210">
+            
+            <label>Preferred Message Language:</label>
+            <select id="setup-msg-language">
+                <option value="en">English</option>
+                <option value="ml">Malayalam</option>
             </select>
         </div>
-        
-        <label>Institution Name:</label>
-        <input type="text" id="setup-school-name" placeholder="Institution Name">
-        
-        <label>Headmaster's WhatsApp No. (For Reports):</label>
-        <input type="tel" id="setup-hm-phone" placeholder="e.g. 919876543210">
-        
-        <label>Preferred Message Language:</label>
-        <select id="setup-msg-language">
-            <option value="en">English</option>
-            <option value="ml">Malayalam</option>
-        </select>
 
-        <div style="margin-top: 20px;">
-            <label>Custom Absence Message (English):</label>
-            <textarea id="setup-msg-en" rows="4" placeholder="Type your English absence message template here..."></textarea>
-            
-            <label>Custom Absence Message (Malayalam):</label>
-            <textarea id="setup-msg-ml" rows="4" placeholder="Type your Malayalam absence message template here..."></textarea>
-            
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
-                <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{roll}</span>, <span style="color:var(--primary-blue)">{date}</span>, <span style="color:var(--primary-blue)">{school}</span>
-            </p>
+        <div id="setup-tab-templates" class="hidden">
+            <div style="margin-top: 5px;">
+                <label>Custom Absence Message (English):</label>
+                <textarea id="setup-msg-en" rows="4" placeholder="Type your English absence message template here..."></textarea>
+                
+                <label>Custom Absence Message (Malayalam):</label>
+                <textarea id="setup-msg-ml" rows="4" placeholder="Type your Malayalam absence message template here..."></textarea>
+                
+                <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
+                    <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{roll}</span>, <span style="color:var(--primary-blue)">{date}</span>, <span style="color:var(--primary-blue)">{school}</span>
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <label>Custom Exam Result Message (English):</label>
+                <textarea id="setup-exam-msg-en" rows="4" placeholder="Type your English exam message template here..."></textarea>
+                
+                <label>Custom Exam Result Message (Malayalam):</label>
+                <textarea id="setup-exam-msg-ml" rows="4" placeholder="Type your Malayalam exam message template here..."></textarea>
+                
+                <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
+                    <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{exam}</span>, <span style="color:var(--primary-blue)">{mark}</span>, <span style="color:var(--primary-blue)">{total}</span>, <span style="color:var(--primary-blue)">{status}</span>
+                </p>
+            </div>
         </div>
 
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-            <label>Custom Exam Result Message (English):</label>
-            <textarea id="setup-exam-msg-en" rows="4" placeholder="Type your English exam message template here..."></textarea>
-            
-            <label>Custom Exam Result Message (Malayalam):</label>
-            <textarea id="setup-exam-msg-ml" rows="4" placeholder="Type your Malayalam exam message template here..."></textarea>
-            
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
-                <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{exam}</span>, <span style="color:var(--primary-blue)">{mark}</span>, <span style="color:var(--primary-blue)">{total}</span>, <span style="color:var(--primary-blue)">{status}</span>
-            </p>
-        </div>
-
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color); padding-bottom: 15px;">
+        <div id="setup-tab-sync" class="hidden">
             <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Co-Teacher Sync</h4>
             <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Your persistent Sync Account. Share these with your co-teacher to safely merge your classrooms.</p>
 
@@ -296,10 +306,8 @@
                     <b style="font-size:18px; color:var(--danger-red); letter-spacing:1px;" id="display-sync-pin">---</b>
                 </div>
             </div>
-            
-            <p id="linked-name-display" class="hidden" style="font-size:12px; color:var(--success-green); font-weight:bold; margin-top:5px; margin-bottom:15px; text-align:center;">🔗 Linked to: <span id="linked-name-text"></span></p>
 
-            <button class="btn-primary btn-full" style="margin-bottom: 15px; padding: 12px; font-size:14px;" onclick="performSmartSync()">🔄 Sync Data Now</button>
+            <button class="btn-primary btn-full" style="margin-bottom: 15px; padding: 12px; font-size:14px;" onclick="performSmartSync(false)">🔄 Sync Data Now</button>
             <p style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top:-5px; margin-bottom:15px;">Click Sync to safely push/pull changes between devices.</p>
 
             <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
@@ -310,6 +318,11 @@
                 <input type="number" id="link-sync-pin" placeholder="PIN" style="margin-bottom: 0; padding: 8px; flex: 1; font-size:13px; letter-spacing:1px;">
             </div>
             <button class="btn-warning btn-full" style="padding: 10px; font-size:13px; margin-top:5px;" onclick="linkCoTeacherAccount()">🔗 Link & Merge Devices</button>
+
+            <div style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top:15px;">
+                 <h4 style="margin: 0 0 5px 0; font-size: 13px;">📱 Connected Devices:</h4>
+                 <div id="connected-devices-list"></div>
+            </div>
         </div>
 
         <button class="btn-success btn-full" style="padding:15px; margin-top:20px;" onclick="completeSetup()">Save Institution Details</button>
@@ -457,6 +470,7 @@
                 <tbody id="marksTableBody"></tbody>
             </table>
         </div>
+
         <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
         <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
         
@@ -636,6 +650,7 @@
             hmPhone: "",
             history: oh || [],
             trash: { students: [], classes: [] },
+            connectedDevices: [],
             msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
             msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
             grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
@@ -658,6 +673,7 @@
         hmPhone: "",
         history: [],
         trash: { students: [], classes: [] },
+        connectedDevices: [],
         msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
         msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
         grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
@@ -678,6 +694,7 @@
     if (appData.passMark === undefined) appData.passMark = 40;
     if (appData.hmPhone === undefined) appData.hmPhone = "";
     if (!appData.trash) appData.trash = { students: [], classes: [] };
+    if (!appData.connectedDevices) appData.connectedDevices = [];
 
     // --- Persistent Sync Credentials ---
     if (!appData.syncId) {
@@ -713,8 +730,6 @@
         if (!appData.isSetupComplete) {
             document.getElementById('header-buttons').classList.add('hidden');
             document.getElementById('setup-back-btn').classList.add('hidden');
-            document.getElementById('setup-welcome-text').classList.remove('hidden');
-            document.getElementById('reset-zone').classList.add('hidden');
             
             document.getElementById('setup-user-name').value = appData.userName || "";
             document.getElementById('setup-user-role').value = appData.userRole || "Teacher";
@@ -727,13 +742,10 @@
             
             document.getElementById('display-sync-id').innerText = appData.syncId;
             document.getElementById('display-sync-pin').innerText = appData.syncPin;
-
-            if (appData.linkedToName) {
-                document.getElementById('linked-name-display').classList.remove('hidden');
-                document.getElementById('linked-name-text').innerText = appData.linkedToName;
-            }
+            updateConnectedDevicesUI();
 
             showPage('setup-page');
+            switchSetupTab('profile');
         } else {
             showPage('home-page');
         }
@@ -746,7 +758,6 @@
     function openSchoolSettings() {
         document.getElementById('header-buttons').classList.add('hidden');
         document.getElementById('setup-back-btn').classList.remove('hidden');
-        document.getElementById('setup-welcome-text').classList.add('hidden');
         document.getElementById('reset-zone').classList.remove('hidden');
         
         document.getElementById('setup-user-name').value = appData.userName || "";
@@ -761,13 +772,31 @@
         
         document.getElementById('display-sync-id').innerText = appData.syncId;
         document.getElementById('display-sync-pin').innerText = appData.syncPin;
-
-        if (appData.linkedToName) {
-            document.getElementById('linked-name-display').classList.remove('hidden');
-            document.getElementById('linked-name-text').innerText = appData.linkedToName;
-        }
+        updateConnectedDevicesUI();
 
         showPage('setup-page');
+        switchSetupTab('profile');
+    }
+
+    function switchSetupTab(tab) {
+        ['profile', 'templates', 'sync'].forEach(k => {
+            document.getElementById(`setup-tab-${k}`).classList.add('hidden');
+            document.getElementById(`btn-setup-tab-${k}`).classList.remove('active');
+        });
+        document.getElementById(`setup-tab-${tab}`).classList.remove('hidden');
+        document.getElementById(`btn-setup-tab-${tab}`).classList.add('active');
+        if(tab === 'sync') updateConnectedDevicesUI();
+    }
+
+    function updateConnectedDevicesUI() {
+        const container = document.getElementById('connected-devices-list');
+        if(!container) return;
+        if(!appData.connectedDevices || appData.connectedDevices.length === 0) {
+            container.innerHTML = '<p style="font-size:11px; color:var(--text-secondary); margin:0;">No other devices connected yet.</p>';
+        } else {
+            container.innerHTML = '<ul style="font-size:12px; margin:5px 0 0 0; padding-left:20px; color:var(--primary-blue);">' + 
+                appData.connectedDevices.map(d => `<li><b>${d}</b></li>`).join('') + '</ul>';
+        }
     }
 
     function completeSetup() {
@@ -1687,28 +1716,43 @@
     }
 
     /* --- CLOUD SYNC (SMART MERGE) LOGIC --- */
-    async function performSmartSync() {
+    async function performSmartSync(isAuto = false) {
         const syncId = appData.syncId;
         const syncPin = appData.syncPin;
         const docRef = db.collection("persistent_sync").doc(syncId);
         const btn = document.activeElement;
-        const originalText = btn ? btn.innerText : "Sync";
-        if(btn) btn.innerText = "Syncing... Please wait";
+        let originalText = "🔄 Sync Data Now";
+        
+        if (!isAuto && btn && btn.innerText.includes("Sync")) {
+            originalText = btn.innerText;
+            btn.innerText = "Syncing... Please wait";
+        }
 
         try {
             const docSnap = await docRef.get();
-            let localData = JSON.parse(localStorage.getItem("pro_attendance_data"));
-            if(!localData) localData = appData;
+            let localData = JSON.parse(localStorage.getItem("pro_attendance_data")) || appData; 
+
+            // Ensure connected devices tracking
+            if (!localData.connectedDevices) localData.connectedDevices = [];
+            let myProf = (localData.userName || "Unknown") + (localData.userRole ? ` (${localData.userRole})` : "");
+            if (myProf.trim() && !localData.connectedDevices.includes(myProf)) {
+                localData.connectedDevices.push(myProf);
+            }
 
             if (docSnap.exists) {
                 const cloudRecord = docSnap.data();
                 if (cloudRecord.pin !== syncPin) {
-                    alert("❌ Authentication Error: The PIN for this Sync ID does not match.");
-                    if(btn) btn.innerText = originalText;
+                    if (!isAuto) alert("❌ Authentication Error: The PIN for this Sync ID does not match.");
+                    if (!isAuto && btn && btn.innerText.includes("Syncing")) btn.innerText = originalText;
                     return;
                 }
                 
                 const cloudData = JSON.parse(cloudRecord.payload);
+                
+                // Merge connected devices list
+                if(cloudData.connectedDevices) {
+                    localData.connectedDevices = [...new Set([...localData.connectedDevices, ...cloudData.connectedDevices])];
+                }
                 
                 // Smart Merge Logic based on NAMES
                 if(cloudData.classes) {
@@ -1749,6 +1793,13 @@
                     });
                     localData.history = uniqueHistory;
                 }
+                
+                // Basic merge for Trash Bin
+                if(cloudData.trash) {
+                    if(!localData.trash) localData.trash = {students:[], classes:[]};
+                    if(cloudData.trash.students) localData.trash.students = [...cloudData.trash.students];
+                    if(cloudData.trash.classes) localData.trash.classes = [...cloudData.trash.classes];
+                }
             }
 
             await docRef.set({
@@ -1760,13 +1811,22 @@
             });
 
             localStorage.setItem("pro_attendance_data", JSON.stringify(localData));
-            alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged. The page will now refresh to show updates.");
-            location.reload();
+            appData = localData; 
+            
+            if (!isAuto) {
+                alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged.");
+                location.reload(); 
+            } else {
+                refreshViews(); 
+                if (document.getElementById('setup-tab-sync') && !document.getElementById('setup-tab-sync').classList.contains('hidden')) {
+                    updateConnectedDevicesUI();
+                }
+            }
 
         } catch (error) {
             console.error("Sync Error:", error);
-            alert("Failed to sync. Check your internet connection.");
-            if(btn) btn.innerText = originalText;
+            if (!isAuto) alert("Failed to sync. Check your internet connection.");
+            if (!isAuto && btn && btn.innerText.includes("Syncing")) btn.innerText = originalText;
         }
     }
 
@@ -1799,7 +1859,7 @@
             appData.linkedToName = masterName + (masterRole ? ` (${masterRole})` : "");
             
             persistData();
-            await performSmartSync();
+            await performSmartSync(false);
 
         } catch (error) {
             console.error(error);
@@ -1940,7 +2000,7 @@
                 <li><b>Find your Credentials:</b> The Master device goes to <b>⚙️ Settings > 🏫 Edit Institution</b> to find the permanent 9-Digit Account ID and PIN.</li>
                 <li><b>Start the Sync:</b> The Master device MUST click <b>🔄 Sync Data Now</b> to establish the cloud link first.</li>
                 <li><b>Link Devices:</b> Have your co-teachers (or your other devices) open the app, enter that Master ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
-                <li><b>How to Collaborate:</b> Whenever anyone clicks <b>🔄 Sync Data Now</b>, the app pushes their new attendance and marks to the cloud and instantly downloads everyone else's work, merging it all together seamlessly!</li>
+                <li><b>How to Collaborate:</b> The app runs an <b>Auto-Sync every 30 minutes</b> in the background. However, if you want immediate updates, just click <b>🔄 Sync Data Now</b> to push your new data to the cloud and instantly download everyone else's work!</li>
             </ul>
         </body>
         </html>`;
@@ -1959,6 +2019,14 @@
     // Ensure DOM is fully loaded before launching the view handlers
     document.addEventListener("DOMContentLoaded", function() {
         initApp();
+        
+        // --- AUTO SYNC TIMER (Every 30 Minutes) ---
+        setInterval(() => {
+            if (appData.isSetupComplete && appData.syncId) {
+                console.log("Running background auto-sync...");
+                performSmartSync(true); 
+            }
+        }, 30 * 60 * 1000); 
     });
 </script>
 </body>
