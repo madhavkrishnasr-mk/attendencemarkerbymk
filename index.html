@@ -231,7 +231,19 @@
         <div id="setup-welcome-text">
             <span class="welcome-icon">🎓</span>
             <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Taker Pro</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your institution details to get started.</p>
+            <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your profile and institution details.</p>
+        </div>
+
+        <div style="background:var(--card-bg); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+            <h4 style="margin-top:0; margin-bottom:10px; color:var(--primary-blue);">👤 Your Profile</h4>
+            <label>Your Name:</label>
+            <input type="text" id="setup-user-name" placeholder="e.g. Madhav Krishna">
+            
+            <label>Your Role:</label>
+            <select id="setup-user-role">
+                <option value="Teacher">Teacher</option>
+                <option value="Head">Head / Principal</option>
+            </select>
         </div>
         
         <label>Institution Name:</label>
@@ -274,7 +286,7 @@
             <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Co-Teacher Sync</h4>
             <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Your persistent Sync Account. Share these with your co-teacher to safely merge your classrooms.</p>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#e8f4fd; padding:12px; border-radius:8px; border:1px solid var(--primary-blue); margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#e8f4fd; padding:12px; border-radius:8px; border:1px solid var(--primary-blue); margin-bottom:5px;">
                 <div>
                     <span style="font-size:10px; color:var(--text-secondary); display:block; font-weight:bold; text-transform:uppercase;">Account ID:</span>
                     <b style="font-size:18px; color:var(--primary-blue); letter-spacing:1px;" id="display-sync-id">---</b>
@@ -284,9 +296,11 @@
                     <b style="font-size:18px; color:var(--danger-red); letter-spacing:1px;" id="display-sync-pin">---</b>
                 </div>
             </div>
+            
+            <p id="linked-name-display" class="hidden" style="font-size:12px; color:var(--success-green); font-weight:bold; margin-top:5px; margin-bottom:15px; text-align:center;">🔗 Linked to: <span id="linked-name-text"></span></p>
 
             <button class="btn-primary btn-full" style="margin-bottom: 15px; padding: 12px; font-size:14px;" onclick="performSmartSync()">🔄 Sync Data Now</button>
-            <p style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top:-5px; margin-bottom:15px;">Click Sync to safely merge changes between devices.</p>
+            <p style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top:-5px; margin-bottom:15px;">Click Sync to safely push/pull changes between devices.</p>
 
             <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
             
@@ -616,6 +630,8 @@
             isSetupComplete: true, 
             classes: oc || [], 
             activeClassId: localStorage.getItem("active_class_id") || (oc && oc.length ? oc[0].id : null), 
+            userName: "",
+            userRole: "Teacher",
             schoolName: os || "", 
             language: ol || "en", 
             hmPhone: "",
@@ -636,6 +652,8 @@
         isSetupComplete: false,
         classes: [], 
         activeClassId: null, 
+        userName: "",
+        userRole: "Teacher",
         schoolName: "", 
         language: "en", 
         hmPhone: "",
@@ -650,6 +668,8 @@
         examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher"
     };
 
+    if (appData.userName === undefined) appData.userName = "";
+    if (appData.userRole === undefined) appData.userRole = "Teacher";
     if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
     if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher";
     if (!appData.examMsgTemplateEn) appData.examMsgTemplateEn = "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher";
@@ -660,7 +680,7 @@
     if (appData.hmPhone === undefined) appData.hmPhone = "";
     if (!appData.trash) appData.trash = { students: [], classes: [] };
 
-    // --- NEW: Persistent Sync Credentials ---
+    // --- Persistent Sync Credentials ---
     if (!appData.syncId) {
         appData.syncId = Math.floor(100000000 + Math.random() * 900000000).toString();
         persistData();
@@ -696,15 +716,24 @@
             document.getElementById('setup-back-btn').classList.add('hidden');
             document.getElementById('setup-welcome-text').classList.remove('hidden');
             document.getElementById('reset-zone').classList.add('hidden');
+            
+            document.getElementById('setup-user-name').value = appData.userName || "";
+            document.getElementById('setup-user-role').value = appData.userRole || "Teacher";
+            document.getElementById('setup-school-name').value = appData.schoolName || "";
             document.getElementById('setup-hm-phone').value = appData.hmPhone || "";
             document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
             document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
             document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
             document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
             
-            // Show new sync credentials
-            document.getElementById('display-sync-id').innerText = appData.syncId.match(/.{1,3}/g).join('-');
+            // Show sync credentials (Dashes removed)
+            document.getElementById('display-sync-id').innerText = appData.syncId;
             document.getElementById('display-sync-pin').innerText = appData.syncPin;
+
+            if (appData.linkedToName) {
+                document.getElementById('linked-name-display').classList.remove('hidden');
+                document.getElementById('linked-name-text').innerText = appData.linkedToName;
+            }
 
             showPage('setup-page');
         } else {
@@ -721,7 +750,10 @@
         document.getElementById('setup-back-btn').classList.remove('hidden');
         document.getElementById('setup-welcome-text').classList.add('hidden');
         document.getElementById('reset-zone').classList.remove('hidden');
-        document.getElementById('setup-school-name').value = appData.schoolName;
+        
+        document.getElementById('setup-user-name').value = appData.userName || "";
+        document.getElementById('setup-user-role').value = appData.userRole || "Teacher";
+        document.getElementById('setup-school-name').value = appData.schoolName || "";
         document.getElementById('setup-hm-phone').value = appData.hmPhone || "";
         document.getElementById('setup-msg-language').value = appData.language;
         document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
@@ -729,9 +761,14 @@
         document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
         document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
         
-        // Show new sync credentials
-        document.getElementById('display-sync-id').innerText = appData.syncId.match(/.{1,3}/g).join('-');
+        // Show sync credentials (Dashes removed)
+        document.getElementById('display-sync-id').innerText = appData.syncId;
         document.getElementById('display-sync-pin').innerText = appData.syncPin;
+
+        if (appData.linkedToName) {
+            document.getElementById('linked-name-display').classList.remove('hidden');
+            document.getElementById('linked-name-text').innerText = appData.linkedToName;
+        }
 
         showPage('setup-page');
     }
@@ -739,6 +776,9 @@
     function completeSetup() {
         const sn = document.getElementById('setup-school-name').value;
         if (!sn || sn.trim() === "") return alert("Please enter your institution name to continue.");
+        
+        appData.userName = document.getElementById('setup-user-name').value.trim();
+        appData.userRole = document.getElementById('setup-user-role').value;
         appData.schoolName = sn;
         appData.hmPhone = document.getElementById('setup-hm-phone').value.trim();
         appData.language = document.getElementById('setup-msg-language').value;
@@ -749,7 +789,7 @@
         appData.isSetupComplete = true;
         persistData();
         
-        alert("Institution Settings Saved!");
+        alert("Settings Saved!");
         
         if (appData.classes && appData.classes.length > 0) {
             document.getElementById('header-buttons').classList.remove('hidden');
@@ -1713,6 +1753,8 @@
 
             await docRef.set({
                 pin: syncPin,
+                userName: localData.userName,
+                userRole: localData.userRole,
                 payload: JSON.stringify(localData),
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1746,11 +1788,17 @@
                     return alert("❌ Incorrect PIN for this Sync ID.");
                 }
             } else {
-                return alert("❌ Account not found. Ensure your co-teacher has synced at least once.");
+                return alert("❌ Account not found. Ensure your co-teacher has clicked 'Sync Data Now' at least once.");
             }
 
             appData.syncId = idInput;
             appData.syncPin = pinInput;
+            
+            // Save the name of the master account to display it
+            let masterName = docSnap.data().userName || "Co-Teacher";
+            let masterRole = docSnap.data().userRole || "";
+            appData.linkedToName = masterName + (masterRole ? ` (${masterRole})` : "");
+            
             persistData();
 
             await performSmartSync();
@@ -1850,7 +1898,7 @@
         </head>
         <body>
             <div class="manual-actions-bar">
-                <button class="manual-btn btn-back" onclick="window.close()">⬅️ Back to App</button>
+                <button class="manual-btn btn-back" onclick="window.history.back(); window.close();">⬅️ Back to App</button>
                 <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
             </div>
 
@@ -1860,7 +1908,7 @@
                 <p>Created by Madhav Krishna RS</p>
             </div>
             <h2>1. Initial Setup</h2>
-            <p>When you open the app, enter your <b>Institution Name</b> and <b>Headmaster's WhatsApp Number</b> (include your country code, e.g., 919876543210). You can also customize the exact text that gets sent to parents for absences and exam results.</p>
+            <p>When you open the app, enter your <b>Name and Role</b>, along with your <b>Institution Name</b> and <b>Headmaster's WhatsApp Number</b> (include your country code, e.g., 919876543210). You can also customize the exact text that gets sent to parents for absences and exam results.</p>
             <h2>2. Managing Classes & Students</h2>
             <ul>
                 <li><b>Create a Class:</b> Go to <b>⚙️ Settings > Classes</b> tab. Type a name and click Add.</li>
@@ -1891,9 +1939,10 @@
                 Create a secure "Classroom Network" by linking multiple phones, tablets, or laptops to a single database. This allows co-teachers to collaborate safely without erasing each other's work!
             </div>
             <ul>
-                <li><b>Find your Credentials:</b> Go to <b>⚙️ Settings > 🏫 Edit Institution</b> to find your permanent 9-Digit Account ID and PIN.</li>
-                <li><b>Link Devices:</b> Have your co-teachers (or your other devices) open the app, enter your ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
-                <li><b>How to Sync:</b> Whenever anyone clicks <b>🔄 Sync Data Now</b>, the app pushes their new attendance and marks to the cloud and instantly downloads everyone else's work, merging it all together seamlessly!</li>
+                <li><b>Find your Credentials:</b> The Master device goes to <b>⚙️ Settings > 🏫 Edit Institution</b> to find the permanent 9-Digit Account ID and PIN.</li>
+                <li><b>Start the Sync:</b> The Master device MUST click <b>🔄 Sync Data Now</b> to establish the cloud link first.</li>
+                <li><b>Link Devices:</b> Have your co-teachers (or your other devices) open the app, enter that Master ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
+                <li><b>How to Collaborate:</b> Whenever anyone clicks <b>🔄 Sync Data Now</b>, the app pushes their new attendance and marks to the cloud and instantly downloads everyone else's work, merging it all together seamlessly!</li>
             </ul>
         </body>
         </html>`;
