@@ -308,7 +308,10 @@
     </div>
 
     <div id="home-page" class="hidden">
-        <label>Select Class:</label>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px;">
+            <label style="margin-bottom:0;">Select Class:</label>
+            <button onclick="printUserManual()" style="background:none; border:none; color:var(--primary-blue); font-size:12px; font-weight:bold; cursor:pointer; padding:0;">📖 Read Manual</button>
+        </div>
         <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
 
         <div style="display: flex; gap: 8px; margin-bottom: 5px;">
@@ -456,6 +459,7 @@
         <div class="settings-tabs">
             <button id="btn-tab-students" class="tab-btn active" onclick="switchSettingsTab('students')">Students</button>
             <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
+            <button id="btn-tab-trash" class="tab-btn" onclick="switchSettingsTab('trash')">🗑️ Trash</button>
         </div>
 
         <div id="tab-students-section">
@@ -504,6 +508,11 @@
             <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="Class Name"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
             <div id="class-list-management" style="margin-top:15px;"></div>
             <button class="btn-info btn-full" style="margin-top: 25px; font-size: 14px;" onclick="openSchoolSettings()">🏫 Edit Institution & Reset Options</button>
+        </div>
+
+        <div id="tab-trash-section" class="hidden">
+            <p style="font-size:12px; color:var(--text-secondary); margin-top:0;">Accidentally deleted a student or class? Restore them here.</p>
+            <div id="trash-list-management"></div>
         </div>
     </div>
 
@@ -602,6 +611,7 @@
             language: ol || "en", 
             hmPhone: "",
             history: oh || [],
+            trash: { students: [], classes: [] },
             msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
             msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
             grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
@@ -621,6 +631,7 @@
         language: "en", 
         hmPhone: "",
         history: [],
+        trash: { students: [], classes: [] },
         msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
         msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
         grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
@@ -638,6 +649,7 @@
     if (appData.totalMark === undefined) appData.totalMark = 100;
     if (appData.passMark === undefined) appData.passMark = 40;
     if (appData.hmPhone === undefined) appData.hmPhone = "";
+    if (!appData.trash) appData.trash = { students: [], classes: [] };
 
     appData.classes.forEach(c => {
         if(!c.exams) c.exams = [];
@@ -735,9 +747,13 @@
     }
 
     function switchSettingsTab(t) {
-        ['classes', 'students'].forEach(k => { document.getElementById(`tab-${k}-section`).classList.add('hidden'); document.getElementById(`btn-tab-${k}`).classList.remove('active'); });
+        ['classes', 'students', 'trash'].forEach(k => { 
+            document.getElementById(`tab-${k}-section`).classList.add('hidden'); 
+            document.getElementById(`btn-tab-${k}`).classList.remove('active'); 
+        });
         document.getElementById(`tab-${t}-section`).classList.remove('hidden');
         document.getElementById(`btn-tab-${t}`).classList.add('active');
+        if (t === 'trash') renderTrashView();
     }
 
     function refreshViews() {
@@ -1406,6 +1422,28 @@
             </div>`}).join('') : "No History.";
     }
 
+    /* --- NEW FEATURE: EXPORT DAILY HISTORY (NO PHONE/EMAIL) --- */
+    function exportDailyHistoryCSV(hId) {
+        const entry = appData.history.find(h => h.id === hId);
+        if (!entry) return alert("History entry not found.");
+        
+        let csv = `Class,${entry.className}\nDate,${entry.date}\nTotal Students,${entry.total}\nPresent,${entry.present}\nAbsent,${entry.absent}\n\n`;
+        csv += "Roll No,Name,Status\n";
+        
+        let sortedStudents = [...entry.students].sort((a,b) => a.roll - b.roll);
+        
+        sortedStudents.forEach(s => {
+            let safeName = s.name ? s.name.replace(/,/g, ' ') : '';
+            csv += `${s.roll},${safeName},${s.status}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); 
+        link.href = URL.createObjectURL(blob); 
+        link.download = `Daily_Attendance_${entry.className.replace(/ /g, '_')}_${entry.date}.csv`; 
+        link.click();
+    }
+
     function smartMessage(roll, date, type) {
         const cls = appData.classes.find(c => c.id == appData.activeClassId);
         if(!cls) return;
@@ -1425,29 +1463,6 @@
         const absents = entry.students.filter(s => s.status === 'Absent');
         if (!absents.length) return alert("No absentees found!");
         absents.forEach((s, idx) => setTimeout(() => smartMessage(s.roll, entry.date, 'wa'), idx * 1200));
-    }
-
-    /* --- NEW FEATURE: EXPORT DAILY HISTORY --- */
-    function exportDailyHistoryCSV(hId) {
-        const entry = appData.history.find(h => h.id === hId);
-        if (!entry) return alert("History entry not found.");
-        
-        let csv = `Class,${entry.className}\nDate,${entry.date}\nTotal Students,${entry.total}\nPresent,${entry.present}\nAbsent,${entry.absent}\n\n`;
-        csv += "Roll No,Name,Status,Phone,Email\n";
-        
-        // Sort students by roll number before exporting
-        let sortedStudents = [...entry.students].sort((a,b) => a.roll - b.roll);
-        
-        sortedStudents.forEach(s => {
-            let safeName = s.name ? s.name.replace(/,/g, ' ') : '';
-            csv += `${s.roll},${safeName},${s.status},${s.phone||''},${s.email||''}\n`;
-        });
-        
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a"); 
-        link.href = URL.createObjectURL(blob); 
-        link.download = `Daily_Attendance_${entry.className.replace(/ /g, '_')}_${entry.date}.csv`; 
-        link.click();
     }
 
     function setupMonthPicker() {
@@ -1522,9 +1537,71 @@
         return s;
     }
 
-    function removeStudent(idx) { if(confirm("Delete student?")) { const cls = appData.classes.find(c => c.id == appData.activeClassId); cls.roster.splice(idx,1); persistData(); refreshViews(); } }
-    function removeClass(id) { if(confirm("Delete class?")) { appData.history = appData.history.filter(h => h.classId != id); appData.classes = appData.classes.filter(c => c.id != id); appData.activeClassId = appData.classes.length > 0 ? appData.classes[0].id : null; persistData(); refreshViews(); } }
+    /* --- TRASH BIN LOGIC --- */
+    function removeStudent(idx) { 
+        if(confirm("Delete student? Don't worry, they will go to the Trash bin if you need them back.")) { 
+            const cls = appData.classes.find(c => c.id == appData.activeClassId); 
+            const deletedStudent = cls.roster.splice(idx,1)[0]; 
+            appData.trash.students.push({ classId: cls.id, className: cls.name, student: deletedStudent, deletedAt: new Date().toLocaleString() });
+            persistData(); 
+            refreshViews(); 
+        } 
+    }
+
+    function removeClass(id) { 
+        if(confirm("Delete class? Don't worry, it will go to the Trash bin if you need it back.")) { 
+            const clsToDelete = appData.classes.find(c => c.id == id);
+            if (clsToDelete) {
+                appData.trash.classes.push({ class: clsToDelete, deletedAt: new Date().toLocaleString() });
+            }
+            appData.history = appData.history.filter(h => h.classId != id); 
+            appData.classes = appData.classes.filter(c => c.id != id); 
+            appData.activeClassId = appData.classes.length > 0 ? appData.classes[0].id : null; 
+            persistData(); 
+            refreshViews(); 
+        } 
+    }
+
     function wipeHistoryForCurrentClass() { if(!appData.activeClassId) return alert("No class selected!"); if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+
+    function renderTrashView() {
+        let html = '<h4 style="margin-top:0;">Deleted Classes</h4>';
+        if (appData.trash.classes.length === 0) html += '<p style="font-size:12px; color:var(--text-secondary);">No classes in trash.</p>';
+        appData.trash.classes.forEach((tc, idx) => {
+            html += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:8px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:8px;">
+                <div><b style="font-size:13px;">${tc.class.name}</b><br><span style="font-size:10px; color:var(--text-secondary);">${tc.deletedAt}</span></div>
+                <button class="btn-success" style="padding:4px 8px; font-size:11px;" onclick="restoreClass(${idx})">Restore</button>
+            </div>`;
+        });
+
+        html += '<h4 style="margin-top:15px;">Deleted Students</h4>';
+        if (appData.trash.students.length === 0) html += '<p style="font-size:12px; color:var(--text-secondary);">No students in trash.</p>';
+        appData.trash.students.forEach((ts, idx) => {
+            html += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:8px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:8px;">
+                <div><b style="font-size:13px;">${ts.student.name} (Roll: ${ts.student.roll})</b><br><span style="font-size:10px; color:var(--text-secondary);">From: ${ts.className} | ${ts.deletedAt}</span></div>
+                <button class="btn-success" style="padding:4px 8px; font-size:11px;" onclick="restoreStudent(${idx})">Restore</button>
+            </div>`;
+        });
+        document.getElementById('trash-list-management').innerHTML = html;
+    }
+
+    function restoreClass(idx) {
+        const tc = appData.trash.classes.splice(idx, 1)[0];
+        appData.classes.push(tc.class);
+        persistData(); refreshViews(); renderTrashView(); alert("Class restored!");
+    }
+
+    function restoreStudent(idx) {
+        const ts = appData.trash.students[idx];
+        const cls = appData.classes.find(c => c.id == ts.classId);
+        if (!cls) {
+            alert("Cannot restore. The class '" + ts.className + "' does not exist. Please restore the class first.");
+            return;
+        }
+        appData.trash.students.splice(idx, 1);
+        cls.roster.push(ts.student);
+        persistData(); refreshViews(); renderTrashView(); alert("Student restored!");
+    }
 
     function factoryResetApp() {
         const currentSchool = appData.schoolName;
@@ -1683,6 +1760,7 @@
                 <li><b>Create a Class:</b> Go to <b>⚙️ Settings > Classes</b> tab. Type a name and click Add.</li>
                 <li><b>Add Students manually:</b> Go to the <b>Students</b> tab and fill in their details.</li>
                 <li><b>Bulk Import:</b> Click "Open Bulk Import Options". You can upload a PDF containing your student list, or download the CSV template, fill it out, and upload it to instantly add the whole class.</li>
+                <li><b>Trash Bin:</b> Accidentally deleted a student or class? Check the <b>🗑️ Trash</b> tab in Settings to restore them instantly!</li>
             </ul>
             <h2>3. Taking Daily Attendance</h2>
             <ul>
@@ -1699,7 +1777,7 @@
             </ul>
             <h2>5. Reports & History</h2>
             <ul>
-                <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day. Click <b>📥 Download CSV</b> to export a spreadsheet of the day's attendance.</li>
+                <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day. Click <b>📥 Download CSV</b> to export a clean spreadsheet of the day's attendance.</li>
                 <li><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
             </ul>
             <h2>6. Cloud Device Sync</h2>
