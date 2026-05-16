@@ -191,7 +191,7 @@
 
 <div id="video-intro-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
     <h3 style="color: white; margin-bottom: 15px; text-align: center;">Welcome! Watch this quick tour:</h3>
-    <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY?si=ajvUrWaYbwzO0Rbu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap; justify-content: center;">
         <button onclick="closeVideoIntro()" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">Start Using App ➔</button>
         <button onclick="printUserManual()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 2px solid white; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">📄 Save User Manual</button>
@@ -707,9 +707,18 @@
         appData.examMsgTemplateMl = document.getElementById('setup-exam-msg-ml').value;
         appData.isSetupComplete = true;
         persistData();
-        document.getElementById('header-buttons').classList.remove('hidden');
+        
         alert("Institution Settings Saved!");
-        showPage('home-page');
+        
+        if (appData.classes && appData.classes.length > 0) {
+            document.getElementById('header-buttons').classList.remove('hidden');
+            showPage('home-page');
+        } else {
+            alert("Next Step: Let's create your first class!");
+            document.getElementById('header-buttons').classList.remove('hidden');
+            showPage('settings-page');
+            switchSettingsTab('classes');
+        }
     }
 
     function showPage(pId) {
@@ -717,6 +726,7 @@
         document.getElementById(pId).classList.remove('hidden');
         if (pId !== 'setup-page') {
             document.getElementById('header-buttons').classList.remove('hidden');
+            document.getElementById('setup-back-btn').classList.add('hidden');
             refreshViews();
         }
         if (pId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
@@ -1382,7 +1392,10 @@
             return `
             <div class="history-card">
                 <b>📅 ${h.date}</b> - P: ${h.present} A: ${h.absent}
-                <div style="margin-top:10px;"><button class="btn-primary" style="font-size:10px; padding:4px 10px; display:inline-flex; align-items:center;" onclick="bulkWhatsApp(${h.id})">${waIconHTML} Message All Absentees</button></div>
+                <div style="margin-top:10px; display:flex; gap:8px;">
+                    <button class="btn-primary" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; flex:1; justify-content:center;" onclick="bulkWhatsApp(${h.id})">${waIconHTML} Message All Absentees</button>
+                    <button class="btn-success" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; flex:1; justify-content:center;" onclick="exportDailyHistoryCSV(${h.id})">📥 Download CSV</button>
+                </div>
                 <details style="margin-top:10px; font-size:12px;">
                     <summary style="cursor:pointer; color:var(--primary-blue)">View Full Details</summary>
                     <div style="font-weight:bold; margin-top:10px; color:red;">Absents:</div>
@@ -1412,6 +1425,29 @@
         const absents = entry.students.filter(s => s.status === 'Absent');
         if (!absents.length) return alert("No absentees found!");
         absents.forEach((s, idx) => setTimeout(() => smartMessage(s.roll, entry.date, 'wa'), idx * 1200));
+    }
+
+    /* --- NEW FEATURE: EXPORT DAILY HISTORY --- */
+    function exportDailyHistoryCSV(hId) {
+        const entry = appData.history.find(h => h.id === hId);
+        if (!entry) return alert("History entry not found.");
+        
+        let csv = `Class,${entry.className}\nDate,${entry.date}\nTotal Students,${entry.total}\nPresent,${entry.present}\nAbsent,${entry.absent}\n\n`;
+        csv += "Roll No,Name,Status,Phone,Email\n";
+        
+        // Sort students by roll number before exporting
+        let sortedStudents = [...entry.students].sort((a,b) => a.roll - b.roll);
+        
+        sortedStudents.forEach(s => {
+            let safeName = s.name ? s.name.replace(/,/g, ' ') : '';
+            csv += `${s.roll},${safeName},${s.status},${s.phone||''},${s.email||''}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); 
+        link.href = URL.createObjectURL(blob); 
+        link.download = `Daily_Attendance_${entry.className.replace(/ /g, '_')}_${entry.date}.csv`; 
+        link.click();
     }
 
     function setupMonthPicker() {
@@ -1578,7 +1614,6 @@
         window.addEventListener('click', () => setTimeout(checkScroll, 100));
     })();
 
-    /* --- USER MANUAL GENERATOR --- */
    /* --- USER MANUAL GENERATOR --- */
     function printUserManual() {
         const manualContent = `
@@ -1664,7 +1699,7 @@
             </ul>
             <h2>5. Reports & History</h2>
             <ul>
-                <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day.</li>
+                <li><b>History:</b> View past attendance. Click "Message All Absentees" to automatically queue WhatsApp alerts to parents of every missing student for that day. Click <b>📥 Download CSV</b> to export a spreadsheet of the day's attendance.</li>
                 <li><b>Reports:</b> See the total attendance percentage for the whole year. Students below 75% are highlighted in red. Download a monthly CSV or send a Shortage Alert to the Headmaster.</li>
             </ul>
             <h2>6. Cloud Device Sync</h2>
@@ -1689,6 +1724,7 @@
             printWindow.print();
         }, 500);
     }
+    
     // Ensure DOM is fully loaded before launching the view handlers
     document.addEventListener("DOMContentLoaded", function() {
         initApp();
