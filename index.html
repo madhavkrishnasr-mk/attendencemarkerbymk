@@ -154,7 +154,7 @@
         .marks-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; color: var(--text-main); }
         .marks-table th, .marks-table td { padding: 4px 2px; border: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
         .marks-table th { background-color: var(--bg-color); font-size: 11px; }
-        .mark-input { width: 30px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 4px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); font-size: 11px; }
+        .mark-input { width: 25px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 4px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); font-size: 11px; }
         .status { padding: 4px 2px; border-radius: 4px; font-size: 9px; font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 35px; }
         .pass { background-color: var(--success-green); }
         .fail { background-color: var(--danger-red); }
@@ -362,6 +362,9 @@
         </div>
         <p id="date-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please pick a date</p>
 
+        <button id="toggle-points-btn" class="btn-warning" style="margin-bottom: 10px; font-size: 12px; padding: 6px 12px; float: right;" onclick="togglePointsUI()">⭐ Participation Points</button>
+        <div style="clear: both;"></div>
+
         <div id="attendance-list-container"></div>
         <button class="btn-primary btn-full" onclick="saveAttendanceData()">Save Attendance Record</button>
     </div>
@@ -462,19 +465,22 @@
             <table class="marks-table">
                 <thead>
                     <tr>
-                        <th width="8%">Roll</th>
-                        <th width="22%">Name</th>
-                        <th width="12%" style="text-align: center;">Mark</th>
-                        <th width="10%" style="text-align: center;">Grade</th>
-                        <th width="12%" style="text-align: center;">Grwth</th>
-                        <th width="12%" style="text-align: center;">Status</th>
+                        <th width="6%">Roll</th>
+                        <th width="20%">Name</th>
+                        <th width="10%" style="text-align: center;">Mark</th>
+                        <th width="8%" style="text-align: center;">Grade</th>
+                        <th width="10%" style="text-align: center;">Grwth</th>
+                        <th width="10%" style="text-align: center;">Status</th>
+                        <th width="10%" style="text-align: center;">Assign.</th>
                         <th width="14%" style="text-align: center;">Msg</th>
-                        <th width="10%" style="text-align: center;">Act</th>
+                        <th width="12%" style="text-align: center;">Act</th>
                     </tr>
                 </thead>
                 <tbody id="marksTableBody"></tbody>
             </table>
         </div>
+
+        <button class="btn-primary btn-full" style="margin-bottom: 15px;" onclick="printBatchReportCards()">🖨️ Print Batch Report Cards</button>
 
         <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
         <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
@@ -608,6 +614,9 @@
         { title: "📊 Step 5: Master Reports", text: "In the 'Reports' section, you can download monthly CSVs or instantly WhatsApp the Headmaster about students with low attendance. You're ready!" }
     ];
     let currentTourStep = 0;
+    
+    // UI State for Participation Points
+    let pointsUIVisible = false;
 
     function startTour() {
         currentTourStep = 0;
@@ -713,7 +722,11 @@
 
     appData.classes.forEach(c => {
         if(!c.exams) c.exams = [];
-        c.roster.forEach(s => { if(!s.marks) s.marks = {}; });
+        c.roster.forEach(s => { 
+            if(!s.marks) s.marks = {}; 
+            if(s.points === undefined) s.points = 0; // Initialize points
+            if(!s.assignments) s.assignments = {}; // Initialize assignments
+        });
     });
 
     if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
@@ -735,7 +748,6 @@
         
         if (role === 'Head') {
             hmContainer.style.display = 'none';
-            // Auto update templates to Headmaster
             ['setup-msg-en', 'setup-exam-msg-en'].forEach(id => {
                 let val = document.getElementById(id).value;
                 document.getElementById(id).value = val.replace('Class Teacher', 'Headmaster');
@@ -746,7 +758,6 @@
             });
         } else {
             hmContainer.style.display = 'block';
-            // Auto update templates back to Teacher
             ['setup-msg-en', 'setup-exam-msg-en'].forEach(id => {
                 let val = document.getElementById(id).value;
                 document.getElementById(id).value = val.replace('Headmaster', 'Class Teacher');
@@ -890,6 +901,30 @@
         if (t === 'trash') renderTrashView();
     }
 
+    // --- NEW: Toggle Points UI ---
+    function togglePointsUI() {
+        pointsUIVisible = !pointsUIVisible;
+        const btn = document.getElementById('toggle-points-btn');
+        if(pointsUIVisible) {
+            btn.innerText = "Hide Points";
+            btn.classList.replace('btn-warning', 'btn-secondary');
+        } else {
+            btn.innerText = "⭐ Participation Points";
+            btn.classList.replace('btn-secondary', 'btn-warning');
+        }
+        refreshViews();
+    }
+
+    function updatePoints(roll, delta) {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const student = cls.roster.find(s => s.roll === roll);
+        if(!student) return;
+        student.points = (student.points || 0) + delta;
+        document.getElementById(`points-${roll}`).innerText = student.points;
+        persistData();
+    }
+
     function refreshViews() {
         if(!appData.isSetupComplete) return;
         const cls = appData.classes.find(c => c.id == appData.activeClassId) || (appData.classes.length > 0 ? appData.classes[0] : null);
@@ -911,6 +946,13 @@
                             <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
                             <span>Roll ${s.roll}: ${s.name}</span>
                         </div>
+                        
+                        <div class="points-ui ${pointsUIVisible ? '' : 'hidden'}" style="display:flex; align-items:center; gap:5px; margin-right:10px;">
+                            <button class="sub-btn" style="background:var(--danger-red); color:white; border:none; padding:4px 8px; cursor:pointer;" onclick="updatePoints(${s.roll}, -1)">-</button>
+                            <span id="points-${s.roll}" style="font-weight:bold; font-size:12px; width:20px; text-align:center;">${s.points || 0}</span>
+                            <button class="sub-btn" style="background:var(--success-green); color:white; border:none; padding:4px 8px; cursor:pointer;" onclick="updatePoints(${s.roll}, 1)">+</button>
+                        </div>
+
                         <div class="attendance-toggle">
                             <input type="hidden" id="status-val-${idx}" value="Present">
                             <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div>
@@ -976,9 +1018,11 @@
         }
         const n = document.getElementById('input-student-name').value, ph = document.getElementById('input-student-phone').value, em = document.getElementById('input-student-email').value, f = document.getElementById('input-student-photo').files[0];
         const done = (img) => {
-            const s = { roll: rollNum, name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {} };
+            const s = { roll: rollNum, name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {}, points: 0, assignments: {} };
             if (editingIdx > -1) { 
                 s.marks = cls.roster[editingIdx].marks || {}; 
+                s.points = cls.roster[editingIdx].points || 0;
+                s.assignments = cls.roster[editingIdx].assignments || {};
                 cls.roster[editingIdx] = s; 
                 editingIdx = -1; 
                 document.getElementById('submit-student-btn').innerText = "+ Add Student"; 
@@ -1031,7 +1075,7 @@
                             if (phone) cls.roster[existingIdx].phone = phone;
                             if (email) cls.roster[existingIdx].email = email;
                         } else {
-                            cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {} });
+                            cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, points: 0, assignments: {} });
                         }
                         addedCount++;
                     }
@@ -1091,7 +1135,7 @@
                                         if (phone) cls.roster[existingIdx].phone = phone;
                                         if (email) cls.roster[existingIdx].email = email;
                                     } else {
-                                        cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {} });
+                                        cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, points: 0, assignments: {} });
                                     }
                                     addedCount++;
                                 }
@@ -1233,6 +1277,18 @@
         refreshMarksTable();
     }
 
+    // --- NEW: Assignment Toggle Function ---
+    function toggleAssignment(roll) {
+        if(!currentExam) return alert("Select an exam first!");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const student = cls.roster.find(s => s.roll === roll);
+        if(!student.assignments) student.assignments = {};
+        student.assignments[currentExam] = !student.assignments[currentExam];
+        persistData();
+        refreshMarksTable();
+    }
+
     function toggleMarkBulkImport() { document.getElementById('mark-bulk-import-section').classList.toggle('hidden'); }
 
     function importMarksCSV() {
@@ -1328,6 +1384,13 @@
                 else if(diff < 0) growthHtml = `<span style="color:var(--danger-red); font-weight:bold;">▼ ${diff}</span>`;
                 else growthHtml = `<span style="color:var(--text-secondary); font-weight:bold;">▶ 0</span>`;
             }
+
+            // --- Assignment Logic ---
+            let assignStatus = (s.assignments && s.assignments[currentExam]) ? true : false;
+            let assignBtn = assignStatus ? 
+                `<button style="background:var(--success-green); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="toggleAssignment(${s.roll})">Done</button>` :
+                `<button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="toggleAssignment(${s.roll})">None</button>`;
+
             let abBtnHtml = '';
             if (currentMark === 'AB') {
                 abBtnHtml = `<button style="background:var(--warning-orange); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="setMark(${s.roll}, '')">Undo</button>`;
@@ -1342,6 +1405,7 @@
                 <td style="text-align: center; font-weight: bold; color: var(--primary-blue);">${gradeStr}</td>
                 <td style="text-align: center;">${growthHtml}</td>
                 <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
+                <td style="text-align: center;">${assignBtn}</td>
                 <td style="text-align: center;">
                     <button class="msg-btn" style="background:#25D366; padding:4px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
                     <button class="msg-btn" style="background:#EA4335; padding:4px;" onclick="sendMarkEmail(${s.roll})">${mailIconHTML}</button>
@@ -1356,6 +1420,93 @@
         if (!document.getElementById('mark-report-container').classList.contains('hidden')) renderMarkReport();
     }
 
+    // --- NEW: Batch Report Card Generator ---
+    function printBatchReportCards() {
+        if(!currentExam) return alert("Please select an exam first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+
+        let html = `<html><head><title>Batch Report Cards - ${cls.name}</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; background: #f4f4f4; padding: 20px; }
+                .card { background: white; padding: 40px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); page-break-after: always; }
+                h1 { color: #0056b3; margin-bottom: 5px; text-align: center; }
+                h2 { color: #17a2b8; margin-top: 0; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; }
+                .student-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 16px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+                th { background-color: #f0f2f5; color: #1c1e21; font-weight: bold; }
+                .signature { margin-top: 60px; display: flex; justify-content: space-between; }
+                .signature div { border-top: 2px solid #333; padding-top: 5px; width: 40%; text-align: center; font-weight: bold; }
+                @media print { body { background: white; padding: 0; } .card { box-shadow: none; border: none; padding: 0; } }
+            </style>
+        </head><body>`;
+        
+        let grades = getGradesFromUI();
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let totalMarks = document.getElementById("totalMarkInput").value;
+        
+        [...cls.roster].sort((a,b)=>a.roll-b.roll).forEach(s => {
+            let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '-';
+            let assign = (s.assignments && s.assignments[currentExam]) ? '<span style="color:green;font-weight:bold;">Submitted</span>' : '<span style="color:red;">Missing</span>';
+            let status = 'Pending', gradeText = '-';
+            
+            if(mark === 'AB') { 
+                status = 'Absent'; gradeText = 'AB'; 
+            } else if(mark !== '-' && !isNaN(parseFloat(mark))) {
+                let markVal = parseFloat(mark);
+                status = markVal >= passThreshold ? '<span style="color:green;font-weight:bold;">Pass</span>' : '<span style="color:red;font-weight:bold;">Fail</span>';
+                let g = grades.find(gd => markVal >= gd.min);
+                if(g) gradeText = g.name;
+            }
+
+            html += `<div class="card">
+                <h1>${appData.schoolName || 'Institution'}</h1>
+                <h2>Official Exam Report: ${currentExam}</h2>
+                <div class="student-info">
+                    <div><b>Student Name:</b> ${s.name}</div>
+                    <div><b>Roll No:</b> ${s.roll}</div>
+                    <div><b>Class:</b> ${cls.name}</div>
+                </div>
+                <table>
+                    <tr>
+                        <th>Subject/Exam</th>
+                        <th>Marks Obtained</th>
+                        <th>Max Marks</th>
+                        <th>Grade</th>
+                        <th>Status</th>
+                        <th>Assignment</th>
+                        <th>Participation Points</th>
+                    </tr>
+                    <tr>
+                        <td><b>${currentExam}</b></td>
+                        <td style="font-size: 18px; font-weight:bold;">${mark}</td>
+                        <td>${totalMarks}</td>
+                        <td style="font-size: 18px; color: #0056b3; font-weight:bold;">${gradeText}</td>
+                        <td>${status}</td>
+                        <td>${assign}</td>
+                        <td><b>${s.points || 0} pts</b></td>
+                    </tr>
+                </table>
+                <div class="signature">
+                    <div>Class Teacher Signature</div>
+                    <div>Parent/Guardian Signature</div>
+                </div>
+            </div>`;
+        });
+        
+        html += `</body></html>`;
+        
+        const printWin = window.open('', '_blank');
+        printWin.document.write(html);
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => { 
+            alert("Tip: In the print dialogue, select 'Save as PDF' to generate the batch file!");
+            printWin.print(); 
+        }, 500);
+    }
+
     function exportMarksToCSV() {
         if(!currentExam) return alert("Please select an exam first.");
         const cls = appData.classes.find(c => c.id == appData.activeClassId);
@@ -1364,7 +1515,7 @@
         let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
         let grades = getGradesFromUI();
         let csv = `Class,${cls.name}\nExam,${currentExam}\n\n`;
-        csv += "Roll No,Name,Mark,Grade,Status,Growth (vs " + (compareExam || 'None') + ")\n";
+        csv += "Roll No,Name,Mark,Grade,Status,Assignment,Growth (vs " + (compareExam || 'None') + ")\n";
         let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
         sortedRoster.forEach(s => {
             let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
@@ -1382,8 +1533,9 @@
                 let diff = parseFloat(mark) - parseFloat(prevMark);
                 growthText = diff > 0 ? `+${diff}` : diff.toString();
             }
+            let assign = (s.assignments && s.assignments[currentExam]) ? 'Submitted' : 'None';
             let name = s.name ? s.name.replace(/,/g, '') : '';
-            csv += `${s.roll},${name},${mark},${gradeText},${status},${growthText}\n`;
+            csv += `${s.roll},${name},${mark},${gradeText},${status},${assign},${growthText}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Marks_${cls.name.replace(/ /g, '_')}_${currentExam}.csv`; link.click();
@@ -1793,7 +1945,7 @@
                     localData.connectedDevices = [...new Set([...localData.connectedDevices, ...cloudData.connectedDevices])];
                 }
                 
-                // Smart Merge Logic based on NAMES
+                // Smart Merge Logic
                 if(cloudData.classes) {
                     cloudData.classes.forEach(cloudClass => {
                         let localClass = localData.classes.find(c => c.name.toLowerCase().trim() === cloudClass.name.toLowerCase().trim());
@@ -1808,10 +1960,15 @@
                                 } else {
                                     if (!localStudent.phone && cloudStudent.phone) localStudent.phone = cloudStudent.phone;
                                     if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
+                                    
+                                    // Merge points and assignments safely
+                                    localStudent.points = Math.max((localStudent.points || 0), (cloudStudent.points || 0));
+                                    
                                     if(!localStudent.marks) localStudent.marks = {};
-                                    if(cloudStudent.marks) {
-                                        localStudent.marks = { ...localStudent.marks, ...cloudStudent.marks };
-                                    }
+                                    if(cloudStudent.marks) localStudent.marks = { ...localStudent.marks, ...cloudStudent.marks };
+                                    
+                                    if(!localStudent.assignments) localStudent.assignments = {};
+                                    if(cloudStudent.assignments) localStudent.assignments = { ...localStudent.assignments, ...cloudStudent.assignments };
                                 }
                             });
                         }
@@ -2018,8 +2175,8 @@
             <ol>
                 <li><a href="#setup">Initial Setup & Profile</a></li>
                 <li><a href="#managing">Managing Classes & Students (PDF/CSV Import)</a></li>
-                <li><a href="#attendance">Taking Daily Attendance</a></li>
-                <li><a href="#marks">Marks, Exams & Grading Configurations</a></li>
+                <li><a href="#attendance">Taking Daily Attendance & Participation</a></li>
+                <li><a href="#marks">Marks, Exams, Assignments & Grading</a></li>
                 <li><a href="#reports">Reports, History & Trash Recovery</a></li>
                 <li><a href="#sync">Co-Teacher Cloud Sync (Smart Merge)</a></li>
             </ol>
@@ -2043,7 +2200,7 @@
                 <li><b>PDF Import Engine:</b> You can upload a standard text-based PDF containing your student list. The app scans the document, identifies rows starting with a Roll Number, extracts the student's name, and intelligently searches for phone numbers and email addresses in the text. <i>(Note: This requires a digital text PDF, not a photographed image of a piece of paper).</i></li>
             </ul>
 
-            <h2 id="attendance" class="page-break">3. Taking Daily Attendance</h2>
+            <h2 id="attendance" class="page-break">3. Taking Daily Attendance & Participation</h2>
             <p>The Home screen is engineered for speed.</p>
             <ol>
                 <li>Select your Class from the top dropdown and pick the current Date.</li>
@@ -2051,31 +2208,28 @@
                 <li>If a student is missing, tap <b>A</b> (Absent). This reveals a sub-menu allowing you to categorize the absence as an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
                 <li>Click <b>Save Attendance Record</b>. The data is instantly written to your device's local database.</li>
             </ol>
-            <div class="box box-warning">
-                <strong>Weekend Warning:</strong> If you accidentally select a Saturday or Sunday, the app will prompt you with a warning before saving to prevent date-entry errors.
-            </div>
 
-            <h2 id="marks">4. Marks, Exams & Grading</h2>
+            <h3>⭐ Participation Tracking</h3>
+            <p>Need to track classroom behavior or participation? Click the yellow <b>⭐ Participation Points</b> button at the top of the Home screen. This reveals positive and negative tracking buttons next to every student. You can instantly add or deduct points during class, and these points are securely saved to their profile!</p>
+
+            <h2 id="marks">4. Marks, Exams, Assignments & Grading</h2>
             <p>Switching to the <b>📝 Marks</b> tab opens your digital grading book.</p>
             
             <h3>Creating Exams & Grading Scales</h3>
             <p>Click <b>+ Create New Exam</b> to define an exam. You can set the Maximum Marks and Pass Mark threshold. You can also define your own Grading Scale (e.g., A = 90, B = 80). The app automatically calculates grades and Pass/Fail statuses as you type in student scores.</p>
 
-            <h3>Growth Tracking</h3>
-            <p>If you select a previous exam from the <b>Compare Growth</b> dropdown, the app calculates the difference between the two tests. It generates dynamic visual arrows (e.g., <span style="color:#28a745; font-weight:bold;">▲ +5</span> or <span style="color:#dc3545; font-weight:bold;">▼ -2</span>) so you can instantly spot students who are improving or falling behind.</p>
+            <h3>Assignment Tracking</h3>
+            <p>Next to the exam grades, you will see an <b>"Assign."</b> column. Use this toggle to quickly mark whether a student has handed in the relevant assignment. It switches instantly between <i>Done</i> (Green) and <i>None</i> (Grey).</p>
 
-            <h3>Parent Communication</h3>
-            <p>Every student row features a WhatsApp and Email button. Clicking these will generate a beautifully formatted report card utilizing your custom message templates and instantly open your messaging app, ready to send to the parent.</p>
+            <h3>Parent Communication & Batch Report Cards</h3>
+            <p>Every student row features a WhatsApp and Email button to instantly send individual result cards. However, if you need physical copies for a Parent-Teacher meeting, click the blue <b>🖨️ Print Batch Report Cards</b> button. This powerful tool instantly generates a beautifully formatted, half-page formal report card for every single student in the class, ready to print on A4 paper!</p>
 
             <h2 id="reports" class="page-break">5. Reports, History & Trash Recovery</h2>
             <p>The app keeps detailed analytics to help you monitor long-term trends.</p>
 
             <h3>History Tab</h3>
             <p>Here you can view exactly who was present or absent on any historical date. A powerful <b>Message All Absentees</b> button allows you to queue up WhatsApp messages for every missing student from that day, automating your follow-ups.</p>
-            <p>You can also click <b>📥 Download CSV</b> to export a clean, printable daily attendance sheet (parent contact info is intentionally hidden from this export for privacy compliance).</p>
-
-            <h3>Reports Tab</h3>
-            <p>This generates an All-Time Class Matrix. It calculates the overall attendance percentage for every student. Any student falling below 75% attendance is visually flagged in red. You can download monthly CSV summaries or send a "Shortage Alert" directly to the Headmaster.</p>
+            <p>You can also click <b>📥 Download CSV</b> to export a clean, printable daily attendance sheet.</p>
 
             <h3>The Trash Bin</h3>
             <p>Deleted a student or a class by accident? Don't panic. Under <b>⚙️ Settings > 🗑️ Trash</b>, the app maintains a secure recycle bin. You can restore deleted classes (and all their history) or deleted students with a single click.</p>
@@ -2089,7 +2243,7 @@
 
             <h3>How to Link Devices</h3>
             <ol>
-                <li><b>The Master Device:</b> Go to <b>⚙️ Settings > 🏫 Edit Institution > Sync Tab</b> to find your permanent 9-Digit Account ID and PIN. <i>You must click <b>🔄 Sync Data Now</b> on this device first to establish the cloud locker.</i></li>
+                <li><b>The Master Device:</b> Go to <b>⚙️ Settings > ☁️ Sync</b> to find your permanent 9-Digit Account ID and PIN. <i>You must click <b>🔄 Sync Data Now</b> on this device first to establish the cloud locker.</i></li>
                 <li><b>Linking Others:</b> On a co-teacher's phone, navigate to the same menu, enter the Master ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
                 <li><b>Verification:</b> You will see a green "Linked to: [Name]" confirmation. Furthermore, a "Connected Devices" list will show everyone currently participating in your network.</li>
             </ol>
