@@ -479,7 +479,6 @@
                 <tbody id="marksTableBody"></tbody>
             </table>
         </div>
-
         <button class="btn-primary btn-full" style="margin-bottom: 15px;" onclick="printBatchReportCards()">🖨️ Print Batch Report Cards</button>
 
         <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
@@ -724,8 +723,8 @@
         if(!c.exams) c.exams = [];
         c.roster.forEach(s => { 
             if(!s.marks) s.marks = {}; 
-            if(s.points === undefined) s.points = 0; // Initialize points
-            if(!s.assignments) s.assignments = {}; // Initialize assignments
+            if(s.points === undefined) s.points = 0; 
+            if(!s.assignments) s.assignments = {}; 
         });
     });
 
@@ -741,7 +740,7 @@
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem("pro_theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
     if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
 
-    // --- NEW: Handle Role Change for Dynamic Signatures ---
+    // --- Handle Role Change for Dynamic Signatures ---
     function handleRoleChange() {
         const role = document.getElementById('setup-user-role').value;
         const hmContainer = document.getElementById('hm-phone-container');
@@ -901,7 +900,6 @@
         if (t === 'trash') renderTrashView();
     }
 
-    // --- NEW: Toggle Points UI ---
     function togglePointsUI() {
         pointsUIVisible = !pointsUIVisible;
         const btn = document.getElementById('toggle-points-btn');
@@ -1272,12 +1270,17 @@
         }
         const student = cls.roster.find(s => s.roll === roll);
         if(!student.marks) student.marks = {};
-        student.marks[currentExam] = value;
+        
+        if (value === "") {
+            delete student.marks[currentExam];
+        } else {
+            student.marks[currentExam] = value;
+        }
+        
         persistData();
         refreshMarksTable();
     }
 
-    // --- NEW: Assignment Toggle Function ---
     function toggleAssignment(roll) {
         if(!currentExam) return alert("Select an exam first!");
         const cls = appData.classes.find(c => c.id == appData.activeClassId);
@@ -1385,7 +1388,6 @@
                 else growthHtml = `<span style="color:var(--text-secondary); font-weight:bold;">▶ 0</span>`;
             }
 
-            // --- Assignment Logic ---
             let assignStatus = (s.assignments && s.assignments[currentExam]) ? true : false;
             let assignBtn = assignStatus ? 
                 `<button style="background:var(--success-green); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="toggleAssignment(${s.roll})">Done</button>` :
@@ -1420,7 +1422,6 @@
         if (!document.getElementById('mark-report-container').classList.contains('hidden')) renderMarkReport();
     }
 
-    // --- NEW: Batch Report Card Generator ---
     function printBatchReportCards() {
         if(!currentExam) return alert("Please select an exam first.");
         const cls = appData.classes.find(c => c.id == appData.activeClassId);
@@ -1923,7 +1924,6 @@
             const docSnap = await docRef.get();
             let localData = JSON.parse(localStorage.getItem("pro_attendance_data")) || appData; 
 
-            // Ensure connected devices tracking
             if (!localData.connectedDevices) localData.connectedDevices = [];
             let myProf = (localData.userName || "Unknown") + (localData.userRole ? ` (${localData.userRole})` : "");
             if (myProf.trim() && !localData.connectedDevices.includes(myProf)) {
@@ -1940,12 +1940,10 @@
                 
                 const cloudData = JSON.parse(cloudRecord.payload);
                 
-                // Merge connected devices list
                 if(cloudData.connectedDevices) {
                     localData.connectedDevices = [...new Set([...localData.connectedDevices, ...cloudData.connectedDevices])];
                 }
                 
-                // Smart Merge Logic
                 if(cloudData.classes) {
                     cloudData.classes.forEach(cloudClass => {
                         let localClass = localData.classes.find(c => c.name.toLowerCase().trim() === cloudClass.name.toLowerCase().trim());
@@ -1961,14 +1959,20 @@
                                     if (!localStudent.phone && cloudStudent.phone) localStudent.phone = cloudStudent.phone;
                                     if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
                                     
-                                    // Merge points and assignments safely
                                     localStudent.points = Math.max((localStudent.points || 0), (cloudStudent.points || 0));
                                     
+                                    // Mark Sync Fix
                                     if(!localStudent.marks) localStudent.marks = {};
-                                    if(cloudStudent.marks) localStudent.marks = { ...localStudent.marks, ...cloudStudent.marks };
+                                    Object.keys(localStudent.marks).forEach(k => { if(localStudent.marks[k] === "") delete localStudent.marks[k]; });
+                                    if(cloudStudent.marks) {
+                                        Object.keys(cloudStudent.marks).forEach(k => { if(cloudStudent.marks[k] === "") delete cloudStudent.marks[k]; });
+                                        localStudent.marks = { ...cloudStudent.marks, ...localStudent.marks };
+                                    }
                                     
                                     if(!localStudent.assignments) localStudent.assignments = {};
-                                    if(cloudStudent.assignments) localStudent.assignments = { ...localStudent.assignments, ...cloudStudent.assignments };
+                                    if(cloudStudent.assignments) {
+                                        localStudent.assignments = { ...cloudStudent.assignments, ...localStudent.assignments };
+                                    }
                                 }
                             });
                         }
@@ -1990,7 +1994,6 @@
                     localData.history = uniqueHistory;
                 }
                 
-                // Basic merge for Trash Bin
                 if(cloudData.trash) {
                     if(!localData.trash) localData.trash = {students:[], classes:[]};
                     if(cloudData.trash.students) localData.trash.students = [...cloudData.trash.students];
@@ -2230,6 +2233,9 @@
             <h3>History Tab</h3>
             <p>Here you can view exactly who was present or absent on any historical date. A powerful <b>Message All Absentees</b> button allows you to queue up WhatsApp messages for every missing student from that day, automating your follow-ups.</p>
             <p>You can also click <b>📥 Download CSV</b> to export a clean, printable daily attendance sheet.</p>
+
+            <h3>Reports Tab</h3>
+            <p>This generates an All-Time Class Matrix. It calculates the overall attendance percentage for every student. Any student falling below 75% attendance is visually flagged in red. You can download monthly CSV summaries or send a "Shortage Alert" directly to the Headmaster.</p>
 
             <h3>The Trash Bin</h3>
             <p>Deleted a student or a class by accident? Don't panic. Under <b>⚙️ Settings > 🗑️ Trash</b>, the app maintains a secure recycle bin. You can restore deleted classes (and all their history) or deleted students with a single click.</p>
