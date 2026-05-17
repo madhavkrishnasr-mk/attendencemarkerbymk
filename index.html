@@ -355,15 +355,12 @@
         </div>
         <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
 
-        <div style="display: flex; gap: 8px; margin-bottom: 5px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
             <input type="date" id="attendance-date-input" style="margin-bottom: 0;" onchange="document.getElementById('date-select-warning').style.display='none'">
             <button onclick="showPage('history-page')" class="btn-success" style="flex: 1; font-size: 13px;">📁 History</button>
             <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1; font-size: 13px;">📊 Reports</button>
         </div>
-        <p id="date-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please pick a date</p>
-
-        <button id="toggle-points-btn" class="btn-warning" style="margin-bottom: 10px; font-size: 12px; padding: 6px 12px; float: right;" onclick="togglePointsUI()">⭐ Participation Points</button>
-        <div style="clear: both;"></div>
+        <p id="date-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:-10px; margin-bottom:10px; font-weight:bold;">⚠️ Please pick a date</p>
 
         <div id="attendance-list-container"></div>
         <button class="btn-primary btn-full" onclick="saveAttendanceData()">Save Attendance Record</button>
@@ -613,9 +610,6 @@
         { title: "📊 Step 5: Master Reports", text: "In the 'Reports' section, you can download monthly CSVs or instantly WhatsApp the Headmaster about students with low attendance. You're ready!" }
     ];
     let currentTourStep = 0;
-    
-    // UI State for Participation Points
-    let pointsUIVisible = false;
 
     function startTour() {
         currentTourStep = 0;
@@ -723,7 +717,6 @@
         if(!c.exams) c.exams = [];
         c.roster.forEach(s => { 
             if(!s.marks) s.marks = {}; 
-            if(s.points === undefined) s.points = 0; 
             if(!s.assignments) s.assignments = {}; 
         });
     });
@@ -900,29 +893,6 @@
         if (t === 'trash') renderTrashView();
     }
 
-    function togglePointsUI() {
-        pointsUIVisible = !pointsUIVisible;
-        const btn = document.getElementById('toggle-points-btn');
-        if(pointsUIVisible) {
-            btn.innerText = "Hide Points";
-            btn.classList.replace('btn-warning', 'btn-secondary');
-        } else {
-            btn.innerText = "⭐ Participation Points";
-            btn.classList.replace('btn-secondary', 'btn-warning');
-        }
-        refreshViews();
-    }
-
-    function updatePoints(roll, delta) {
-        const cls = appData.classes.find(c => c.id == appData.activeClassId);
-        if(!cls) return;
-        const student = cls.roster.find(s => s.roll === roll);
-        if(!student) return;
-        student.points = (student.points || 0) + delta;
-        document.getElementById(`points-${roll}`).innerText = student.points;
-        persistData();
-    }
-
     function refreshViews() {
         if(!appData.isSetupComplete) return;
         const cls = appData.classes.find(c => c.id == appData.activeClassId) || (appData.classes.length > 0 ? appData.classes[0] : null);
@@ -944,13 +914,6 @@
                             <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
                             <span>Roll ${s.roll}: ${s.name}</span>
                         </div>
-                        
-                        <div class="points-ui ${pointsUIVisible ? '' : 'hidden'}" style="display:flex; align-items:center; gap:5px; margin-right:10px;">
-                            <button class="sub-btn" style="background:var(--danger-red); color:white; border:none; padding:4px 8px; cursor:pointer;" onclick="updatePoints(${s.roll}, -1)">-</button>
-                            <span id="points-${s.roll}" style="font-weight:bold; font-size:12px; width:20px; text-align:center;">${s.points || 0}</span>
-                            <button class="sub-btn" style="background:var(--success-green); color:white; border:none; padding:4px 8px; cursor:pointer;" onclick="updatePoints(${s.roll}, 1)">+</button>
-                        </div>
-
                         <div class="attendance-toggle">
                             <input type="hidden" id="status-val-${idx}" value="Present">
                             <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div>
@@ -1016,10 +979,9 @@
         }
         const n = document.getElementById('input-student-name').value, ph = document.getElementById('input-student-phone').value, em = document.getElementById('input-student-email').value, f = document.getElementById('input-student-photo').files[0];
         const done = (img) => {
-            const s = { roll: rollNum, name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {}, points: 0, assignments: {} };
+            const s = { roll: rollNum, name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {}, assignments: {} };
             if (editingIdx > -1) { 
                 s.marks = cls.roster[editingIdx].marks || {}; 
-                s.points = cls.roster[editingIdx].points || 0;
                 s.assignments = cls.roster[editingIdx].assignments || {};
                 cls.roster[editingIdx] = s; 
                 editingIdx = -1; 
@@ -1073,7 +1035,7 @@
                             if (phone) cls.roster[existingIdx].phone = phone;
                             if (email) cls.roster[existingIdx].email = email;
                         } else {
-                            cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, points: 0, assignments: {} });
+                            cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, assignments: {} });
                         }
                         addedCount++;
                     }
@@ -1133,7 +1095,7 @@
                                         if (phone) cls.roster[existingIdx].phone = phone;
                                         if (email) cls.roster[existingIdx].email = email;
                                     } else {
-                                        cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, points: 0, assignments: {} });
+                                        cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, assignments: {} });
                                     }
                                     addedCount++;
                                 }
@@ -1429,7 +1391,7 @@
 
         let html = `<html><head><title>Batch Report Cards - ${cls.name}</title>
             <style>
-                body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; background: #f4f4f4; padding: 20px; }
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; background: #f4f4f4; padding: 20px; padding-top: 80px; margin: 0; }
                 .card { background: white; padding: 40px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); page-break-after: always; }
                 h1 { color: #0056b3; margin-bottom: 5px; text-align: center; }
                 h2 { color: #17a2b8; margin-top: 0; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; }
@@ -1439,9 +1401,26 @@
                 th { background-color: #f0f2f5; color: #1c1e21; font-weight: bold; }
                 .signature { margin-top: 60px; display: flex; justify-content: space-between; }
                 .signature div { border-top: 2px solid #333; padding-top: 5px; width: 40%; text-align: center; font-weight: bold; }
-                @media print { body { background: white; padding: 0; } .card { box-shadow: none; border: none; padding: 0; } }
+                
+                /* Fixed Navigation Header Actions */
+                .manual-actions-bar {
+                    position: fixed; top: 0; left: 0; right: 0; background: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10000;
+                }
+                .manual-btn { padding: 10px 18px; font-size: 14px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+                .btn-back { background: #606770; color: white; }
+                .btn-print { background: #0056b3; color: white; }
+                
+                @media print { 
+                    body { background: white; padding: 0 !important; } 
+                    .card { box-shadow: none; border: none; padding: 0; } 
+                    .manual-actions-bar { display: none !important; }
+                }
             </style>
-        </head><body>`;
+        </head><body>
+            <div class="manual-actions-bar">
+                <button class="manual-btn btn-back" onclick="window.close();">⬅️ Close</button>
+                <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+            </div>`;
         
         let grades = getGradesFromUI();
         let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
@@ -1477,7 +1456,6 @@
                         <th>Grade</th>
                         <th>Status</th>
                         <th>Assignment</th>
-                        <th>Participation Points</th>
                     </tr>
                     <tr>
                         <td><b>${currentExam}</b></td>
@@ -1486,7 +1464,6 @@
                         <td style="font-size: 18px; color: #0056b3; font-weight:bold;">${gradeText}</td>
                         <td>${status}</td>
                         <td>${assign}</td>
-                        <td><b>${s.points || 0} pts</b></td>
                     </tr>
                 </table>
                 <div class="signature">
@@ -1502,10 +1479,6 @@
         printWin.document.write(html);
         printWin.document.close();
         printWin.focus();
-        setTimeout(() => { 
-            alert("Tip: In the print dialogue, select 'Save as PDF' to generate the batch file!");
-            printWin.print(); 
-        }, 500);
     }
 
     function exportMarksToCSV() {
@@ -1924,6 +1897,7 @@
             const docSnap = await docRef.get();
             let localData = JSON.parse(localStorage.getItem("pro_attendance_data")) || appData; 
 
+            // Ensure connected devices tracking
             if (!localData.connectedDevices) localData.connectedDevices = [];
             let myProf = (localData.userName || "Unknown") + (localData.userRole ? ` (${localData.userRole})` : "");
             if (myProf.trim() && !localData.connectedDevices.includes(myProf)) {
@@ -1940,10 +1914,12 @@
                 
                 const cloudData = JSON.parse(cloudRecord.payload);
                 
+                // Merge connected devices list
                 if(cloudData.connectedDevices) {
                     localData.connectedDevices = [...new Set([...localData.connectedDevices, ...cloudData.connectedDevices])];
                 }
                 
+                // Smart Merge Logic based on NAMES
                 if(cloudData.classes) {
                     cloudData.classes.forEach(cloudClass => {
                         let localClass = localData.classes.find(c => c.name.toLowerCase().trim() === cloudClass.name.toLowerCase().trim());
@@ -1959,9 +1935,7 @@
                                     if (!localStudent.phone && cloudStudent.phone) localStudent.phone = cloudStudent.phone;
                                     if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
                                     
-                                    localStudent.points = Math.max((localStudent.points || 0), (cloudStudent.points || 0));
-                                    
-                                    // Mark Sync Fix
+                                    // Merge points and assignments safely
                                     if(!localStudent.marks) localStudent.marks = {};
                                     Object.keys(localStudent.marks).forEach(k => { if(localStudent.marks[k] === "") delete localStudent.marks[k]; });
                                     if(cloudStudent.marks) {
@@ -1994,6 +1968,7 @@
                     localData.history = uniqueHistory;
                 }
                 
+                // Basic merge for Trash Bin
                 if(cloudData.trash) {
                     if(!localData.trash) localData.trash = {students:[], classes:[]};
                     if(cloudData.trash.students) localData.trash.students = [...cloudData.trash.students];
@@ -2013,7 +1988,7 @@
             appData = localData; 
             
             if (!isAuto) {
-                alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged.");
+                alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged. The page will now refresh to show updates.");
                 location.reload(); 
             } else {
                 refreshViews(); 
@@ -2153,14 +2128,14 @@
                 /* Prevent action tools from printing on paper/PDF */
                 @media print {
                     .manual-actions-bar { display: none !important; }
-                    body { padding-top: 0px; }
+                    body { padding-top: 0px !important; }
                     .page-break { page-break-before: always; }
                 }
             </style>
         </head>
         <body>
             <div class="manual-actions-bar">
-                <button class="manual-btn btn-back" onclick="window.history.back(); window.close();">⬅️ Back to App</button>
+                <button class="manual-btn btn-back" onclick="window.close();">⬅️ Close</button>
                 <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
             </div>
 
@@ -2178,7 +2153,7 @@
             <ol>
                 <li><a href="#setup">Initial Setup & Profile</a></li>
                 <li><a href="#managing">Managing Classes & Students (PDF/CSV Import)</a></li>
-                <li><a href="#attendance">Taking Daily Attendance & Participation</a></li>
+                <li><a href="#attendance">Taking Daily Attendance</a></li>
                 <li><a href="#marks">Marks, Exams, Assignments & Grading</a></li>
                 <li><a href="#reports">Reports, History & Trash Recovery</a></li>
                 <li><a href="#sync">Co-Teacher Cloud Sync (Smart Merge)</a></li>
@@ -2203,7 +2178,7 @@
                 <li><b>PDF Import Engine:</b> You can upload a standard text-based PDF containing your student list. The app scans the document, identifies rows starting with a Roll Number, extracts the student's name, and intelligently searches for phone numbers and email addresses in the text. <i>(Note: This requires a digital text PDF, not a photographed image of a piece of paper).</i></li>
             </ul>
 
-            <h2 id="attendance" class="page-break">3. Taking Daily Attendance & Participation</h2>
+            <h2 id="attendance" class="page-break">3. Taking Daily Attendance</h2>
             <p>The Home screen is engineered for speed.</p>
             <ol>
                 <li>Select your Class from the top dropdown and pick the current Date.</li>
@@ -2211,9 +2186,6 @@
                 <li>If a student is missing, tap <b>A</b> (Absent). This reveals a sub-menu allowing you to categorize the absence as an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
                 <li>Click <b>Save Attendance Record</b>. The data is instantly written to your device's local database.</li>
             </ol>
-
-            <h3>⭐ Participation Tracking</h3>
-            <p>Need to track classroom behavior or participation? Click the yellow <b>⭐ Participation Points</b> button at the top of the Home screen. This reveals positive and negative tracking buttons next to every student. You can instantly add or deduct points during class, and these points are securely saved to their profile!</p>
 
             <h2 id="marks">4. Marks, Exams, Assignments & Grading</h2>
             <p>Switching to the <b>📝 Marks</b> tab opens your digital grading book.</p>
@@ -2264,11 +2236,6 @@
         printWindow.document.write(manualContent);
         printWindow.document.close();
         printWindow.focus();
-        
-        setTimeout(() => {
-            alert("Tip: Click 'Back to App' at the top left anytime to exit the manual view. Select 'Save as PDF' in your system dialogue to download a copy!");
-            printWindow.print();
-        }, 500);
     }
     
     // Ensure DOM is fully loaded before launching the view handlers
