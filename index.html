@@ -189,6 +189,20 @@
 </head>
 <body>
 
+<div id="custom-note-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:20000; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+    <div style="background:var(--card-bg); padding:20px; border-radius:12px; width:90%; max-width:400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="margin-top:0; color:var(--primary-blue);">Send Custom Note</h3>
+        <label>Select Student:</label>
+        <select id="note-student-select"></select>
+        <label style="margin-top:10px;">Message:</label>
+        <textarea id="note-message-text" rows="5">Dear Parent, this is to inform you about your child's recent performance and behavior in class. Please review this note. Regards, Teacher.</textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-secondary" style="flex:1;" onclick="closeNoteModal()">Cancel</button>
+            <button class="btn-success" style="flex:1;" onclick="sendCustomNote()">Send Note</button>
+        </div>
+    </div>
+</div>
+
 <div id="video-intro-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
     <h3 style="color: white; margin-bottom: 15px; text-align: center;">Welcome! Watch this quick tour:</h3>
     <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY?si=ajvUrWaYbwzO0Rbu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
@@ -836,8 +850,20 @@
         if(!appData.connectedDevices || appData.connectedDevices.length === 0) {
             container.innerHTML = '<p style="font-size:11px; color:var(--text-secondary); margin:0;">No other devices connected yet.</p>';
         } else {
-            container.innerHTML = '<ul style="font-size:12px; margin:5px 0 0 0; padding-left:20px; color:var(--primary-blue);">' + 
-                appData.connectedDevices.map(d => `<li><b>${d}</b></li>`).join('') + '</ul>';
+            container.innerHTML = '<ul style="font-size:12px; margin:5px 0 0 0; padding-left:0; list-style:none; color:var(--primary-blue);">' + 
+                appData.connectedDevices.map((d, i) => `<li style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-color); padding:5px; margin-bottom:5px; border-radius:4px; border:1px solid var(--border-color);">
+                <b>${d}</b> 
+                <button style="background:var(--danger-red); color:white; border:none; padding:2px 8px; font-size:10px; border-radius:4px; cursor:pointer;" onclick="removeDevice(${i})">Remove</button>
+                </li>`).join('') + '</ul>';
+        }
+    }
+
+    function removeDevice(index) {
+        if(confirm("Remove this device from your network?")) {
+            appData.connectedDevices.splice(index, 1);
+            persistData();
+            updateConnectedDevicesUI();
+            performSmartSync(true); // silent sync to update cloud
         }
     }
 
@@ -1650,7 +1676,7 @@
         let p = 0;
         const recs = cls.roster.map((s, idx) => {
             const st = document.getElementById(`status-val-${idx}`).value;
-            if (st !== 'Absent') p++;
+            if (st === 'Present') p++; 
             return { roll: s.roll, name: s.name, status: st, phone: s.phone, email: s.email };
         });
         appData.history.unshift({ id: Date.now(), date: d, className: cls.name, classId: cls.id, total: cls.roster.length, present: p, absent: cls.roster.length-p, students: recs });
@@ -1664,29 +1690,64 @@
         const filtered = appData.history.filter(h => h.classId == cls.id);
         cont.innerHTML = filtered.length ? filtered.map(h => {
             const aL = h.students.filter(s => s.status === 'Absent');
-            const pL = h.students.filter(s => s.status !== 'Absent');
+            const lL = h.students.filter(s => s.status === 'Leave');
+            const pL = h.students.filter(s => s.status === 'Present');
             return `
             <div class="history-card">
-                <b>📅 ${h.date}</b> - P: ${h.present} A: ${h.absent}
-                <div style="margin-top:10px; display:flex; gap:8px;">
+                <b>📅 ${h.date}</b> - P: ${h.present} A/L: ${h.absent}
+                <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
                     <button class="btn-primary" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; flex:1; justify-content:center;" onclick="bulkWhatsApp(${h.id})">${waIconHTML} Message All Absentees</button>
                     <button class="btn-success" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; flex:1; justify-content:center;" onclick="exportDailyHistoryCSV(${h.id})">📥 Download CSV</button>
+                    <button class="btn-info" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; width:100%; justify-content:center; margin-top:4px;" onclick="openNoteModal(${h.id})">📝 Send Custom Note</button>
                 </div>
                 <details style="margin-top:10px; font-size:12px;">
                     <summary style="cursor:pointer; color:var(--primary-blue)">View Full Details</summary>
                     <div style="font-weight:bold; margin-top:10px; color:red;">Absents:</div>
                     ${aL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><div><button class="msg-btn" style="background:#25D366" onclick="smartMessage(${s.roll},'${h.date}','wa')">${waIconHTML} WA</button><button class="msg-btn" style="background:#EA4335" onclick="smartMessage(${s.roll},'${h.date}','mail')">${mailIconHTML} Mail</button></div></div>`).join('')}
-                    <div style="font-weight:bold; margin-top:10px; color:green;">Present/Leave:</div>
+                    ${lL.length > 0 ? `<div style="font-weight:bold; margin-top:10px; color:var(--warning-orange);">On Leave:</div>
+                    ${lL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>Leave</b></div>`).join('')}` : ''}
+                    <div style="font-weight:bold; margin-top:10px; color:green;">Present:</div>
                     ${pL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>${s.status}</b></div>`).join('')}
                 </details>
             </div>`}).join('') : "No History.";
+    }
+
+    // --- Custom Note Logic ---
+    function openNoteModal(hId) {
+        const entry = appData.history.find(h => h.id === hId);
+        if (!entry) return;
+        const select = document.getElementById('note-student-select');
+        select.innerHTML = entry.students.map(s => `<option value="${s.roll}">${s.roll}. ${s.name}</option>`).join('');
+        document.getElementById('custom-note-modal').style.display = 'flex';
+    }
+    
+    function closeNoteModal() {
+        document.getElementById('custom-note-modal').style.display = 'none';
+    }
+    
+    function sendCustomNote() {
+        const roll = document.getElementById('note-student-select').value;
+        const msg = document.getElementById('note-message-text').value;
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const student = cls.roster.find(s => s.roll == roll);
+        if (!student || (!student.phone && !student.email)) return alert("No contact information saved for this student!");
+        
+        if (student.phone) {
+            let ct = student.phone.replace(/\D/g, ''); 
+            if (ct.length === 10) ct = "91" + ct;
+            window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+        } else {
+            window.location.href = `mailto:${student.email}?subject=Message from Teacher&body=${encodeURIComponent(msg)}`;
+        }
+        closeNoteModal();
     }
 
     function exportDailyHistoryCSV(hId) {
         const entry = appData.history.find(h => h.id === hId);
         if (!entry) return alert("History entry not found.");
         
-        let csv = `Class,${entry.className}\nDate,${entry.date}\nTotal Students,${entry.total}\nPresent,${entry.present}\nAbsent,${entry.absent}\n\n`;
+        let csv = `Class,${entry.className}\nDate,${entry.date}\nTotal Students,${entry.total}\nPresent,${entry.present}\nAbsent/Leave,${entry.absent}\n\n`;
         csv += "Roll No,Name,Status\n";
         
         let sortedStudents = [...entry.students].sort((a,b) => a.roll - b.roll);
@@ -1743,15 +1804,15 @@
         document.getElementById('trend-analysis').innerText = history.length ? `Trend: Most Absences on ${peakDay}s` : "No trends available.";
         document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
             const s = stats[roll];
-            const activePresent = s.present + s.leave;
+            const activePresent = s.present; 
             const per = s.total ? Math.round((activePresent / s.total) * 100) : 0;
             const isDanger = per < 75 && s.total > 0;
             return `<div class="report-card ${isDanger ? 'danger-zone' : ''}">
                 ${per === 100 && s.total > 0 ? '<span class="badge-100">🌟 TOP</span>' : ''}
                 <b>${roll}. ${s.name}</b>
                 <div class="report-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="stat-box">P/L: ${activePresent}</div>
-                    <div class="stat-box">A: ${s.absent}</div>
+                    <div class="stat-box">P: ${activePresent}</div>
+                    <div class="stat-box">A/L: ${s.absent + s.leave}</div>
                     <div class="stat-box" style="color:${isDanger?'red':''}">${per}%</div>
                 </div>
             </div>`;
@@ -1768,7 +1829,7 @@
         let shortageList = [];
         Object.keys(stats).sort((a,b)=>a-b).forEach(r => {
             const s = stats[r];
-            if(s.t > 0) { const activePresent = s.p + s.l; const per = Math.round((activePresent / s.t) * 100); if (per < 75) shortageList.push(`${r}. ${s.name} - ${per}%`); }
+            if(s.t > 0) { const activePresent = s.p; const per = Math.round((activePresent / s.t) * 100); if (per < 75) shortageList.push(`${r}. ${s.name} - ${per}%`); }
         });
         let msg = `*Attendance Shortage Alert*\n*Class:* ${cls.name}\n*Month:* ${m}\n\n`;
         if (shortageList.length > 0) { msg += `*Students below 75%:\n*` + shortageList.join('\n'); } 
@@ -1783,7 +1844,7 @@
         let csv = `Class,${cls.name}\nMonth,${m}\n\n`;
         csv += "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
         const stats = getStats(m);
-        Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round(((s.p+s.l)/s.t)*100):0}%\n`; });
+        Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round((s.p/s.t)*100):0}%\n`; });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
     }
@@ -1897,7 +1958,6 @@
             const docSnap = await docRef.get();
             let localData = JSON.parse(localStorage.getItem("pro_attendance_data")) || appData; 
 
-            // Ensure connected devices tracking
             if (!localData.connectedDevices) localData.connectedDevices = [];
             let myProf = (localData.userName || "Unknown") + (localData.userRole ? ` (${localData.userRole})` : "");
             if (myProf.trim() && !localData.connectedDevices.includes(myProf)) {
@@ -1914,12 +1974,10 @@
                 
                 const cloudData = JSON.parse(cloudRecord.payload);
                 
-                // Merge connected devices list
                 if(cloudData.connectedDevices) {
                     localData.connectedDevices = [...new Set([...localData.connectedDevices, ...cloudData.connectedDevices])];
                 }
                 
-                // Smart Merge Logic based on NAMES
                 if(cloudData.classes) {
                     cloudData.classes.forEach(cloudClass => {
                         let localClass = localData.classes.find(c => c.name.toLowerCase().trim() === cloudClass.name.toLowerCase().trim());
@@ -1935,7 +1993,6 @@
                                     if (!localStudent.phone && cloudStudent.phone) localStudent.phone = cloudStudent.phone;
                                     if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
                                     
-                                    // Merge points and assignments safely
                                     if(!localStudent.marks) localStudent.marks = {};
                                     Object.keys(localStudent.marks).forEach(k => { if(localStudent.marks[k] === "") delete localStudent.marks[k]; });
                                     if(cloudStudent.marks) {
@@ -1968,7 +2025,6 @@
                     localData.history = uniqueHistory;
                 }
                 
-                // Basic merge for Trash Bin
                 if(cloudData.trash) {
                     if(!localData.trash) localData.trash = {students:[], classes:[]};
                     if(cloudData.trash.students) localData.trash.students = [...cloudData.trash.students];
@@ -1988,7 +2044,7 @@
             appData = localData; 
             
             if (!isAuto) {
-                alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged. The page will now refresh to show updates.");
+                alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged.");
                 location.reload(); 
             } else {
                 refreshViews(); 
@@ -2155,7 +2211,7 @@
                 <li><a href="#managing">Managing Classes & Students (PDF/CSV Import)</a></li>
                 <li><a href="#attendance">Taking Daily Attendance</a></li>
                 <li><a href="#marks">Marks, Exams, Assignments & Grading</a></li>
-                <li><a href="#reports">Reports, History & Trash Recovery</a></li>
+                <li><a href="#reports">Reports, History, Notes & Trash Recovery</a></li>
                 <li><a href="#sync">Co-Teacher Cloud Sync (Smart Merge)</a></li>
             </ol>
 
@@ -2199,12 +2255,12 @@
             <h3>Parent Communication & Batch Report Cards</h3>
             <p>Every student row features a WhatsApp and Email button to instantly send individual result cards. However, if you need physical copies for a Parent-Teacher meeting, click the blue <b>🖨️ Print Batch Report Cards</b> button. This powerful tool instantly generates a beautifully formatted, half-page formal report card for every single student in the class, ready to print on A4 paper!</p>
 
-            <h2 id="reports" class="page-break">5. Reports, History & Trash Recovery</h2>
+            <h2 id="reports" class="page-break">5. Reports, History, Notes & Trash Recovery</h2>
             <p>The app keeps detailed analytics to help you monitor long-term trends.</p>
 
-            <h3>History Tab</h3>
-            <p>Here you can view exactly who was present or absent on any historical date. A powerful <b>Message All Absentees</b> button allows you to queue up WhatsApp messages for every missing student from that day, automating your follow-ups.</p>
-            <p>You can also click <b>📥 Download CSV</b> to export a clean, printable daily attendance sheet.</p>
+            <h3>History Tab & Custom Notes</h3>
+            <p>Here you can view exactly who was present or absent on any historical date. A powerful <b>Message All Absentees</b> button allows you to queue up WhatsApp messages for every missing student from that day. <i>Note: Students marked as "Leave" are excluded from this automated message blast.</i></p>
+            <p>You can also click <b>📝 Send Custom Note</b> inside any history card to manually select a student and send an editable, direct message to their parents regarding their performance.</p>
 
             <h3>Reports Tab</h3>
             <p>This generates an All-Time Class Matrix. It calculates the overall attendance percentage for every student. Any student falling below 75% attendance is visually flagged in red. You can download monthly CSV summaries or send a "Shortage Alert" directly to the Headmaster.</p>
@@ -2223,7 +2279,7 @@
             <ol>
                 <li><b>The Master Device:</b> Go to <b>⚙️ Settings > ☁️ Sync</b> to find your permanent 9-Digit Account ID and PIN. <i>You must click <b>🔄 Sync Data Now</b> on this device first to establish the cloud locker.</i></li>
                 <li><b>Linking Others:</b> On a co-teacher's phone, navigate to the same menu, enter the Master ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
-                <li><b>Verification:</b> You will see a green "Linked to: [Name]" confirmation. Furthermore, a "Connected Devices" list will show everyone currently participating in your network.</li>
+                <li><b>Managing Network:</b> You will see a "Connected Devices" list showing everyone currently participating in your network. You can click <b>Remove</b> next to any device name to easily kick old devices off the network.</li>
             </ol>
 
             <h3>Syncing Data</h3>
