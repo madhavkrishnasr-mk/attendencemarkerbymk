@@ -1,1041 +1,2311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Make it Karnatic</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Attendance Taker Pro - Ultimate Teacher Edition</title>
 
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121214;
-      color: #e1e1e6;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      height: -webkit-fill-available;
-      width: 100vw;
-      overflow: hidden;
-    }
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
 
-    html {
-      height: -webkit-fill-available;
-    }
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-    header {
-      background-color: #1a1a1e;
-      padding: 10px 15px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      border-bottom: 1px solid #29292e;
-      height: auto;
-      min-height: 60px;
-      z-index: 10;
-      flex-shrink: 0;
-      flex-wrap: wrap;
-    }
+    <style>
+        /* --- PROFESSIONAL COLOR PALETTE --- */
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1c1e21;
+            --text-secondary: #606770;
+            --border-color: #dddfe2;
+            --primary-blue: #0056b3;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+            --info-cyan: #17a2b8;
+            --warning-orange: #f39c12;
+            --mark-purple: #8e44ad;
+            --pattern-color: rgba(0, 0, 0, 0.05);
+        }
 
-    .logo-container { display: flex; align-items: center; gap: 10px; }
-    .logo { font-size: 18px; font-weight: bold; color: #00adb5; white-space: nowrap; }
+        .dark-mode {
+            --bg-color: #18191a;
+            --card-bg: #242526;
+            --text-main: #e4e6eb;
+            --text-secondary: #b0b3b8;
+            --border-color: #3e4042;
+            --primary-blue: #2d88ff;
+            --pattern-color: rgba(255, 255, 255, 0.03);
+        }
 
-    .sidebar-toggle {
-      background: #202024; border: 1px solid #29292e; color: #e1e1e6;
-      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
-    }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            background-image: repeating-linear-gradient(45deg, var(--pattern-color) 0, var(--pattern-color) 2px, transparent 2px, transparent 12px);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.3s ease;
+            min-height: 100vh;
+        }
 
-    .search-bar { display: flex; gap: 8px; flex: 1; min-width: 200px; max-width: 450px; order: 3; width: 100%; }
-    .search-bar input {
-      flex: 1; background-color: #202024; border: 1px solid #29292e;
-      padding: 7px 12px; border-radius: 6px; color: #fff; font-size: 13px; outline: none; min-width: 0;
-    }
-    .search-bar button {
-      background-color: #00adb5; color: #fff; border: none;
-      padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap;
-    }
+        .main-card {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            box-sizing: border-box;
+            overflow: hidden;
+        }
 
-    .header-controls { display: flex; align-items: center; gap: 10px; order: 2; }
+        .hidden { display: none !important; }
 
-    .mic-btn {
-      background: #202024; border: 1px solid #ff4d4d; color: #ff4d4d;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;
-      transition: all 0.2s ease; white-space: nowrap;
-    }
-    .mic-btn.active { background: #ff4d4d; color: #fff; box-shadow: 0 0 10px rgba(255,77,77,0.4); }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
 
-    /* === RESPONSIVE LAYOUT === */
-    .workspace {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 400px 1fr;
-      overflow: hidden;
-      transition: grid-template-columns 0.3s cubic-bezier(0.4,0,0.2,1);
-      min-height: 0;
-    }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-size: 15px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
 
-    .left-panel {
-      background-color: #16161a;
-      border-right: 1px solid #29292e;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 12px;
-      overflow-y: auto;
-      transition: transform 0.3s ease, opacity 0.2s ease;
-      min-height: 0;
-    }
+        label { font-size: 12px; font-weight: bold; color: var(--text-secondary); display: block; margin-bottom: 4px; }
 
-    .control-box {
-      background: #1a1a1e; border-radius: 8px; border: 1px solid #29292e; padding: 12px;
-      flex-shrink: 0;
-    }
-    .control-box h4 { font-size: 11px; color: #00adb5; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        button { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; padding: 10px; transition: 0.2s ease; }
 
-    .raga-select-dropdown {
-      background: #202024; border: 1px solid #29292e; color: #fff;
-      padding: 7px; border-radius: 6px; font-size: 13px; outline: none; width: 100%; cursor: pointer;
-    }
-    .raga-display-card {
-      background: #202024; border: 1px solid #29292e; border-radius: 6px; padding: 10px; margin-top: 8px;
-    }
-    .raga-notation-line { font-size: 13px; color: #cbd5e1; margin-top: 4px; word-break: break-all; }
+        .btn-full { width: 100%; padding: 15px; font-size: 16px; margin-top: 10px; color: white; }
+        .btn-primary { background-color: var(--primary-blue); color: white; }
+        .btn-success { background-color: var(--success-green); color: white; }
+        .btn-danger { background-color: var(--danger-red); color: white; }
+        .btn-info { background-color: var(--info-cyan); color: white; }
+        .btn-warning { background-color: var(--mark-purple); color: white; }
+        .btn-secondary { background-color: var(--text-secondary); color: white; }
 
-    .skill-action-btn {
-      background: #00adb5; color: #fff; border: none; padding: 6px 14px;
-      border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
-    }
+        #tour-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; box-sizing: border-box;
+            backdrop-filter: blur(4px);
+        }
 
-    .generator-accent-btn {
-      background: linear-gradient(135deg, #ff9f43, #ff7f11); color: #fff; border: none; padding: 7px 14px;
-      border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; width: 100%; margin-top: 5px;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
+        /* --- SETUP SCREEN --- */
+        .welcome-icon { font-size: 40px; text-align: center; margin-bottom: 10px; display: block; }
 
-    .creator-input-group { display: flex; flex-direction: column; gap: 7px; }
-    .creator-input-group input {
-      background: #202024; border: 1px solid #29292e; padding: 7px 10px;
-      border-radius: 4px; color: #fff; font-size: 13px; outline: none;
-    }
-    .creator-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
-    .creator-buttons button { flex: 1; min-width: 70px; }
-    
-    .add-note-btn {
-      background: #202024; border: 1px solid #29292e; color: #e1e1e6;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;
-    }
-    .capture-btn {
-      background: #202024; border: 1px solid #ff9f43; color: #ff9f43;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;
-      font-weight: bold;
-    }
-    .capture-btn.active { background: #ff9f43; color: #000; }
+        /* --- ATTENDANCE UI --- */
+        .student-item { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); }
+        .student-top-row { display: flex; justify-content: space-between; align-items: center; }
+        
+        .student-meta { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; padding-right: 10px; }
+        .student-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+        
+        .student-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-blue); flex-shrink: 0; }
+        
+        .attendance-toggle { display: flex; width: 100px; height: 35px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+        .toggle-opt { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; background-color: var(--card-bg); color: var(--text-main); cursor: pointer; }
+        .toggle-opt.p-active { background-color: var(--success-green); color: white; }
+        .toggle-opt.a-active { background-color: var(--danger-red); color: white; }
 
-    .notes-feed {
-      background: #1a1a1e; border-radius: 8px; border: 1px solid #29292e;
-      padding: 12px; display: flex; flex-direction: column; flex: 1; min-height: 150px; overflow: hidden;
-    }
-    .notes-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; overflow-y: auto; flex: 1; }
-    
-    .note-row {
-      display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-      background: #202024; border-radius: 6px; border-left: 4px solid #00adb5; cursor: pointer; flex-shrink: 0;
-      position: relative;
-    }
-    .note-row:hover { background: #2a2a30; }
-    .song-details-block { display: flex; flex-direction: column; flex: 1; padding-right: 10px; min-width: 0; }
-    .song-row-title { font-size: 12px; color: #00adb5; font-weight: bold; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .carnatic-notation { font-size: 14px; color: #ffffff; margin-bottom: 3px; word-break: break-all; }
-    .song-meta-data { font-size: 10px; color: #a5a5b4; display: flex; gap: 6px; flex-wrap: wrap; }
-    .meta-tag { background: #16161a; padding: 2px 6px; border-radius: 3px; border: 1px solid #29292e; white-space: nowrap; }
-    
-    .remove-song-btn {
-      background: transparent; border: none; color: #ff4d4d; font-size: 18px; cursor: pointer;
-      padding: 4px 8px; border-radius: 4px; line-height: 1; transition: background 0.2s;
-    }
-    .remove-song-btn:hover { background: rgba(255,77,77,0.15); }
+        .extra-opts { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; padding-top: 8px; border-top: 1px dashed var(--border-color); }
+        .sub-btn { font-size: 10px; padding: 5px 10px; border-radius: 4px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); }
+        .sub-btn.l-active { background: var(--warning-orange); color: white; border-color: var(--warning-orange); }
 
-    /* === VISUALIZER === */
-    .visualizer-panel {
-      background: #111113; position: relative; overflow: hidden;
-      display: flex; flex-direction: column; width: 100%; min-height: 0;
-    }
-    .visualizer-header {
-      padding: 8px 15px; background-color: #16161a; border-bottom: 1px solid #29292e;
-      font-size: 13px; color: #e1e1e6; display: flex; justify-content: space-between; align-items: center;
-      height: 42px; flex-shrink: 0;
-    }
-    .controls-group { display: flex; align-items: center; gap: 8px; }
-    .summary-btn {
-      background: #202024; border: 1px solid #ff9f43; color: #ff9f43;
-      padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;
-    }
+        /* --- REPORT UI --- */
+        .report-card { background-color: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); position: relative;}
+        .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; font-size: 11px; text-align: center; }
+        .stat-box { background: var(--card-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); font-weight: bold; }
+        .danger-zone { border: 2px solid var(--danger-red) !important; background-color: #fff0f0; }
+        .badge-100 { position: absolute; top: 5px; right: 5px; background: gold; color: black; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
 
-    #visualizerCanvas { flex: 1; width: 100%; display: block; }
+        /* --- HISTORY --- */
+        .history-card { background: var(--bg-color); padding: 12px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid var(--primary-blue); border: 1px solid var(--border-color); }
+        .student-list-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px dashed var(--border-color); align-items: center;}
+        .msg-btn { font-size: 10px; padding: 4px 8px; border-radius: 4px; color: white; margin-left: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;}
 
-    .summary-overlay {
-      position: absolute; top: 52px; right: 15px; background: #1a1a1e;
-      border: 1px solid #ff9f43; border-radius: 8px; padding: 15px; width: 240px;
-      z-index: 20; box-shadow: 0 4px 20px rgba(0,0,0,0.6); display: none;
-    }
+        /* --- SETTINGS TABS --- */
+        .settings-tabs { display: flex; gap: 5px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; font-size: 13px; background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .tab-btn.active { background-color: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+        
+        .trend-box { background: #e8f4fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid var(--primary-blue); }
+        .csv-reminder { font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 10px; }
 
-    /* Loading Message Overlay */
-    .song-loading-screen {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(18,18,20,0.85); z-index: 100; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 15px; opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-    .song-loading-screen.visible { opacity: 1; pointer-events: auto; }
-    .spinner-ring {
-      width: 40px; height: 40px; border: 4px solid #29292e; border-top: 4px solid #ff9f43;
-      border-radius: 50%; animation: spinRing 0.8s linear infinite;
-    }
-    @keyframes spinRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    /* === PIANO INTERFACE === */
-    .keyboard-container {
-      height: 145px;
-      background: #09090a;
-      display: flex;
-      justify-content: flex-start;
-      align-items: flex-start;
-      border-top: 3px solid #29292e;
-      position: relative;
-      overflow-x: auto;
-      overflow-y: hidden;
-      flex-shrink: 0;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .piano {
-      display: flex;
-      position: relative;
-      height: 135px;
-      flex-shrink: 0;
-    }
-
-    .white-key {
-      width: 45px; /* Increased slightly for better mobile thumb-targeting */
-      height: 130px;
-      background: linear-gradient(to bottom, #fefefe 0%, #efefef 100%);
-      border: 1px solid #aaa;
-      border-radius: 0 0 5px 5px;
-      cursor: pointer;
-      z-index: 1;
-      position: relative;
-      flex-shrink: 0;
-      transition: background 0.06s;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 5px;
-      user-select: none;
-    }
-    .key-label { font-size: 9px; color: #666; pointer-events: none; }
-
-    .white-key.active { background: linear-gradient(to bottom, #ffd32a, #ffca28) !important; transform: translateY(1px); height: 129px; }
-    .white-key.wrong  { background: linear-gradient(to bottom, #ff4d4d, #ff3333) !important; }
-    .white-key.hint   { background: linear-gradient(to bottom, #1e272e, #2f3640); border-bottom: 4px solid #00adb5; }
-
-    .black-key {
-      width: 26px;
-      height: 82px;
-      background: linear-gradient(to bottom, #2c3e50 0%, #000 100%);
-      border: 1px solid #000;
-      border-radius: 0 0 4px 4px;
-      position: absolute;
-      z-index: 2;
-      cursor: pointer;
-      top: 0;
-      transition: background 0.06s;
-      user-select: none;
-    }
-    .black-key.active { background: linear-gradient(to bottom, #ffd32a, #e5b810) !important; }
-    .black-key.wrong  { background: linear-gradient(to bottom, #cc0000, #990000) !important; }
-    .black-key.hint   { background: linear-gradient(to bottom, #000, #1e272e); border-bottom: 3px solid #00adb5; }
-
-    #micNoteCapture {
-      position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
-      background: #1a1a1e; border: 1px solid #29292e; border-radius: 6px;
-      padding: 4px 12px; font-size: 11px; color: #00adb5; z-index: 10; white-space: nowrap;
-      pointer-events: none;
-    }
-
-    /* === SCREEN ADAPTATION MEDIA QUERIES === */
-    @media (max-width: 868px) {
-      .workspace {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-        position: relative;
-      }
-
-      .left-panel {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 5;
-        transform: translateX(0);
-        opacity: 1;
-        border-right: none;
-      }
-
-      .workspace.sidebar-closed .left-panel {
-        transform: translateX(-100%);
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      /* When sidebar is closed on mobile, show visualizer panel full screen */
-      .visualizer-panel {
-        grid-row: 1;
-        grid-column: 1;
-      }
-      
-      header {
-        padding: 8px 12px;
-      }
-      
-      .search-bar {
-        max-width: none;
-      }
-    }
-  </style>
+        /* --- MARKS MODULE UI --- */
+        .marks-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; color: var(--text-main); }
+        .marks-table th, .marks-table td { padding: 4px 2px; border: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
+        .marks-table th { background-color: var(--bg-color); font-size: 11px; }
+        .mark-input { width: 25px; text-align: center; font-weight: bold; border: 1px solid var(--border-color); padding: 4px; border-radius: 4px; background: var(--bg-color); color: var(--text-main); font-size: 11px; }
+        .status { padding: 4px 2px; border-radius: 4px; font-size: 9px; font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 35px; }
+        .pass { background-color: var(--success-green); }
+        .fail { background-color: var(--danger-red); }
+        .pending { background-color: var(--text-secondary); }
+        
+        .stats-box { background-color: var(--bg-color); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; display: flex; justify-content: space-around; margin-bottom: 15px; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 20px; font-weight: bold; color: var(--primary-blue); }
+        .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
+        
+        /* --- PRINT CSS --- */
+        .print-only { display: none; }
+        @media print {
+            @page { margin: 1cm; }
+            body { background: white; margin: 0; padding: 0; color: black; }
+            body * { visibility: hidden; }
+            #mark-report-table-wrapper, #mark-report-table-wrapper * { visibility: visible; }
+            #mark-report-table-wrapper {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .print-only { display: block !important; }
+            button { display: none !important; }
+            .marks-table th, .marks-table td { font-size: 14px !important; padding: 8px !important; border-color: #000 !important; }
+            .print-only h2 { font-size: 24px !important; margin-bottom: 5px !important; }
+            .print-only h3 { font-size: 18px !important; margin-bottom: 5px !important; }
+            .print-only h4 { font-size: 16px !important; margin-bottom: 15px !important; }
+        }
+    </style>
 </head>
 <body>
 
-<div id="asyncLoaderOverlay" class="song-loading-screen">
-  <div class="spinner-ring"></div>
-  <div style="font-size: 14px; color: #ff9f43; font-weight: 600; letter-spacing: 0.5px;">Generating Composition Patterns...</div>
+<div id="custom-note-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:20000; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+    <div style="background:var(--card-bg); padding:20px; border-radius:12px; width:90%; max-width:400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="margin-top:0; color:var(--primary-blue);">Send Custom Note</h3>
+        <label>Select Student:</label>
+        <select id="note-student-select"></select>
+        <label style="margin-top:10px;">Message:</label>
+        <textarea id="note-message-text" rows="5">Dear Parent, this is to inform you about your child's recent performance and behavior in class. Please review this note. Regards, Teacher.</textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-secondary" style="flex:1;" onclick="closeNoteModal()">Cancel</button>
+            <button class="btn-success" style="flex:1;" onclick="sendCustomNote()">Send Note</button>
+        </div>
+    </div>
 </div>
 
-<header>
-  <div class="logo-container">
-    <button class="sidebar-toggle" onclick="toggleSidebar()">☰ Menu</button>
-    <div class="logo">Make it Karnatic</div>
-  </div>
-  <div class="search-bar">
-    <input type="text" id="youtubeUrl" placeholder="Paste YouTube link...">
-    <button onclick="loadSong()">Load</button>
-  </div>
-  <div class="header-controls">
-    <button id="micToggleBtn" class="mic-btn" onclick="toggleMicDetection()">🎙️ Mic: OFF</button>
-    <div style="font-size: 12px; color: #00adb5;" id="pitchDisplay">Idle</div>
-  </div>
-</header>
-
-<div class="workspace" id="mainWorkspace">
-  <div class="left-panel">
-    <div class="control-box" id="videoContainer" style="min-height:90px; display:flex; align-items:center; justify-content:center; color:#555; font-size:13px;">
-      YouTube Media Panel
+<div id="video-intro-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10005; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <h3 style="color: white; margin-bottom: 15px; text-align: center;">Welcome! Watch this quick tour:</h3>
+    <iframe width="90%" style="max-width: 400px; height: 250px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" src="https://www.youtube.com/embed/ddWEhKCt4IY?si=ajvUrWaYbwzO0Rbu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap; justify-content: center;">
+        <button onclick="closeVideoIntro()" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">Start Using App ➔</button>
+        <button onclick="printUserManual()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 2px solid white; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">📄 Save User Manual</button>
     </div>
+</div>
 
-    <div class="control-box">
-      <h4>72 Melakarta Parent Raga Engine</h4>
-      <select id="ragaLibraryDropdown" class="raga-select-dropdown" onchange="loadSelectedRaga()"></select>
-      <div class="raga-display-card">
-        <div id="ragaCardTitle" style="font-weight:bold; color:#00adb5; font-size:13px;">Mayamalavagowla</div>
-        <div class="raga-notation-line"><strong>Aro:</strong> <span id="ragaAroText">സ രി ഗ മ പ ധ നി സ</span></div>
-        <div class="raga-notation-line"><strong>Ava:</strong> <span id="ragaAvaText">സ നി ധ പ മ ഗ രി സ</span></div>
-      </div>
-      <button class="skill-action-btn" style="width:100%; margin-top:8px; padding:7px;" onclick="playCurrentRagaLibraryMobile()">▶ Launch Raga Stream</button>
-    </div>
-
-    <div class="control-box">
-      <h4>Composition Builder</h4>
-      <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-        <span style="font-size:11px; color:#888;">Mic capture:</span>
-        <button id="captureModeBtn" class="capture-btn" onclick="toggleCaptureMode()">🎤 Capture OFF</button>
-      </div>
-      <div class="creator-input-group">
-        <input type="text" id="customSongNameInput" placeholder="Song/Gitam Title..." value="Anandabhairavi Line">
-        <input type="text" id="customNotesInput" placeholder="Notes (e.g. സ രി ഗ മ)..." value="സ രി ഗ മ പ ധ">
-        <div class="creator-buttons">
-          <button class="add-note-btn" onclick="promptAddNote()">➕ Note</button>
-          <button class="add-note-btn" onclick="clearNotesInput()">🗑 Clear</button>
-          <button class="skill-action-btn" style="flex:1;" onclick="addNewSongToFeedMobile()">🎵 Save</button>
-        </div>
-      </div>
-      <button class="generator-accent-btn" onclick="generateNotesAutomaticallyMobile()">🪄 Auto-Generate Composition</button>
-    </div>
-
-    <div class="notes-feed">
-      <h3 style="font-size:13px; color:#e1e1e6; flex-shrink:0;">Saved Compositions</h3>
-      <div class="notes-list" id="customSongsPlaylistContainer">
-        <div class="note-row" id="default-song-row">
-          <div class="song-details-block" onclick="triggerLinePracticeMobile(['C4','D4','E4','F4','G4','A4','B4','C5'],['സ','രി','ഗ','മ','പ','ധ','നി','സ'])">
-            <div class="song-row-title">Sarali Varisai Basic</div>
-            <div class="carnatic-notation">സ &nbsp; രി &nbsp; ഗ &nbsp; മ &nbsp; പ &nbsp; ധ &nbsp; നി &nbsp; സ</div>
-            <div class="song-meta-data">
-              <span class="meta-tag">Tempo: 90 BPM</span>
-              <span class="meta-tag">Timing: Adi Thalam (8/4)</span>
-              <span class="meta-tag">Raga: Mayamalavagowla</span>
+<div id="tour-overlay" class="hidden">
+    <div style="background:var(--card-bg); width:100%; max-width:350px; padding:25px; border-radius:12px; text-align:center; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 id="tour-title" style="margin-top:0; color:var(--primary-blue); font-size:18px;">Title</h3>
+        <p id="tour-text" style="font-size:14px; color:var(--text-secondary); min-height:60px; line-height:1.5;">Text</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span id="tour-step-indicator" style="font-size:12px; font-weight:bold; color:var(--text-secondary);">1/6</span>
+            <div style="display:flex; gap:10px;">
+                <button id="tour-skip-btn" onclick="endTour()" style="background:none; color:var(--text-secondary); font-size:14px; padding:8px;">Skip Tour</button>
+                <button id="tour-next-btn" onclick="nextTourStep()" class="btn-primary" style="padding:8px 20px; margin-top:0;">Next ➔</button>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
-
-  <div class="visualizer-panel">
-    <div class="visualizer-header">
-      <span id="streamTitle" style="font-weight:600; color:#00adb5;">Waterfall Stream</span>
-      <div class="controls-group">
-        <button class="summary-btn" onclick="toggleSummaryPanel()">📊 Stats</button>
-        <label for="speedSlider" style="font-size:11px;">Speed:</label>
-        <input type="range" id="speedSlider" min="1" max="8" value="3" style="width:60px;">
-      </div>
-    </div>
-
-    <div class="summary-overlay" id="summaryOverlay">
-      <h4 style="margin-bottom:8px; color:#ff9f43;">Practice Evaluation</h4>
-      <p style="margin:4px 0;">Total Attempts: <span id="statTotal" style="font-weight:bold;">0</span></p>
-      <p style="margin:4px 0;">Mistakes: <span id="statMistakes" style="color:#ff4d4d; font-weight:bold;">0</span></p>
-      <p style="margin:4px 0;">Accuracy: <span id="statAccuracy" style="color:#00adb5; font-weight:bold;">100%</span></p>
-      <button onclick="resetStats()" style="margin-top:8px; background:#202024; border:1px solid #29292e; color:#e1e1e6; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;">Reset</button>
-    </div>
-
-    <canvas id="visualizerCanvas"></canvas>
-  </div>
 </div>
 
-<div class="keyboard-container" id="kbContainer">
-  <div id="micNoteCapture" style="display:none;">Detected: —</div>
-  <div class="piano" id="pianoWrapper">
+<div class="main-card">
+    <div class="header-section" id="main-header">
+        <h2 id="app-title">Attendance Taker Pro</h2>
+        <div id="header-buttons" style="display:flex; align-items:center; gap:5px;">
+            <button onclick="toggleDarkMode()" style="background:none; font-size:22px; padding:0; margin-right:5px;">🌓</button>
+            <button onclick="showPage('marks-page')" class="btn-warning" style="padding: 6px 10px; font-size: 14px;">📝 Marks</button>
+            <button onclick="showPage('settings-page')" class="btn-info" style="padding: 6px 10px; font-size: 14px; font-weight: bold;">⚙️ Settings</button>
+        </div>
+    </div>
+
+    <div id="setup-page" class="hidden">
+        <div id="setup-back-btn" class="hidden" style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <h3>Institution Setup</h3>
+            <button onclick="showPage('settings-page')" class="btn-secondary">Back</button>
+        </div>
+        
+        <div id="setup-welcome-text">
+            <span class="welcome-icon">🎓</span>
+            <h3 style="text-align: center; margin-top: 0;">Welcome to Attendance Taker Pro</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Let's set up your profile and institution details.</p>
+        </div>
+
+        <div id="setup-tabs-nav" class="settings-tabs" style="margin-bottom: 15px;">
+            <button id="btn-setup-tab-profile" class="tab-btn active" onclick="switchSetupTab('profile')">Profile</button>
+            <button id="btn-setup-tab-templates" class="tab-btn" onclick="switchSetupTab('templates')">Templates</button>
+            <button id="btn-setup-tab-sync" class="tab-btn" onclick="switchSetupTab('sync')">☁️ Sync</button>
+        </div>
+
+        <div id="setup-tab-profile">
+            <div style="background:var(--card-bg); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+                <h4 style="margin-top:0; margin-bottom:10px; color:var(--primary-blue);">👤 Your Profile</h4>
+                <label>Your Name:</label>
+                <input type="text" id="setup-user-name" placeholder="e.g. Madhav Krishna">
+                
+                <label>Your Role:</label>
+                <select id="setup-user-role" onchange="handleRoleChange()">
+                    <option value="Teacher">Teacher</option>
+                    <option value="Head">Head / Principal</option>
+                </select>
+            </div>
+            
+            <label>Institution Name:</label>
+            <input type="text" id="setup-school-name" placeholder="Institution Name">
+            
+            <div id="hm-phone-container">
+                <label>Headmaster's WhatsApp No. (For Reports):</label>
+                <input type="tel" id="setup-hm-phone" placeholder="e.g. 919876543210">
+            </div>
+            
+            <label>Preferred Message Language:</label>
+            <select id="setup-msg-language">
+                <option value="en">English</option>
+                <option value="ml">Malayalam</option>
+            </select>
+        </div>
+
+        <div id="setup-tab-templates" class="hidden">
+            <div style="margin-top: 5px;">
+                <label>Custom Absence Message (English):</label>
+                <textarea id="setup-msg-en" rows="4" placeholder="Type your English absence message template here..."></textarea>
+                
+                <label>Custom Absence Message (Malayalam):</label>
+                <textarea id="setup-msg-ml" rows="4" placeholder="Type your Malayalam absence message template here..."></textarea>
+                
+                <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
+                    <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{roll}</span>, <span style="color:var(--primary-blue)">{date}</span>, <span style="color:var(--primary-blue)">{school}</span>
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <label>Custom Exam Result Message (English):</label>
+                <textarea id="setup-exam-msg-en" rows="4" placeholder="Type your English exam message template here..."></textarea>
+                
+                <label>Custom Exam Result Message (Malayalam):</label>
+                <textarea id="setup-exam-msg-ml" rows="4" placeholder="Type your Malayalam exam message template here..."></textarea>
+                
+                <p style="font-size:11px; color:var(--text-secondary); margin-top:-8px; margin-bottom:15px;">
+                    <b>Hint:</b> Use tags: <span style="color:var(--primary-blue)">{name}</span>, <span style="color:var(--primary-blue)">{exam}</span>, <span style="color:var(--primary-blue)">{mark}</span>, <span style="color:var(--primary-blue)">{total}</span>, <span style="color:var(--primary-blue)">{status}</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="setup-tab-sync" class="hidden">
+            <h4 style="margin: 0 0 10px 0; font-size: 14px;">☁️ Cloud Co-Teacher Sync</h4>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:-5px; margin-bottom:15px;">Your persistent Sync Account. Share these with your co-teacher to safely merge your classrooms.</p>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#e8f4fd; padding:12px; border-radius:8px; border:1px solid var(--primary-blue); margin-bottom:5px;">
+                <div>
+                    <span style="font-size:10px; color:var(--text-secondary); display:block; font-weight:bold; text-transform:uppercase;">Account ID:</span>
+                    <b style="font-size:18px; color:var(--primary-blue); letter-spacing:1px;" id="display-sync-id">---</b>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:10px; color:var(--text-secondary); display:block; font-weight:bold; text-transform:uppercase;">PIN:</span>
+                    <b style="font-size:18px; color:var(--danger-red); letter-spacing:1px;" id="display-sync-pin">---</b>
+                </div>
+            </div>
+            
+            <p id="linked-name-display" class="hidden" style="font-size:12px; color:var(--success-green); font-weight:bold; margin-top:5px; margin-bottom:15px; text-align:center;">🔗 Linked to: <span id="linked-name-text"></span></p>
+
+            <button class="btn-primary btn-full" style="margin-bottom: 15px; padding: 12px; font-size:14px;" onclick="performSmartSync(false)">🔄 Sync Data Now</button>
+            <p style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top:-5px; margin-bottom:15px;">Click Sync to safely push/pull changes between devices.</p>
+
+            <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
+            
+            <label style="margin-bottom: 5px;">Connect to Co-Teacher's Account:</label>
+            <div style="display:flex; gap:8px; margin-bottom:5px;">
+                <input type="number" id="link-sync-id" placeholder="9-Digit ID" style="margin-bottom: 0; padding: 8px; flex: 2; font-size:13px; letter-spacing:1px;">
+                <input type="number" id="link-sync-pin" placeholder="PIN" style="margin-bottom: 0; padding: 8px; flex: 1; font-size:13px; letter-spacing:1px;">
+            </div>
+            <button class="btn-warning btn-full" style="padding: 10px; font-size:13px; margin-top:5px;" onclick="linkCoTeacherAccount()">🔗 Link & Merge Devices</button>
+
+            <div style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top:15px;">
+                 <h4 style="margin: 0 0 5px 0; font-size: 13px;">📱 Connected Devices:</h4>
+                 <div id="connected-devices-list"></div>
+            </div>
+        </div>
+
+        <button class="btn-info btn-full" style="padding:10px; margin-top:20px; margin-bottom:-10px;" onclick="switchSetupTab('profile')">👤 Change Designation</button>
+        <button class="btn-success btn-full" style="padding:15px; margin-top:20px;" onclick="completeSetup()">Save Institution Details</button>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border-color); text-align: center;">
+            <h4 style="margin: 0 0 8px 0; color: var(--primary-blue); font-size: 14px;">About Attendance Taker Pro</h4>
+            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                <b>Version 1.0 (Ultimate Collab Edition) Created by Madhav Krishna RS</b><br>
+                A smart, offline-ready tool designed to simplify attendance, grading, and automated reporting for modern educators.<br>
+                <i>Your data stays private on your device, and merges safely via cloud.</i>
+            </p>
+        </div>
+
+        <div id="reset-zone" class="hidden" style="margin-top: 30px; padding-top: 15px; border-top: 2px dashed var(--danger-red);">
+            <label style="color: var(--danger-red); font-size: 14px;">Danger Zone:</label>
+            <p style="font-size:11px; color:var(--text-secondary);">This will delete all students, classes, and history permanently.</p>
+            <button class="btn-danger btn-full" onclick="factoryResetApp()">⚠️ Factory Reset App</button>
+        </div>
+    </div>
+
+    <div id="home-page" class="hidden">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px;">
+            <label style="margin-bottom:0;">Select Class:</label>
+            <button onclick="printUserManual()" style="background:none; border:none; color:var(--primary-blue); font-size:12px; font-weight:bold; cursor:pointer; padding:0;">📖 Read Manual</button>
+        </div>
+        <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <input type="date" id="attendance-date-input" style="margin-bottom: 0;" onchange="document.getElementById('date-select-warning').style.display='none'">
+            <button onclick="showPage('history-page')" class="btn-success" style="flex: 1; font-size: 13px;">📁 History</button>
+            <button onclick="showPage('reports-page')" class="btn-info" style="flex: 1; font-size: 13px;">📊 Reports</button>
+        </div>
+        <p id="date-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:-10px; margin-bottom:10px; font-weight:bold;">⚠️ Please pick a date</p>
+
+        <div id="attendance-list-container"></div>
+        <button class="btn-primary btn-full" onclick="saveAttendanceData()">Save Attendance Record</button>
+    </div>
+
+    <div id="marks-page" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <h3>📝 Mark Entry & Growth</h3>
+            <button onclick="showPage('home-page')" class="btn-secondary">Back</button>
+        </div>
+        
+        <select class="class-dropdown" onchange="handleClassChange(this.value); refreshMarksView();"></select>
+        <button class="btn-secondary btn-full" style="margin-bottom:15px; font-size:13px;" onclick="toggleCreateExamPanel()">➕ Create New Exam</button>
+
+        <div id="create-exam-panel" class="hidden" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+            <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Create New Exam</h4>
+            <div style="display:flex; gap:8px; margin-bottom:0px;">
+                <input type="text" id="newExamInput" placeholder="Exam Name" style="margin-bottom:0; flex:2;">
+                <input type="text" id="newExamSubject" placeholder="Subject (Opt)" style="margin-bottom:0; flex:1.5;">
+                <button class="btn-primary" onclick="addExam()">Add</button>
+            </div>
+            
+            <div id="mark-grade-config-wrapper">
+                <hr style="border:0; border-top:1px dashed var(--border-color); margin:15px 0;">
+                <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">Mark & Grade Configuration</h4>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <div style="flex:1;">
+                        <label>Total Marks:</label>
+                        <input type="number" id="totalMarkInput" value="100" oninput="updateExamConfig()">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Pass Mark:</label>
+                        <input type="number" id="passMarkInput" value="40" oninput="updateExamConfig()">
+                    </div>
+                </div>
+                <label style="margin-top:10px;">Grade Index (Minimum mark for grade):</label>
+                <div id="grades-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;"></div>
+                <button class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-top:12px;" onclick="addGradeRow()">+ Add New Grade</button>
+            </div>
+        </div>
+
+        <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+            <label>Select Exam to Enter Marks:</label>
+            <div style="display:flex; gap:8px; margin-bottom: 8px;">
+                <select id="examSelect" onchange="changeExam()" style="margin-bottom:0; flex:1;">
+                    <option value="">-- Select Exam --</option>
+                </select>
+                <button class="btn-info" style="padding: 10px 15px; font-size: 13px;" onclick="editCurrentExam()">✏️ Edit</button>
+            </div>
+            <p id="exam-select-warning" style="font-size:11px; color:var(--danger-red); margin-top:0px; margin-bottom:10px; font-weight:bold;">⚠️ Please select an exam</p>
+
+            <div id="edit-exam-settings" class="hidden" style="margin-top:10px; padding:15px; background:var(--card-bg); border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;"></div>
+
+            <label style="margin-top:8px;">Compare Growth with Previous Exam (Optional):</label>
+            <select id="compareExamSelect" onchange="refreshMarksTable()">
+                <option value="">-- None --</option>
+            </select>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <label>Bulk Import Marks (CSV):</label>
+                <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll/Name, Mark</p>
+                <button class="btn-secondary btn-full" style="margin-top: 0; margin-bottom: 10px; padding: 10px;" onclick="toggleMarkBulkImport()">📤 Open Bulk Import Options</button>
+            </div>
+            
+            <div id="mark-bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
+                <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
+                    <li><a href="https://docs.google.com/spreadsheets/d/1ng1mdn9VMXHGzJZAXN7b1uLmOg9Fj7Z3F-ko5PR512Q/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
+                    <li>Open it in Gnumeric, Google Sheets, or Excel</li>
+                    <li>Export it as CSV <br><i>(Click the three dots ➔ Share and export ➔ Save as ➔ CSV)</i></li>
+                    <li>Upload it using the option below:</li>
+                </ul>
+                <div style="margin-bottom: 5px; padding-bottom: 5px;">
+                    <label style="margin-bottom: 8px;">Upload CSV</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="file" id="input-marks-csv-upload" accept=".csv" style="margin-bottom: 0; padding: 8px; flex: 1;">
+                        <button class="btn-success" style="padding: 8px 15px;" onclick="importMarksCSV()">Upload</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-box">
+            <div class="stat-item">
+                <div class="stat-value" id="statAvg">0.0</div>
+                <div class="stat-label">Class Avg</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statPass" style="color: var(--success-green);">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statFail" style="color: var(--danger-red);">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto; margin-bottom: 15px;">
+            <table class="marks-table">
+                <thead>
+                    <tr>
+                        <th width="6%">Roll</th>
+                        <th width="20%">Name</th>
+                        <th width="10%" style="text-align: center;">Mark</th>
+                        <th width="8%" style="text-align: center;">Grade</th>
+                        <th width="10%" style="text-align: center;">Grwth</th>
+                        <th width="10%" style="text-align: center;">Status</th>
+                        <th width="10%" style="text-align: center;">Assign.</th>
+                        <th width="14%" style="text-align: center;">Msg</th>
+                        <th width="12%" style="text-align: center;">Act</th>
+                    </tr>
+                </thead>
+                <tbody id="marksTableBody"></tbody>
+            </table>
+        </div>
+        <button class="btn-primary btn-full" style="margin-bottom: 15px;" onclick="printBatchReportCards()">🖨️ Print Batch Report Cards</button>
+
+        <button class="btn-success btn-full" style="margin-bottom: 5px;" onclick="exportMarksToCSV()">📥 Download Mark Report (.csv)</button>
+        <p style="font-size: 11px; color: var(--danger-red); font-weight: bold; text-align: center; margin-top: 5px; margin-bottom: 15px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
+        
+        <button class="btn-warning btn-full" style="margin-bottom: 15px;" onclick="sendExamToHM()">📱 Send Exam Report to HM</button>
+        <button class="btn-info btn-full" style="margin-bottom: 15px;" onclick="toggleMarkReport()">📊 View Full Mark Report</button>
+        
+        <div id="mark-report-container" class="hidden" style="overflow-x: auto; background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+            <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin-bottom:0; flex:1;">Student Filter:</label>
+                <select id="reportStudentFilter" onchange="renderMarkReport()" style="flex:2; padding:6px; margin-bottom:0;"></select>
+            </div>
+            <div id="mark-report-table-wrapper" style="overflow-x: auto;"></div>
+        </div>
+    </div>
+
+    <div id="settings-page" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <h3>Settings</h3>
+            <button onclick="showPage('home-page')" class="btn-secondary">Back</button>
+        </div>
+        
+        <div class="settings-tabs">
+            <button id="btn-tab-students" class="tab-btn active" onclick="switchSettingsTab('students')">Students</button>
+            <button id="btn-tab-classes" class="tab-btn" onclick="switchSettingsTab('classes')">Classes</button>
+            <button id="btn-tab-trash" class="tab-btn" onclick="switchSettingsTab('trash')">🗑️ Trash</button>
+        </div>
+
+        <div id="tab-students-section">
+            <label>Manage Students for:</label>
+            <select class="class-dropdown" onchange="handleClassChange(this.value)"></select>
+            <div style="display: flex; gap: 8px;"><input type="number" id="input-student-roll" placeholder="Roll" min="1"><input type="text" id="input-student-name" placeholder="Name"></div>
+            <input type="tel" id="input-student-phone" placeholder="WhatsApp No">
+            <input type="email" id="input-student-email" placeholder="Parent Email">
+            <input type="file" id="input-student-photo" accept="image/*">
+            <button id="submit-student-btn" class="btn-primary btn-full" onclick="saveStudentObject()">+ Add Student</button>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <label>Bulk Import Students (CSV or PDF):</label>
+                <p style="font-size:10px; color:var(--text-secondary); margin-top:-2px; margin-bottom:8px;">Format must have headers: Roll No, Name, Phone, Email</p>
+                <button class="btn-secondary btn-full" style="margin-top: 0; margin-bottom: 10px; padding: 10px;" onclick="toggleBulkImport()">📤 Open Bulk Import Options</button>
+            </div>
+            
+            <div id="bulk-import-section" class="hidden" style="margin-top: 5px; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">How to Import:</h4>
+                <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 20px; margin-bottom: 15px; line-height: 1.5;">
+                    <li><a href="https://docs.google.com/spreadsheets/d/1hozh8SC0W2v18oWwEiC6ks3XiliCrYSPnROPTBAoISQ/export?format=csv" download style="color:var(--primary-blue); font-weight:bold;">Download the template file here</a></li>
+                    <li>Open it in Gnumeric, Google Sheets, or Excel</li>
+                    <li>Export it as CSV or PDF <br><i>(Save As ➔ PDF or CSV)</i></li>
+                    <li>Upload it using the options below:</li>
+                </ul>
+                <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
+                    <label style="margin-bottom: 8px;">Upload CSV</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="file" id="input-csv-upload" accept=".csv" style="margin-bottom: 0; padding: 8px;">
+                        <button class="btn-success" style="padding: 8px 15px;" onclick="importStudentListCSV()">Upload</button>
+                    </div>
+                </div>
+                <div>
+                    <label style="margin-bottom: 8px;">Upload PDF</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="file" id="input-pdf-upload" accept=".pdf" style="margin-bottom: 0; padding: 8px;">
+                        <button class="btn-success" style="padding: 8px 15px;" onclick="importStudentListPDF()">Upload</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="student-list-management" style="margin-top: 15px;"></div>
+        </div>
+
+        <div id="tab-classes-section" class="hidden">
+            <div style="display:flex; gap:8px;"><input type="text" id="input-new-class-name" placeholder="Class Name"><button onclick="createNewClass()" class="btn-primary">Add</button></div>
+            <div id="class-list-management" style="margin-top:15px;"></div>
+            <button class="btn-info btn-full" style="margin-top: 25px; font-size: 14px;" onclick="openSchoolSettings()">🏫 Edit Institution & Reset Options</button>
+        </div>
+
+        <div id="tab-trash-section" class="hidden">
+            <p style="font-size:12px; color:var(--text-secondary); margin-top:0;">Accidentally deleted a student or class? Restore them here.</p>
+            <div id="trash-list-management"></div>
+        </div>
+    </div>
+
+    <div id="reports-page" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3>📊 All-Time Reports</h3><button onclick="showPage('home-page')" class="btn-secondary">Back</button></div>
+        <select class="class-dropdown" onchange="handleClassChange(this.value); refreshReportsView();"></select>
+        
+        <div id="trend-analysis" class="trend-box"></div>
+        
+        <div style="background:var(--bg-color); padding:10px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px;">
+            <label>Select Month for CSV Export:</label>
+            <select id="report-month-picker" style="margin-bottom:10px;"></select>
+            <button class="btn-primary btn-full" style="margin-top:0;" onclick="exportReportToCSV()">📥 Download Monthly .csv Report</button>
+            <p class="csv-reminder" style="margin-bottom:0; margin-top:5px;">⚠️ Ensure filename ends with .csv before clicking Save</p>
+            <button class="btn-warning btn-full" style="margin-bottom: 5px;" onclick="sendAttendanceToHM()">📱 Send Attendance Alert to HM</button>
+        </div>
+        
+        <h4 style="margin-top:0; margin-bottom:10px; font-size:14px;">All-Time Student Matrix:</h4>
+        <div id="reports-display-container"></div>
+    </div>
+
+    <div id="history-page" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3>📁 History</h3><button onclick="showPage('home-page')" class="btn-secondary">Back</button></div>
+        <select class="class-dropdown" onchange="handleClassChange(this.value); renderHistoryView();"></select>
+        <div id="history-display-container"></div>
+        <button class="btn-danger btn-full" onclick="wipeHistoryForCurrentClass()">Delete History</button>
     </div>
 </div>
 
 <script>
-// ==============================
-// AUDIO SETUP
-// ==============================
-const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-let analyserNode = null;
-let isMicActive = false;
-let micBuffer = new Float32Array(2048);
-let captureMode = false;   
-let lastCapturedNote = null;
-let lastCaptureTime = 0;
-let lastAnalysisTime = 0;
-
-function initAudio() {
-  if (!audioCtx) audioCtx = new AudioCtxClass();
-}
-
-// ==============================
-// NOTE FREQUENCIES  (C3–C6)
-// ==============================
-const noteFreqs = {
-  "C3":130.81,"C#3":138.59,"D3":146.83,"D#3":155.56,"E3":164.81,"F3":174.61,"F#3":185.00,"G3":196.00,"G#3":207.65,"A3":220.00,"A#3":233.08,"B3":246.94,
-  "C4":261.63,"C#4":277.18,"D4":293.66,"D#4":311.13,"E4":329.63,"F4":349.23,"F#4":369.99,"G4":392.00,"G#4":415.30,"A4":440.00,"A#4":466.16,"B4":493.88,
-  "C5":523.25,"C#5":554.37,"D5":587.33,"D#5":622.25,"E5":659.25,"F5":698.46,"F#5":739.99,"G5":783.99,"G#5":830.61,"A5":880.00,"A#5":932.33,"B5":987.77,
-  "C6":1046.50
-};
-
-const swaraToNote = {
-  'സ':'C4','രി':'D4','ഗ':'E4','മ':'F4','പ':'G4','ധ':'A4','നി':'B4',
-  'S':'C4','R':'D4','G':'E4','M':'F4','P':'G4','D':'A4','N':'B4'
-};
-
-const noteToSwara = {
-  'C':'സ','C#':'—','D':'രി','D#':'—','E':'ഗ','F':'മ','F#':'—','G':'പ','G#':'—','A':'ധ','A#':'—','B':'നി'
-};
-
-function getNoteBase(note) { return note.replace(/\d/,''); }
-
-// ==============================
-// PIANO BUILDER (Mobile-Friendly Metrics)
-// ==============================
-const whiteKeys = ['C','D','E','F','G','A','B'];
-const blackKeyMap = { 'C':'C#', 'D':'D#', 'F':'F#', 'G':'G#', 'A':'A#' };
-const WHITE_KEY_WIDTH = 45; 
-const BLACK_KEY_WIDTH = 26;
-const BLACK_KEY_OFFSETS = { 'C': 31, 'D': 63, 'F': 125, 'G': 157, 'A': 189 }; 
-
-function buildPiano() {
-  const wrapper = document.getElementById('pianoWrapper');
-  wrapper.innerHTML = '';
-
-  const octaves = [3, 4, 5];
-  let pianoWidth = 0;
-
-  octaves.forEach(oct => {
-    const octaveDiv = document.createElement('div');
-    octaveDiv.style.position = 'relative';
-    octaveDiv.style.display = 'flex';
-    octaveDiv.style.flexShrink = '0';
-    octaveDiv.style.width = (WHITE_KEY_WIDTH * 7) + 'px';
-
-    whiteKeys.forEach(wn => {
-      const note = wn + oct;
-      const key = document.createElement('div');
-      key.className = 'white-key';
-      key.dataset.note = note;
-      key.innerHTML = `<span class="key-label">${wn}${oct}</span>`;
-      key.addEventListener('mousedown', () => handleKeyPress(note));
-      key.addEventListener('touchstart', e => { e.preventDefault(); handleKeyPress(note); }, { passive: false });
-      octaveDiv.appendChild(key);
-    });
-
-    whiteKeys.forEach(wn => {
-      if (!blackKeyMap[wn]) return;
-      const note = blackKeyMap[wn] + oct;
-      const key = document.createElement('div');
-      key.className = 'black-key';
-      key.dataset.note = note;
-      key.style.left = BLACK_KEY_OFFSETS[wn] + 'px';
-      key.style.width = BLACK_KEY_WIDTH + 'px';
-      key.addEventListener('mousedown', () => handleKeyPress(note));
-      key.addEventListener('touchstart', e => { e.preventDefault(); handleKeyPress(note); }, { passive: false });
-      octaveDiv.appendChild(key);
-    });
-
-    pianoWidth += WHITE_KEY_WIDTH * 7;
-    wrapper.appendChild(octaveDiv);
-  });
-
-  const c6 = document.createElement('div');
-  c6.className = 'white-key';
-  c6.dataset.note = 'C6';
-  c6.style.width = WHITE_KEY_WIDTH + 'px';
-  c6.innerHTML = `<span class="key-label">C6</span>`;
-  c6.addEventListener('mousedown', () => handleKeyPress('C6'));
-  c6.addEventListener('touchstart', e => { e.preventDefault(); handleKeyPress('C6'); }, { passive: false });
-  wrapper.appendChild(c6);
-
-  wrapper.style.width = (pianoWidth + WHITE_KEY_WIDTH) + 'px';
-  
-  // Center scroll to focus Middle C octave automatically on load
-  setTimeout(() => {
-    const container = document.getElementById('kbContainer');
-    container.scrollLeft = WHITE_KEY_WIDTH * 5;
-  }, 300);
-}
-
-// ==============================
-// 72 MELAKARTA LIBRARY
-// ==============================
-const melakartaNames = [
-  "Kanakangi","Ratnangi","Ganamurthi","Vanaspati","Manavati","Tanarupi","Senavati","Hanumatodi","Dhenuka","Natakapriya",
-  "Kokilapriya","Rupavati","Gayakapriya","Vakulabharanam","Mayamalavagowla","Chakravakam","Suryakantam","Hatakambari","Jhankaradhwani","Natabhairavi",
-  "Keeravani","Kharaharapriya","Gourimanohari","Varunapriya","Mararanjani","Charukesi","Sarasangi","Harikambhoji","Dheerasankarabharanam","Naganandini",
-  "Yagapriya","Ragavardhani","Gangeyabhushani","Vagadhishwari","Shulini","Chalanata","Salagam","Jalanatarangini","Jhalavarali","Navaneetam",
-  "Pavani","Raghupriya","Gavambhodhi","Bhavapriya","Shubhapantuvarali","Shadvidhamargini","Suvarnangi","Divyamani","Dhavalambari","Namanarayani",
-  "Kamavardhani","Ramapriya","Gamanashrama","Vishwambhari","Shyamalangi","Shanmukhapriya","Simhendramadhyamam","Hemavati","Dharmavati","Nitishimati",
-  "Kantamani","Rishabhapriya","Latangi","Vachaspati","Mechakalyani","Chitrambari","Sucharitra","Jyotiswarupini","Dhatuvardhani","Nasikabhushani",
-  "Kosalam","Rasikapriya"
-];
-
-const ragaLibrary = {};
-
-function generateMelakartaLibrary() {
-  melakartaNames.forEach((name, idx) => {
-    const id = idx + 1;
-    const chakra = Math.floor(idx / 6);
-    const ragaInChakra = idx % 6;
-    let r, g, d, n;
-    const m = id <= 36 ? "F4" : "F#4";
-
-    if      (chakra === 0 || chakra === 6)  { r="C#4"; g="D4"; }
-    else if (chakra === 1 || chakra === 7)  { r="C#4"; g="D#4"; }
-    else if (chakra === 2 || chakra === 8)  { r="C#4"; g="E4"; }
-    else if (chakra === 3 || chakra === 9)  { r="D4";  g="D#4"; }
-    else if (chakra === 4 || chakra === 10) { r="D4";  g="E4"; }
-    else                                     { r="D#4"; g="E4"; }
-
-    if      (ragaInChakra === 0) { d="G#4"; n="A4"; }
-    else if (ragaInChakra === 1) { d="G#4"; n="A#4"; }
-    else if (ragaInChakra === 2) { d="G#4"; n="B4"; }
-    else if (ragaInChakra === 3) { d="A4";  n="A#4"; }
-    else if (ragaInChakra === 4) { d="A4";  n="B4"; }
-    else                          { d="A#4"; n="B4"; }
-
-    const aro = ["C4", r, g, m, "G4", d, n, "C5"];
-    ragaLibrary[id] = {
-      name: `${name}`,
-      aroNotes:  aro,
-      avaNotes:  [...aro].reverse(),
-      aroLabels: ["സ","രി","ഗ","മ","പ","ധ","നി","സ"],
-      avaLabels: ["സ","നി","ധ","പ","മ","ഗ","രി","സ"]
+    /* --- FIREBASE CLOUD LOCKER SETUP --- */
+    const firebaseConfig = {
+        apiKey: "AIzaSyBRYDJdniuXXbDW7UNyBndPPrxSp32OGTM",
+        authDomain: "attendance-pro-962cf.firebaseapp.com",
+        projectId: "attendance-pro-962cf",
+        storageBucket: "attendance-pro-962cf.firebasestorage.app",
+        messagingSenderId: "30095786812",
+        appId: "1:30095786812:web:3e765366ba94ff9e799439"
     };
-  });
-}
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-function initRagaDropdown() {
-  const dd = document.getElementById('ragaLibraryDropdown');
-  dd.innerHTML = "";
-  for (let i = 1; i <= 72; i++) {
-    const opt = document.createElement('option');
-    opt.value = i; opt.innerText = i + ". " + ragaLibrary[i].name;
-    if (i === 15) opt.selected = true;
-    dd.appendChild(opt);
-  }
-}
+    const waIconHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
+    const mailIconHTML = `✉️`;
 
-function loadSelectedRaga() {
-  const id = document.getElementById('ragaLibraryDropdown').value;
-  const raga = ragaLibrary[id];
-  document.getElementById('ragaCardTitle').innerText = id + ". " + raga.name;
-  document.getElementById('ragaAroText').innerText = raga.aroLabels.join(" ");
-  document.getElementById('ragaAvaText').innerText = raga.avaLabels.join(" ");
-}
+    const tourSteps = [
+        { title: "👋 Welcome!", text: "Welcome to Attendance Taker Pro! Let's take a quick 6-step tour to help you master the app." },
+        { title: "🏫 Step 1: Institution Setup", text: "Before you start, you'll set up your school name and the Headmaster's WhatsApp number for easy reporting." },
+        { title: "⚙️ Step 2: Settings & Classes", text: "Tap the '⚙️ Settings' button to create your classes. You can add students manually or import them instantly from a CSV/PDF!" },
+        { title: "✅ Step 3: Take Attendance", text: "On the Home screen, select your class, pick a date, and tap 'P' or 'A' to mark students. It's lightning fast!" },
+        { title: "📝 Step 4: Marks & Exams", text: "Switch to the '📝 Marks' tab to create exams, customize your grading scale, and send beautiful result cards to parents." },
+        { title: "📊 Step 5: Master Reports", text: "In the 'Reports' section, you can download monthly CSVs or instantly WhatsApp the Headmaster about students with low attendance. You're ready!" }
+    ];
+    let currentTourStep = 0;
 
-function closeMenuOnMobile() {
-  if (window.innerWidth <= 868) {
-    document.getElementById('mainWorkspace').classList.add('sidebar-closed');
-  }
-}
-
-function playCurrentRagaLibraryMobile() {
-  closeMenuOnMobile();
-  const id = document.getElementById('ragaLibraryDropdown').value;
-  const raga = ragaLibrary[id];
-  startSkillPractice([...raga.aroNotes, ...raga.avaNotes], [...raga.aroLabels, ...raga.avaLabels]);
-}
-
-// ==============================
-// SIDEBAR TOGGLE
-// ==============================
-function toggleSidebar() {
-  document.getElementById('mainWorkspace').classList.toggle('sidebar-closed');
-  setTimeout(resizeCanvas, 350);
-}
-
-// Ensure clean startup responsive dimensions
-if (window.innerWidth <= 868) {
-  document.getElementById('mainWorkspace').classList.add('sidebar-closed');
-}
-
-// ==============================
-// COMPOSITION BUILDER & SAVES
-// ==============================
-function toggleCaptureMode() {
-  captureMode = !captureMode;
-  const btn = document.getElementById('captureModeBtn');
-  btn.className = captureMode ? 'capture-btn active' : 'capture-btn';
-  btn.textContent = captureMode ? '🎤 Capture ON' : '🎤 Capture OFF';
-  if (captureMode && !isMicActive) {
-    startMic();
-  }
-}
-
-function clearNotesInput() {
-  document.getElementById('customNotesInput').value = '';
-}
-
-function promptAddNote() {
-  const note = prompt("Type a Swara (സ, രി, ഗ, മ, പ, ധ, നി) or Western note:");
-  if (note) {
-    const f = document.getElementById('customNotesInput');
-    f.value = (f.value ? f.value + " " : "") + note.trim();
-  }
-}
-
-function appendNoteToComposer(note) {
-  const now = Date.now();
-  if (lastCapturedNote === note && now - lastCaptureTime < 600) return; 
-  lastCapturedNote = note;
-  lastCaptureTime = now;
-
-  const base = getNoteBase(note);
-  const swara = noteToSwara[base];
-  if (!swara || swara === '—') return; 
-
-  const f = document.getElementById('customNotesInput');
-  f.value = (f.value ? f.value + " " : "") + swara;
-}
-
-function addNewSongToFeedMobile() {
-  const title = document.getElementById('customSongNameInput').value.trim();
-  const rawNotes = document.getElementById('customNotesInput').value.trim();
-  if (!title || !rawNotes) return alert("Please fill both title and notes.");
-
-  const segments = rawNotes.split(/\s+/);
-  const notesArr = [], labelsArr = [];
-
-  segments.forEach(s => {
-    if (swaraToNote[s]) {
-      notesArr.push(swaraToNote[s]);
-      labelsArr.push(s);
-    } else if (noteFreqs[s]) {
-      notesArr.push(s);
-      labelsArr.push(s);
-    }
-  });
-
-  if (notesArr.length === 0) return alert("Could not match any notes.");
-
-  const currentRagaId = document.getElementById('ragaLibraryDropdown').value;
-  const ragaName = ragaLibrary[currentRagaId].name;
-
-  createSongRowUIMobile(title, notesArr, labelsArr, 95, "Rupaka Thalam (3/4)", ragaName);
-  document.getElementById('customNotesInput').value = '';
-}
-
-function generateNotesAutomaticallyMobile() {
-  const loader = document.getElementById('asyncLoaderOverlay');
-  loader.classList.add('visible');
-
-  setTimeout(() => {
-    const currentRagaId = document.getElementById('ragaLibraryDropdown').value;
-    const raga = ragaLibrary[currentRagaId];
-    
-    const options = [...raga.aroLabels, ...raga.avaLabels];
-    const notesArr = [];
-    const labelsArr = [];
-    
-    const length = 6 + Math.floor(Math.random() * 4); 
-    for(let i=0; i<length; i++) {
-      const targetLabel = options[Math.floor(Math.random() * options.length)];
-      const targetNote = swaraToNote[targetLabel];
-      notesArr.push(targetNote);
-      labelsArr.push(targetLabel);
+    function startTour() {
+        currentTourStep = 0;
+        document.getElementById('tour-overlay').classList.remove('hidden');
+        renderTourStep();
     }
 
-    const randomBPM = 85 + Math.floor(Math.random() * 40);
-    const thalamOptions = ["Adi Thalam (8/4)", "Rupaka Thalam (3/4)", "Misra Chapu (7/8)"];
-    const randomThalam = thalamOptions[Math.floor(Math.random() * thalamOptions.length)];
-    const randomID = Math.floor(Math.random() * 900) + 100;
-    const generatedTitle = "Geetham Variant " + randomID;
-
-    createSongRowUIMobile(generatedTitle, notesArr, labelsArr, randomBPM, randomThalam, raga.name);
-    loader.classList.remove('visible');
-  }, 1500);
-}
-
-function createSongRowUIMobile(title, notesArr, labelsArr, tempo, timing, ragaName) {
-  const container = document.getElementById('customSongsPlaylistContainer');
-  const row = document.createElement('div');
-  row.className = "note-row";
-  
-  const mainDataBlock = document.createElement('div');
-  mainDataBlock.className = "song-details-block";
-  mainDataBlock.onclick = () => {
-    closeMenuOnMobile();
-    startSkillPractice(notesArr, labelsArr);
-  };
-  mainDataBlock.innerHTML = `
-    <div class="song-row-title">${title}</div>
-    <div class="carnatic-notation">${labelsArr.join(' &nbsp; ')}</div>
-    <div class="song-meta-data">
-      <span class="meta-tag">${tempo} BPM</span>
-      <span class="meta-tag">${timing.split(" ")[0]}</span>
-      <span class="meta-tag">${ragaName}</span>
-    </div>
-  `;
-  
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = "remove-song-btn";
-  deleteBtn.innerHTML = "&times;";
-  deleteBtn.onclick = (e) => {
-    e.stopPropagation();
-    row.remove();
-  };
-
-  row.appendChild(mainDataBlock);
-  row.appendChild(deleteBtn);
-  container.appendChild(row);
-}
-
-function triggerLinePracticeMobile(notesArray, labelsArray) {
-  closeMenuOnMobile();
-  startSkillPractice(notesArray, labelsArray);
-}
-
-// ==============================
-// WATERFALL NOTE STREAMS
-// ==============================
-let noteStreams = [];
-let totalAttempts = 0;
-let mistakesCount = 0;
-let skillActiveNotes = [];
-
-function setupWaterfallBlocks(notesArray, labelsArray) {
-  noteStreams = []; 
-  const canvasRect = canvas.getBoundingClientRect();
-
-  notesArray.forEach((note, index) => {
-    const label = labelsArray[index] || note;
-    const keyEl = document.querySelector(`[data-note="${note}"]`);
-
-    let blockX, blockW;
-    if (keyEl) {
-      const kr = keyEl.getBoundingClientRect();
-      blockX = kr.left - canvasRect.left + (kr.width / 2) - 15;
-      blockW = Math.max(kr.width - 2, 22);
-    } else {
-      blockX = 40 + index * 45;
-      blockW = 34;
+    function renderTourStep() {
+        document.getElementById('tour-title').innerText = tourSteps[currentTourStep].title;
+        document.getElementById('tour-text').innerText = tourSteps[currentTourStep].text;
+        document.getElementById('tour-step-indicator').innerText = (currentTourStep + 1) + " / " + tourSteps.length;
+        if (currentTourStep === tourSteps.length - 1) {
+            document.getElementById('tour-next-btn').innerText = "Get Started ✓";
+            document.getElementById('tour-skip-btn').classList.add('hidden');
+        } else {
+            document.getElementById('tour-next-btn').innerText = "Next ➔";
+            document.getElementById('tour-skip-btn').classList.remove('hidden');
+        }
     }
 
-    noteStreams.push({
-      x: blockX, y: -(index * 110) - 60,
-      w: blockW, h: 42,
-      label, note,
-      done: false
+    function nextTourStep() {
+        if (currentTourStep < tourSteps.length - 1) {
+            currentTourStep++;
+            renderTourStep();
+        } else {
+            endTour();
+        }
+    }
+
+    function endTour() {
+        document.getElementById('tour-overlay').classList.add('hidden');
+        localStorage.setItem('pro_tour_seen', 'true');
+    }
+
+    function migrateOldData() {
+        const oc = JSON.parse(localStorage.getItem("all_classes")), oh = JSON.parse(localStorage.getItem("attendance_history")), os = localStorage.getItem("school_name"), ol = localStorage.getItem("msg_lang");
+        if (oc || oh) return { 
+            isSetupComplete: true, 
+            classes: oc || [], 
+            activeClassId: localStorage.getItem("active_class_id") || (oc && oc.length ? oc[0].id : null), 
+            userName: "",
+            userRole: "Teacher",
+            schoolName: os || "", 
+            language: ol || "en", 
+            hmPhone: "",
+            history: oh || [],
+            trash: { students: [], classes: [] },
+            connectedDevices: [],
+            msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
+            msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
+            grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
+            totalMark: 100,
+            passMark: 40,
+            examMsgTemplateEn: "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher",
+            examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher"
+        };
+        return null;
+    }
+
+    let appData = JSON.parse(localStorage.getItem("pro_attendance_data")) || migrateOldData() || { 
+        isSetupComplete: false,
+        classes: [], 
+        activeClassId: null, 
+        userName: "",
+        userRole: "Teacher",
+        schoolName: "", 
+        language: "en", 
+        hmPhone: "",
+        history: [],
+        trash: { students: [], classes: [] },
+        connectedDevices: [],
+        msgTemplateEn: "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher",
+        msgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher",
+        grades: [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}],
+        totalMark: 100,
+        passMark: 40,
+        examMsgTemplateEn: "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher",
+        examMsgTemplateMl: "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher"
+    };
+
+    if (appData.userName === undefined) appData.userName = "";
+    if (appData.userRole === undefined) appData.userRole = "Teacher";
+    if (!appData.msgTemplateEn) appData.msgTemplateEn = "Dear Parent,\n\nThis is to inform you that your child, {name} (Roll No: {roll}), was marked absent today ({date}) from {school}.\n\nRegards,\nClass Teacher";
+    if (!appData.msgTemplateMl) appData.msgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\n{school}-ൽ പഠിക്കുന്ന നിങ്ങളുടെ കുട്ടി {name} (റോൾ നമ്പർ: {roll}) ഇന്ന് ({date}) ഹാജരായിട്ടില്ല എന്ന് അറിയിക്കുന്നു.\n\nRegards,\nClass Teacher";
+    if (!appData.examMsgTemplateEn) appData.examMsgTemplateEn = "Dear Parents of *{name}*,\n\nThe result for *{exam}* has been entered.\n\n*Mark Obtained:* {mark} / {total}\n*Status:* {status}\n\nRegards,\nClass Teacher";
+    if (!appData.examMsgTemplateMl) appData.examMsgTemplateMl = "പ്രിയ രക്ഷിതാവേ,\n\nനിങ്ങളുടെ കുട്ടി *{name}* ന്റെ *{exam}* റിസൾട്ട് വന്നിട്ടുണ്ട്.\n\n*മാർക്ക്:* {mark} / {total}\n*വിജയ നില:* {status}\n\nRegards,\nClass Teacher";
+    if (!appData.grades) appData.grades = [{name: 'A', min: 90}, {name: 'B', min: 80}, {name: 'C', min: 70}, {name: 'D', min: 60}];
+    if (appData.totalMark === undefined) appData.totalMark = 100;
+    if (appData.passMark === undefined) appData.passMark = 40;
+    if (appData.hmPhone === undefined) appData.hmPhone = "";
+    if (!appData.trash) appData.trash = { students: [], classes: [] };
+    if (!appData.connectedDevices) appData.connectedDevices = [];
+
+    // --- Persistent Sync Credentials ---
+    if (!appData.syncId) {
+        appData.syncId = Math.floor(100000000 + Math.random() * 900000000).toString();
+        persistData();
+    }
+    if (!appData.syncPin) {
+        appData.syncPin = Math.floor(1000 + Math.random() * 9000).toString();
+        persistData();
+    }
+
+    appData.classes.forEach(c => {
+        if(!c.exams) c.exams = [];
+        c.roster.forEach(s => { 
+            if(!s.marks) s.marks = {}; 
+            if(!s.assignments) s.assignments = {}; 
+        });
     });
-  });
-}
 
-function startSkillPractice(notesArray, labelsArray) {
-  clearHints();
-  skillActiveNotes = notesArray;
-  
-  notesArray.forEach(n => {
-    const keyEl = document.querySelector(`[data-note="${n}"]`);
-    if (keyEl) keyEl.classList.add('hint');
-  });
-  
-  setTimeout(() => setupWaterfallBlocks(notesArray, labelsArray), 100);
-  document.getElementById('streamTitle').textContent = `Stream: ${notesArray.length} Notes`;
-}
-
-function clearHints() {
-  skillActiveNotes = [];
-  document.querySelectorAll('.white-key, .black-key').forEach(k => {
-    k.classList.remove('hint','active','wrong');
-  });
-}
-
-// ==============================
-// KEY PRESS ACTION CODES
-// ==============================
-function handleKeyPress(note) {
-  initAudio();
-  totalAttempts++;
-
-  let hitBlock = null;
-  for (const block of noteStreams) {
-    if (block.note === note && block.y >= canvas.height - 75 && block.y <= canvas.height + block.h) {
-      hitBlock = block;
-      break;
+    if (!appData.activeClassId && appData.classes.length) appData.activeClassId = appData.classes[0].id;
+    if (appData.history.length > 0 || (appData.classes.length && appData.classes[0] && appData.classes[0].roster.length > 0)) {
+        appData.isSetupComplete = true;
     }
-  }
 
-  playTone(note);
+    let editingIdx = -1;
+    let currentExam = "";
 
-  const keyEl = document.querySelector(`[data-note="${note}"]`);
-  if (keyEl) {
-    if (hitBlock) {
-      keyEl.classList.add('active');
-      setTimeout(() => keyEl.classList.remove('active'), 180);
-      noteStreams = noteStreams.filter(b => b !== hitBlock);
-    } else {
-      mistakesCount++;
-      keyEl.classList.add('wrong');
-      setTimeout(() => keyEl.classList.remove('wrong'), 220);
+    function persistData() { localStorage.setItem("pro_attendance_data", JSON.stringify(appData)); }
+    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem("pro_theme", document.body.classList.contains('dark-mode') ? "dark" : "light"); }
+    if(localStorage.getItem("pro_theme") === "dark") document.body.classList.add('dark-mode');
+
+    // --- Handle Role Change for Dynamic Signatures ---
+    function handleRoleChange() {
+        const role = document.getElementById('setup-user-role').value;
+        const hmContainer = document.getElementById('hm-phone-container');
+        
+        if (role === 'Head') {
+            hmContainer.style.display = 'none';
+            ['setup-msg-en', 'setup-exam-msg-en'].forEach(id => {
+                let val = document.getElementById(id).value;
+                document.getElementById(id).value = val.replace('Class Teacher', 'Headmaster');
+            });
+            ['setup-msg-ml', 'setup-exam-msg-ml'].forEach(id => {
+                let val = document.getElementById(id).value;
+                document.getElementById(id).value = val.replace('ക്ലാസ്സ് ടീച്ചർ', 'ഹെഡ്മാസ്റ്റർ');
+            });
+        } else {
+            hmContainer.style.display = 'block';
+            ['setup-msg-en', 'setup-exam-msg-en'].forEach(id => {
+                let val = document.getElementById(id).value;
+                document.getElementById(id).value = val.replace('Headmaster', 'Class Teacher');
+            });
+            ['setup-msg-ml', 'setup-exam-msg-ml'].forEach(id => {
+                let val = document.getElementById(id).value;
+                document.getElementById(id).value = val.replace('ഹെഡ്മാസ്റ്റർ', 'ക്ലാസ്സ് ടീച്ചർ');
+            });
+        }
     }
-  }
-  updateSummaryMetrics();
-}
 
-function playTone(note) {
-  if (!audioCtx || !noteFreqs[note]) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(noteFreqs[note], audioCtx.currentTime);
-  gain.gain.setValueAtTime(0, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.65);
-  osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + 0.7);
-}
+    function initApp() {
+        document.getElementById('totalMarkInput').value = appData.totalMark;
+        document.getElementById('passMarkInput').value = appData.passMark;
 
-// ==============================
-// METRIC EVALUATIONS
-// ==============================
-function updateSummaryMetrics() {
-  const acc = totalAttempts > 0 ? Math.round(((totalAttempts - mistakesCount) / totalAttempts) * 100) : 100;
-  document.getElementById('statTotal').innerText = totalAttempts;
-  document.getElementById('statMistakes').innerText = mistakesCount;
-  document.getElementById('statAccuracy').innerText = acc + '%';
-}
+        if (!appData.isSetupComplete) {
+            document.getElementById('header-buttons').classList.add('hidden');
+            document.getElementById('setup-back-btn').classList.add('hidden');
+            
+            document.getElementById('setup-user-name').value = appData.userName || "";
+            document.getElementById('setup-user-role').value = appData.userRole || "Teacher";
+            document.getElementById('setup-school-name').value = appData.schoolName || "";
+            document.getElementById('setup-hm-phone').value = appData.hmPhone || "";
+            document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
+            document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
+            document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
+            document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
+            
+            document.getElementById('display-sync-id').innerText = appData.syncId;
+            document.getElementById('display-sync-pin').innerText = appData.syncPin;
+            updateConnectedDevicesUI();
 
-function resetStats() {
-  totalAttempts = 0; mistakesCount = 0;
-  updateSummaryMetrics();
-}
+            handleRoleChange();
 
-function toggleSummaryPanel() {
-  const p = document.getElementById('summaryOverlay');
-  p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-}
+            showPage('setup-page');
+            switchSetupTab('profile');
+        } else {
+            showPage('home-page');
+        }
 
-// ==============================
-// YOUTUBE LOADER
-// ==============================
-function loadSong() {
-  const url = document.getElementById('youtubeUrl').value;
-  const m = url.match(/(?:youtu\.be\/|v=|embed\/)([^#&?]{11})/);
-  if (m) {
-    document.getElementById('videoContainer').innerHTML =
-      `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${m[1]}?enablejsapi=1" frameborder="0" allowfullscreen style="border-radius:6px;"></iframe>`;
-  } else {
-    alert("Invalid YouTube URL.");
-  }
-}
-
-// ==============================
-// MIC PROCESSING
-// ==============================
-function toggleMicDetection() {
-  initAudio();
-  if (isMicActive) {
-    stopMic();
-  } else {
-    startMic();
-  }
-}
-
-function startMic() {
-  navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-    .then(stream => {
-      isMicActive = true;
-      document.getElementById('micToggleBtn').className = "mic-btn active";
-      document.getElementById('micToggleBtn').innerText = "🎙️ Mic: ON";
-      document.getElementById('micNoteCapture').style.display = 'block';
-
-      const src = audioCtx.createMediaStreamSource(stream);
-      analyserNode = audioCtx.createAnalyser();
-      analyserNode.fftSize = 2048;
-      src.connect(analyserNode);
-      micBuffer = new Float32Array(analyserNode.fftSize);
-      pitchLoop();
-    })
-    .catch(() => alert("Microphone permission denied."));
-}
-
-function stopMic() {
-  isMicActive = false;
-  document.getElementById('micToggleBtn').className = "mic-btn";
-  document.getElementById('micToggleBtn').innerText = "🎙️ Mic: OFF";
-  document.getElementById('pitchDisplay').innerText = "Idle";
-  document.getElementById('micNoteCapture').style.display = 'none';
-}
-
-function pitchLoop() {
-  if (!isMicActive) return;
-  analyserNode.getFloatTimeDomainData(micBuffer);
-  const freq = autoCorrelate(micBuffer, audioCtx.sampleRate);
-  const now = Date.now();
-
-  if (freq > 0 && (now - lastAnalysisTime > 300)) {
-    let closest = null, minDiff = Infinity;
-    for (const note in noteFreqs) {
-      const diff = Math.abs(noteFreqs[note] - freq);
-      if (diff < minDiff) { minDiff = diff; closest = note; }
+        if (!localStorage.getItem('pro_tour_seen')) {
+            startTour();
+        }
     }
-    if (closest && minDiff < 12) {
-      document.getElementById('pitchDisplay').innerText = `${closest}`;
-      document.getElementById('micNoteCapture').innerText = `Detected: ${closest}`;
 
-      if (captureMode) {
-        appendNoteToComposer(closest);
-      } else {
-        handleKeyPress(closest);
-      }
-      lastAnalysisTime = now;
+    function openSchoolSettings() {
+        document.getElementById('header-buttons').classList.add('hidden');
+        document.getElementById('setup-back-btn').classList.remove('hidden');
+        document.getElementById('reset-zone').classList.remove('hidden');
+        
+        document.getElementById('setup-user-name').value = appData.userName || "";
+        document.getElementById('setup-user-role').value = appData.userRole || "Teacher";
+        document.getElementById('setup-school-name').value = appData.schoolName || "";
+        document.getElementById('setup-hm-phone').value = appData.hmPhone || "";
+        document.getElementById('setup-msg-language').value = appData.language;
+        document.getElementById('setup-msg-en').value = appData.msgTemplateEn;
+        document.getElementById('setup-msg-ml').value = appData.msgTemplateMl;
+        document.getElementById('setup-exam-msg-en').value = appData.examMsgTemplateEn;
+        document.getElementById('setup-exam-msg-ml').value = appData.examMsgTemplateMl;
+        
+        document.getElementById('display-sync-id').innerText = appData.syncId;
+        document.getElementById('display-sync-pin').innerText = appData.syncPin;
+        updateConnectedDevicesUI();
+
+        handleRoleChange();
+
+        showPage('setup-page');
+        switchSetupTab('profile');
     }
-  }
-  requestAnimationFrame(pitchLoop);
-}
 
-function autoCorrelate(buf, sampleRate) {
-  let size = buf.length;
-  let rms = 0;
-  for (let i = 0; i < size; i++) rms += buf[i] * buf[i];
-  rms = Math.sqrt(rms / size);
-  if (rms < 0.02) return -1;
-
-  let r1 = 0, r2 = size - 1;
-  for (let i = 0; i < size / 2; i++) { if (Math.abs(buf[i]) < 0.15) { r1 = i; break; } }
-  for (let i = size - 1; i >= size / 2; i--) { if (Math.abs(buf[i]) < 0.15) { r2 = i; break; } }
-  buf = buf.slice(r1, r2);
-  size = buf.length;
-
-  const c = new Float32Array(size);
-  for (let i = 0; i < size; i++)
-    for (let j = 0; j < size - i; j++)
-      c[i] += buf[j] * buf[j + i];
-
-  let d = 0;
-  while (c[d] > c[d + 1]) d++;
-  let maxVal = -1, maxPos = -1;
-  for (let i = d; i < size; i++) {
-    if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; }
-  }
-  return maxPos > 0 ? sampleRate / maxPos : -1;
-}
-
-// ==============================
-// DYNAMIC WATERFALL ENGINE
-// ==============================
-const canvas = document.getElementById('visualizerCanvas');
-const ctx2d = canvas.getContext('2d');
-
-function resizeCanvas() {
-  const panel = canvas.parentElement;
-  canvas.width = panel.clientWidth;
-  canvas.height = panel.clientHeight - 42; 
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-function animate() {
-  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-  const speed = parseInt(document.getElementById('speedSlider').value, 10);
-
-  ctx2d.strokeStyle = "rgba(0,173,181,0.35)";
-  ctx2d.lineWidth = 2;
-  ctx2d.beginPath();
-  ctx2d.moveTo(0, canvas.height - 50);
-  ctx2d.lineTo(canvas.width, canvas.height - 50);
-  ctx2d.stroke();
-  ctx2d.fillStyle = "rgba(0,173,181,0.07)";
-  ctx2d.fillRect(0, canvas.height - 52, canvas.width, 52);
-
-  // Read current layout coordinates of physical keys dynamically to align blocks
-  noteStreams.forEach(note => {
-    let targetKey = document.querySelector(`[data-note="${note.note}"]`);
-    if (targetKey) {
-      let canvasRect = canvas.getBoundingClientRect();
-      let keyRect = targetKey.getBoundingClientRect();
-      note.x = keyRect.left - canvasRect.left + (keyRect.width / 2) - (note.w / 2);
+    function switchSetupTab(tab) {
+        ['profile', 'templates', 'sync'].forEach(k => {
+            document.getElementById(`setup-tab-${k}`).classList.add('hidden');
+            document.getElementById(`btn-setup-tab-${k}`).classList.remove('active');
+        });
+        document.getElementById(`setup-tab-${tab}`).classList.remove('hidden');
+        document.getElementById(`btn-setup-tab-${tab}`).classList.add('active');
+        if(tab === 'sync') updateConnectedDevicesUI();
     }
-  });
 
-  for (const note of noteStreams) {
-    ctx2d.fillStyle = '#00adb5';
-    ctx2d.beginPath();
-    ctx2d.roundRect(note.x, note.y, note.w, note.h, 4);
-    ctx2d.fill();
+    function updateConnectedDevicesUI() {
+        const container = document.getElementById('connected-devices-list');
+        if(!container) return;
+        if(!appData.connectedDevices || appData.connectedDevices.length === 0) {
+            container.innerHTML = '<p style="font-size:11px; color:var(--text-secondary); margin:0;">No other devices connected yet.</p>';
+        } else {
+            container.innerHTML = '<ul style="font-size:12px; margin:5px 0 0 0; padding-left:0; list-style:none; color:var(--primary-blue);">' + 
+                appData.connectedDevices.map((d, i) => `<li style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-color); padding:5px; margin-bottom:5px; border-radius:4px; border:1px solid var(--border-color);">
+                <b>${d}</b> 
+                <button style="background:var(--danger-red); color:white; border:none; padding:2px 8px; font-size:10px; border-radius:4px; cursor:pointer;" onclick="removeDevice(${i})">Remove</button>
+                </li>`).join('') + '</ul>';
+        }
+    }
 
-    ctx2d.fillStyle = '#fff';
-    ctx2d.font = 'bold 13px sans-serif';
-    ctx2d.textAlign = 'center';
-    ctx2d.textBaseline = 'middle';
-    ctx2d.fillText(note.label, note.x + note.w / 2, note.y + note.h / 2);
+    function removeDevice(index) {
+        if(confirm("Remove this device from your network?")) {
+            appData.connectedDevices.splice(index, 1);
+            persistData();
+            updateConnectedDevicesUI();
+            performSmartSync(true); // silent sync to update cloud
+        }
+    }
 
-    note.y += speed;
-  }
+    function completeSetup() {
+        const sn = document.getElementById('setup-school-name').value;
+        if (!sn || sn.trim() === "") return alert("Please enter your institution name to continue.");
+        
+        appData.userName = document.getElementById('setup-user-name').value.trim();
+        appData.userRole = document.getElementById('setup-user-role').value;
+        appData.schoolName = sn;
+        appData.hmPhone = document.getElementById('setup-hm-phone').value.trim();
+        appData.language = document.getElementById('setup-msg-language').value;
+        appData.msgTemplateEn = document.getElementById('setup-msg-en').value;
+        appData.msgTemplateMl = document.getElementById('setup-msg-ml').value;
+        appData.examMsgTemplateEn = document.getElementById('setup-exam-msg-en').value;
+        appData.examMsgTemplateMl = document.getElementById('setup-exam-msg-ml').value;
+        appData.isSetupComplete = true;
+        persistData();
+        
+        alert("Settings Saved!");
+        
+        if (appData.classes && appData.classes.length > 0) {
+            document.getElementById('header-buttons').classList.remove('hidden');
+            showPage('home-page');
+        } else {
+            alert("Next Step: Let's create your first class!");
+            document.getElementById('header-buttons').classList.remove('hidden');
+            showPage('settings-page');
+            switchSettingsTab('classes');
+        }
+    }
 
-  noteStreams = noteStreams.filter(n => n.y < canvas.height + 60);
-  requestAnimationFrame(animate);
-}
+    function showPage(pId) {
+        document.querySelectorAll('.main-card > div:not(.header-section)').forEach(p => p.classList.add('hidden'));
+        document.getElementById(pId).classList.remove('hidden');
+        if (pId !== 'setup-page') {
+            document.getElementById('header-buttons').classList.remove('hidden');
+            document.getElementById('setup-back-btn').classList.add('hidden');
+            refreshViews();
+        }
+        if (pId === 'reports-page') { setupMonthPicker(); refreshReportsView(); }
+        if (pId === 'history-page') renderHistoryView();
+        if (pId === 'marks-page') { refreshMarksView(); }
+    }
 
-// ==============================
-// RUNTIMES
-// ==============================
-generateMelakartaLibrary();
-buildPiano();
-initRagaDropdown();
-loadSelectedRaga();
-animate();
+    function switchSettingsTab(t) {
+        ['classes', 'students', 'trash'].forEach(k => { 
+            document.getElementById(`tab-${k}-section`).classList.add('hidden'); 
+            document.getElementById(`btn-tab-${k}`).classList.remove('active'); 
+        });
+        document.getElementById(`tab-${t}-section`).classList.remove('hidden');
+        document.getElementById(`btn-tab-${t}`).classList.add('active');
+        if (t === 'trash') renderTrashView();
+    }
+
+    function refreshViews() {
+        if(!appData.isSetupComplete) return;
+        const cls = appData.classes.find(c => c.id == appData.activeClassId) || (appData.classes.length > 0 ? appData.classes[0] : null);
+        document.getElementById('app-title').innerText = cls ? cls.name : 'Attendance Taker Pro';
+        document.querySelectorAll('.class-dropdown').forEach(s => { 
+            s.innerHTML = appData.classes.map(c => `<option value="${c.id}" ${c.id == appData.activeClassId ? 'selected' : ''}>${c.name}</option>`).join('') || '<option value="">-- No Classes --</option>'; 
+        });
+        const cont = document.getElementById('attendance-list-container');
+        if (!cls || cls.roster.length === 0) {
+            cont.innerHTML = `<div style="background: var(--warning-orange); color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 15px 0;"><b style="font-size: 16px;">⚠️ Setup Required</b><br><br>Please click the <b>⚙️ Settings</b> button at the top right to create your classes and add students before taking attendance!</div>`;
+            document.getElementById('student-list-management').innerHTML = "";
+        } else {
+            cont.innerHTML = "";
+            cls.roster.sort((a,b) => a.roll - b.roll).forEach((s, idx) => {
+                cont.innerHTML += `
+                <div class="student-item" id="student-item-${s.roll}">
+                    <div class="student-top-row">
+                        <div class="student-meta">
+                            <img src="${s.photo||''}" class="student-avatar" onerror="this.style.display='none'">
+                            <span>Roll ${s.roll}: ${s.name}</span>
+                        </div>
+                        <div class="attendance-toggle">
+                            <input type="hidden" id="status-val-${idx}" value="Present">
+                            <div id="opt-p-${idx}" class="toggle-opt p-active" onclick="markStatus(${idx},'Present')">P</div>
+                            <div id="opt-a-${idx}" class="toggle-opt" onclick="markStatus(${idx},'Absent')">A</div>
+                        </div>
+                    </div>
+                    <div id="sub-opts-${idx}" class="extra-opts hidden">
+                        <span style="font-size:10px; margin-right:auto; align-self:center;">Reason:</span>
+                        <button id="opt-l-${idx}" class="sub-btn" onclick="markStatus(${idx},'Leave')">Leave</button>
+                        <button id="opt-normal-a-${idx}" class="sub-btn sub-btn-active" style="background:#ddd" onclick="markStatus(${idx},'Absent')">Absent</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('student-list-management').innerHTML = cls.roster.map((s, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid var(--border-color); padding: 5px;">
+                    <span style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px; font-size:14px;">${s.roll}. ${s.name}</span>
+                    <div style="flex-shrink:0;">
+                        <button class="btn-info" style="color:white; padding: 4px 8px; font-size:11px;" onclick="loadStudentForEdit(${idx})">Edit</button>
+                        <button class="btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="removeStudent(${idx})">Del</button>
+                    </div>
+                </div>`).join('');
+        }
+        document.getElementById('class-list-management').innerHTML = appData.classes.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:var(--bg-color); border-radius:8px;"><span>${c.name}</span><button class="btn-danger" style="padding: 2px 10px;" onclick="removeClass(${c.id})">Del</button></div>`).join('');
+    }
+
+    function markStatus(idx, s) {
+        document.getElementById(`status-val-${idx}`).value = s;
+        const extra = document.getElementById(`sub-opts-${idx}`);
+        if (s === 'Present') {
+            extra.classList.add('hidden');
+            document.getElementById(`opt-p-${idx}`).classList.add('p-active');
+            document.getElementById(`opt-a-${idx}`).classList.remove('a-active');
+        } else {
+            extra.classList.remove('hidden');
+            document.getElementById(`opt-p-${idx}`).classList.remove('p-active');
+            document.getElementById(`opt-a-${idx}`).classList.add('a-active');
+            document.getElementById(`opt-l-${idx}`).className = (s === 'Leave') ? 'sub-btn l-active' : 'sub-btn';
+            document.getElementById(`opt-normal-a-${idx}`).style.background = (s === 'Absent') ? '#ddd' : 'transparent';
+        }
+    }
+
+    function handleClassChange(id) { appData.activeClassId = id; persistData(); refreshViews(); }
+
+    function createNewClass() {
+        const n = document.getElementById('input-new-class-name').value;
+        if (!n) return;
+        const newId = Date.now();
+        appData.classes.push({ id: newId, name: n, roster: [], exams: [] });
+        if (!appData.activeClassId) appData.activeClassId = newId;
+        document.getElementById('input-new-class-name').value = "";
+        persistData(); refreshViews();
+    }
+
+    function saveStudentObject() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if (!cls) return alert("Please create a class first!");
+        const r = document.getElementById('input-student-roll').value;
+        const rollNum = parseInt(r);
+        if (isNaN(rollNum) || rollNum < 1) return alert("Please enter a valid positive Roll Number (1 or higher).");
+        const duplicateIdx = cls.roster.findIndex(s => s.roll === rollNum);
+        if (duplicateIdx > -1 && duplicateIdx !== editingIdx) {
+            return alert("Roll Number " + rollNum + " is already assigned to another student in this class!");
+        }
+        const n = document.getElementById('input-student-name').value, ph = document.getElementById('input-student-phone').value, em = document.getElementById('input-student-email').value, f = document.getElementById('input-student-photo').files[0];
+        const done = (img) => {
+            const s = { roll: rollNum, name: n, phone: ph, email: em, photo: img || (editingIdx > -1 ? cls.roster[editingIdx].photo : null), marks: {}, assignments: {} };
+            if (editingIdx > -1) { 
+                s.marks = cls.roster[editingIdx].marks || {}; 
+                s.assignments = cls.roster[editingIdx].assignments || {};
+                cls.roster[editingIdx] = s; 
+                editingIdx = -1; 
+                document.getElementById('submit-student-btn').innerText = "+ Add Student"; 
+            } else cls.roster.push(s);
+            persistData(); refreshViews();
+            ['roll','name','phone','email','photo'].forEach(k => document.getElementById(`input-student-${k}`).value = "");
+        };
+        if (f) { const rd = new FileReader(); rd.onload = (e) => done(e.target.result); rd.readAsDataURL(f); } else done(null);
+    }
+
+    function loadStudentForEdit(idx) {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if (!cls) return;
+        const s = cls.roster[idx];
+        document.getElementById('input-student-roll').value = s.roll;
+        document.getElementById('input-student-name').value = s.name;
+        document.getElementById('input-student-phone').value = s.phone || "";
+        document.getElementById('input-student-email').value = s.email || "";
+        document.getElementById('submit-student-btn').innerText = "Update";
+        editingIdx = idx;
+    }
+
+    function toggleBulkImport() { document.getElementById('bulk-import-section').classList.toggle('hidden'); }
+
+    function importStudentListCSV() {
+        const fileInput = document.getElementById('input-csv-upload');
+        const file = fileInput.files[0];
+        if (!file) return alert("Please select a CSV file first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if (!cls) return alert("Please create a class first!");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split('\n');
+            let addedCount = 0;
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const parts = line.split(',');
+                if (parts.length >= 2) {
+                    const rollRaw = parts[0].replace(/['"]/g, '').trim();
+                    const roll = parseInt(rollRaw);
+                    const name = parts[1].replace(/['"]/g, '').trim();
+                    const phone = parts.length > 2 ? parts[2].replace(/['"]/g, '').trim() : "";
+                    const email = parts.length > 3 ? parts[3].replace(/['"]/g, '').trim() : "";
+                    if (!isNaN(roll) && roll > 0 && name) {
+                        const existingIdx = cls.roster.findIndex(s => s.roll === roll);
+                        if (existingIdx > -1) {
+                            cls.roster[existingIdx].name = name;
+                            if (phone) cls.roster[existingIdx].phone = phone;
+                            if (email) cls.roster[existingIdx].email = email;
+                        } else {
+                            cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, assignments: {} });
+                        }
+                        addedCount++;
+                    }
+                }
+            }
+            if (addedCount > 0) {
+                persistData(); refreshViews();
+                alert(`Successfully imported/updated ${addedCount} students from CSV!`);
+                fileInput.value = "";
+            } else {
+                alert("No valid data found. Ensure CSV headers: Roll No, Name, Phone, Email.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    async function importStudentListPDF() {
+        const fileInput = document.getElementById('input-pdf-upload');
+        const file = fileInput.files[0];
+        if (!file) return alert("Please select a PDF file first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if (!cls) return alert("Please create a class first!");
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const typedarray = new Uint8Array(e.target.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                let addedCount = 0;
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    let rows = {};
+                    textContent.items.forEach(item => {
+                        let y = Math.round(item.transform[5]);
+                        if(!rows[y]) rows[y] = [];
+                        rows[y].push(item);
+                    });
+                    let yKeys = Object.keys(rows).map(Number).sort((a,b) => b - a);
+                    yKeys.forEach(y => {
+                        let rowItems = rows[y].sort((a,b) => a.transform[4] - b.transform[4]);
+                        let rowText = rowItems.map(item => item.str).join(' ').trim();
+                        let parts = rowText.split(/\s+/);
+                        if (parts.length >= 2) {
+                            let roll = parseInt(parts[0]);
+                            if (!isNaN(roll) && roll > 0) {
+                                let nameParts = [], phone = "", email = "";
+                                for(let j=1; j<parts.length; j++) {
+                                    if(parts[j].includes('@')) email = parts[j];
+                                    else if(/^\d{7,15}$/.test(parts[j].replace(/[^0-9]/g, ''))) phone = parts[j];
+                                    else nameParts.push(parts[j]);
+                                }
+                                let name = nameParts.join(' ').trim();
+                                if(name) {
+                                    const existingIdx = cls.roster.findIndex(s => s.roll === roll);
+                                    if (existingIdx > -1) {
+                                        cls.roster[existingIdx].name = name;
+                                        if (phone) cls.roster[existingIdx].phone = phone;
+                                        if (email) cls.roster[existingIdx].email = email;
+                                    } else {
+                                        cls.roster.push({ roll: roll, name: name, phone: phone, email: email, photo: null, marks: {}, assignments: {} });
+                                    }
+                                    addedCount++;
+                                }
+                            }
+                        }
+                    });
+                }
+                if (addedCount > 0) {
+                    persistData(); refreshViews();
+                    alert(`Successfully imported/updated ${addedCount} students from PDF!`);
+                    fileInput.value = "";
+                } else {
+                    alert("Could not detect student rows. Ensure the PDF contains lines starting with a Roll Number.");
+                }
+            } catch (err) {
+                alert("Error parsing PDF. Please make sure it is a valid text-based PDF (not an image scan).");
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function updateExamConfig() {
+        appData.totalMark = document.getElementById("totalMarkInput").value;
+        appData.passMark = document.getElementById("passMarkInput").value;
+        persistData();
+        refreshMarksTable();
+    }
+
+    function toggleCreateExamPanel() {
+        const pnl = document.getElementById('create-exam-panel');
+        const config = document.getElementById('mark-grade-config-wrapper');
+        pnl.appendChild(config);
+        pnl.classList.toggle('hidden');
+        if(!pnl.classList.contains('hidden')) {
+            document.getElementById('edit-exam-settings').classList.add('hidden');
+            renderGradesUI();
+        }
+    }
+
+    function editCurrentExam() {
+        if(!appData.activeClassId) return alert("Please create a class first!");
+        if(!currentExam) return alert("Please select an exam first!");
+        const editPnl = document.getElementById('edit-exam-settings');
+        const config = document.getElementById('mark-grade-config-wrapper');
+        editPnl.appendChild(config);
+        editPnl.classList.toggle('hidden');
+        if(!editPnl.classList.contains('hidden')) {
+            document.getElementById('create-exam-panel').classList.add('hidden');
+            renderGradesUI();
+            editPnl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function renderGradesUI() {
+        const container = document.getElementById('grades-container');
+        container.innerHTML = '';
+        appData.grades.forEach((g, i) => {
+            container.innerHTML += `
+                <div style="display:flex; gap:5px; align-items:center; background: var(--bg-color); padding: 5px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <input type="text" value="${g.name}" class="grade-name" style="min-width:0; flex:1; padding:6px; text-align:center; margin-bottom:0;" onchange="updateGrade(${i}, 'name', this.value)">
+                    <span style="font-size:12px; font-weight:bold;">:</span>
+                    <input type="number" value="${g.min}" class="grade-val" style="min-width:0; flex:1.5; padding:6px; margin-bottom:0;" onchange="updateGrade(${i}, 'min', this.value)">
+                    <button style="background:none; border:none; color:var(--danger-red); cursor:pointer; padding:0 5px; font-size:16px; font-weight:bold;" onclick="removeGrade(${i})">×</button>
+                </div>`;
+        });
+    }
+
+    function addGradeRow() { appData.grades.push({name: '', min: 0}); persistData(); renderGradesUI(); }
+    function updateGrade(idx, field, val) { if(field === 'min') val = parseFloat(val) || 0; appData.grades[idx][field] = val; persistData(); refreshMarksTable(); }
+    function removeGrade(idx) { appData.grades.splice(idx, 1); persistData(); renderGradesUI(); refreshMarksTable(); }
+
+    function refreshMarksView() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        const examSelect = document.getElementById("examSelect");
+        const compareSelect = document.getElementById("compareExamSelect");
+        if (!cls) {
+            examSelect.innerHTML = '<option value="">-- Select Exam --</option>';
+            compareSelect.innerHTML = '<option value="">-- None --</option>';
+            refreshMarksTable();
+            return;
+        }
+        if (cls.exams && cls.exams.length > 0) { examSelect.innerHTML = ''; } 
+        else { examSelect.innerHTML = '<option value="">-- Select Exam --</option>'; }
+        compareSelect.innerHTML = '<option value="">-- None --</option>';
+        if(cls.exams) {
+            if (cls.exams.length > 0 && !cls.exams.includes(currentExam)) currentExam = cls.exams[0];
+            cls.exams.forEach(exam => {
+                let opt = document.createElement('option');
+                opt.value = exam; opt.innerHTML = exam;
+                if(exam === currentExam) opt.selected = true;
+                examSelect.appendChild(opt);
+                let optC = document.createElement('option');
+                optC.value = exam; optC.innerHTML = exam;
+                compareSelect.appendChild(optC);
+            });
+        }
+        if(!cls.exams || !cls.exams.includes(currentExam)) currentExam = "";
+        refreshMarksTable();
+    }
+
+    function addExam() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return alert("Please create a class first!");
+        if(!cls.exams) cls.exams = [];
+        let name = document.getElementById("newExamInput").value.trim();
+        let subj = document.getElementById("newExamSubject").value.trim();
+        let examLabel = subj ? `${name} - ${subj}` : name;
+        if(examLabel && !cls.exams.includes(examLabel)) {
+            cls.exams.push(examLabel);
+            document.getElementById("newExamInput").value = '';
+            document.getElementById("newExamSubject").value = '';
+            document.getElementById('create-exam-panel').classList.add('hidden');
+            persistData();
+            currentExam = examLabel;
+            refreshMarksView();
+        }
+    }
+
+    function changeExam() { currentExam = document.getElementById("examSelect").value; refreshMarksTable(); }
+
+    function setMark(roll, value) {
+        if(!currentExam) return alert("Select an exam first!");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        if(value !== "" && value.toUpperCase() !== "AB") {
+            let markVal = parseFloat(value);
+            let totalMarkVal = parseFloat(appData.totalMark);
+            if(!isNaN(markVal) && markVal > totalMarkVal) {
+                alert("Mark cannot be greater than Total Marks (" + totalMarkVal + ")!");
+                refreshMarksTable();
+                return;
+            }
+        }
+        const student = cls.roster.find(s => s.roll === roll);
+        if(!student.marks) student.marks = {};
+        
+        if (value === "") {
+            delete student.marks[currentExam];
+        } else {
+            student.marks[currentExam] = value;
+        }
+        
+        persistData();
+        refreshMarksTable();
+    }
+
+    function toggleAssignment(roll) {
+        if(!currentExam) return alert("Select an exam first!");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const student = cls.roster.find(s => s.roll === roll);
+        if(!student.assignments) student.assignments = {};
+        student.assignments[currentExam] = !student.assignments[currentExam];
+        persistData();
+        refreshMarksTable();
+    }
+
+    function toggleMarkBulkImport() { document.getElementById('mark-bulk-import-section').classList.toggle('hidden'); }
+
+    function importMarksCSV() {
+        if(!currentExam) return alert("Please select an exam first before importing marks.");
+        const fileInput = document.getElementById('input-marks-csv-upload');
+        const file = fileInput.files[0];
+        if (!file) return alert("Please select a CSV file first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if (!cls) return alert("Please create a class first!");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split('\n');
+            let addedCount = 0;
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                let parts = line.split(',');
+                if (parts.length >= 2) {
+                    let identifier = parts[0].replace(/['"]/g, '').trim();
+                    let markVal = parts[1].replace(/['"]/g, '').trim();
+                    let rollMatch = identifier.match(/^\d+/);
+                    let targetRoll = null;
+                    if (rollMatch) { targetRoll = parseInt(rollMatch[0]); } 
+                    else { let match = cls.roster.find(s => s.name.toLowerCase() === identifier.toLowerCase()); if (match) targetRoll = match.roll; }
+                    if (targetRoll !== null && markVal !== "") {
+                        const student = cls.roster.find(s => s.roll === targetRoll);
+                        if (student) {
+                            if(markVal.toUpperCase() !== "AB") {
+                                let floatMark = parseFloat(markVal);
+                                let totalMarkVal = parseFloat(appData.totalMark);
+                                if(isNaN(floatMark) || floatMark > totalMarkVal) continue;
+                                markVal = floatMark.toString();
+                            } else { markVal = "AB"; }
+                            if(!student.marks) student.marks = {};
+                            student.marks[currentExam] = markVal;
+                            addedCount++;
+                        }
+                    }
+                }
+            }
+            if (addedCount > 0) {
+                persistData(); refreshMarksTable();
+                alert(`Successfully imported marks for ${addedCount} students into ${currentExam}!`);
+                fileInput.value = "";
+                document.getElementById('mark-bulk-import-section').classList.add('hidden');
+            } else {
+                alert("No valid marks found. Ensure the CSV has Roll/Name in column 1 and Marks in column 2, and marks don't exceed the total.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function getGradesFromUI() { return [...appData.grades].sort((a,b) => b.min - a.min); }
+
+    function refreshMarksTable() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        let tbody = document.getElementById("marksTableBody");
+        let compareExam = document.getElementById("compareExamSelect") ? document.getElementById("compareExamSelect").value : "";
+        tbody.innerHTML = '';
+        document.getElementById('exam-select-warning').style.display = currentExam ? 'none' : 'block';
+        if(!currentExam || !cls) {
+            document.getElementById("statAvg").innerText = "0.0";
+            document.getElementById("statPass").innerText = "0";
+            document.getElementById("statFail").innerText = "0";
+            if (!document.getElementById('mark-report-container').classList.contains('hidden')) renderMarkReport();
+            return;
+        }
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let grades = getGradesFromUI();
+        let totalMarksSum = 0; let markCount = 0; let passCount = 0; let failCount = 0;
+        let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
+        sortedRoster.forEach((s) => {
+            let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+            let prevMark = (compareExam && s.marks && s.marks[compareExam]) ? s.marks[compareExam] : '';
+            let markVal = parseFloat(currentMark);
+            let statusHtml = '<span class="status pending">-</span>';
+            let gradeStr = '-';
+            if(currentMark === 'AB' || (typeof currentMark === 'string' && currentMark.toUpperCase() === 'AB')) {
+                statusHtml = '<span class="status fail" style="background:var(--text-secondary)">Absent</span>';
+                gradeStr = 'AB';
+            } else if(!isNaN(markVal) && currentMark !== '') {
+                totalMarksSum += markVal; markCount++;
+                let g = grades.find(g => markVal >= g.min);
+                if(g) gradeStr = g.name;
+                if(markVal >= passThreshold) { statusHtml = `<span class="status pass">Pass</span>`; passCount++; } 
+                else { statusHtml = `<span class="status fail">Fail</span>`; failCount++; }
+            }
+            let growthHtml = '-';
+            if(currentMark !== '' && currentMark !== 'AB' && prevMark !== '' && prevMark !== 'AB' && compareExam !== currentExam) {
+                let diff = parseFloat(currentMark) - parseFloat(prevMark);
+                if(diff > 0) growthHtml = `<span style="color:var(--success-green); font-weight:bold;">▲ +${diff}</span>`;
+                else if(diff < 0) growthHtml = `<span style="color:var(--danger-red); font-weight:bold;">▼ ${diff}</span>`;
+                else growthHtml = `<span style="color:var(--text-secondary); font-weight:bold;">▶ 0</span>`;
+            }
+
+            let assignStatus = (s.assignments && s.assignments[currentExam]) ? true : false;
+            let assignBtn = assignStatus ? 
+                `<button style="background:var(--success-green); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="toggleAssignment(${s.roll})">Done</button>` :
+                `<button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="toggleAssignment(${s.roll})">None</button>`;
+
+            let abBtnHtml = '';
+            if (currentMark === 'AB') {
+                abBtnHtml = `<button style="background:var(--warning-orange); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="setMark(${s.roll}, '')">Undo</button>`;
+            } else {
+                abBtnHtml = `<button style="background:var(--text-secondary); color:white; border:none; border-radius:4px; padding:6px 2px; font-size:9px; cursor:pointer; width:100%;" onclick="setMark(${s.roll}, 'AB')">AB</button>`;
+            }
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${s.roll}</td>
+                <td style="max-width: 120px; white-space: normal; overflow-wrap: break-word;"><strong>${s.name}</strong></td>
+                <td style="text-align: center; min-width: 60px;"><input type="text" class="mark-input" value="${currentMark}" onchange="setMark(${s.roll}, this.value.toUpperCase())" style="width: 45px; display:inline-block;"></td>
+                <td style="text-align: center; font-weight: bold; color: var(--primary-blue);">${gradeStr}</td>
+                <td style="text-align: center;">${growthHtml}</td>
+                <td style="text-align: center; line-height: 1.2;">${statusHtml}</td>
+                <td style="text-align: center;">${assignBtn}</td>
+                <td style="text-align: center;">
+                    <button class="msg-btn" style="background:#25D366; padding:4px;" onclick="sendMarkWA(${s.roll})">${waIconHTML}</button>
+                    <button class="msg-btn" style="background:#EA4335; padding:4px;" onclick="sendMarkEmail(${s.roll})">${mailIconHTML}</button>
+                </td>
+                <td style="text-align: center;">${abBtnHtml}</td>`;
+            tbody.appendChild(tr);
+        });
+        let avg = markCount > 0 ? (totalMarksSum / markCount).toFixed(1) : "0.0";
+        document.getElementById("statAvg").innerText = avg;
+        document.getElementById("statPass").innerText = passCount;
+        document.getElementById("statFail").innerText = failCount;
+        if (!document.getElementById('mark-report-container').classList.contains('hidden')) renderMarkReport();
+    }
+
+    function printBatchReportCards() {
+        if(!currentExam) return alert("Please select an exam first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+
+        let html = `<html><head><title>Batch Report Cards - ${cls.name}</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; background: #f4f4f4; padding: 20px; padding-top: 80px; margin: 0; }
+                .card { background: white; padding: 40px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); page-break-after: always; }
+                h1 { color: #0056b3; margin-bottom: 5px; text-align: center; }
+                h2 { color: #17a2b8; margin-top: 0; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; }
+                .student-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 16px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+                th { background-color: #f0f2f5; color: #1c1e21; font-weight: bold; }
+                .signature { margin-top: 60px; display: flex; justify-content: space-between; }
+                .signature div { border-top: 2px solid #333; padding-top: 5px; width: 40%; text-align: center; font-weight: bold; }
+                
+                /* Fixed Navigation Header Actions */
+                .manual-actions-bar {
+                    position: fixed; top: 0; left: 0; right: 0; background: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10000;
+                }
+                .manual-btn { padding: 10px 18px; font-size: 14px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+                .btn-back { background: #606770; color: white; }
+                .btn-print { background: #0056b3; color: white; }
+                
+                @media print { 
+                    body { background: white; padding: 0 !important; } 
+                    .card { box-shadow: none; border: none; padding: 0; } 
+                    .manual-actions-bar { display: none !important; }
+                }
+            </style>
+        </head><body>
+            <div class="manual-actions-bar">
+                <button class="manual-btn btn-back" onclick="window.close();">⬅️ Close</button>
+                <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+            </div>`;
+        
+        let grades = getGradesFromUI();
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let totalMarks = document.getElementById("totalMarkInput").value;
+        
+        [...cls.roster].sort((a,b)=>a.roll-b.roll).forEach(s => {
+            let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '-';
+            let assign = (s.assignments && s.assignments[currentExam]) ? '<span style="color:green;font-weight:bold;">Submitted</span>' : '<span style="color:red;">Missing</span>';
+            let status = 'Pending', gradeText = '-';
+            
+            if(mark === 'AB') { 
+                status = 'Absent'; gradeText = 'AB'; 
+            } else if(mark !== '-' && !isNaN(parseFloat(mark))) {
+                let markVal = parseFloat(mark);
+                status = markVal >= passThreshold ? '<span style="color:green;font-weight:bold;">Pass</span>' : '<span style="color:red;font-weight:bold;">Fail</span>';
+                let g = grades.find(gd => markVal >= gd.min);
+                if(g) gradeText = g.name;
+            }
+
+            html += `<div class="card">
+                <h1>${appData.schoolName || 'Institution'}</h1>
+                <h2>Official Exam Report: ${currentExam}</h2>
+                <div class="student-info">
+                    <div><b>Student Name:</b> ${s.name}</div>
+                    <div><b>Roll No:</b> ${s.roll}</div>
+                    <div><b>Class:</b> ${cls.name}</div>
+                </div>
+                <table>
+                    <tr>
+                        <th>Subject/Exam</th>
+                        <th>Marks Obtained</th>
+                        <th>Max Marks</th>
+                        <th>Grade</th>
+                        <th>Status</th>
+                        <th>Assignment</th>
+                    </tr>
+                    <tr>
+                        <td><b>${currentExam}</b></td>
+                        <td style="font-size: 18px; font-weight:bold;">${mark}</td>
+                        <td>${totalMarks}</td>
+                        <td style="font-size: 18px; color: #0056b3; font-weight:bold;">${gradeText}</td>
+                        <td>${status}</td>
+                        <td>${assign}</td>
+                    </tr>
+                </table>
+                <div class="signature">
+                    <div>Class Teacher Signature</div>
+                    <div>Parent/Guardian Signature</div>
+                </div>
+            </div>`;
+        });
+        
+        html += `</body></html>`;
+        
+        const printWin = window.open('', '_blank');
+        printWin.document.write(html);
+        printWin.document.close();
+        printWin.focus();
+    }
+
+    function exportMarksToCSV() {
+        if(!currentExam) return alert("Please select an exam first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        let compareExam = document.getElementById("compareExamSelect").value;
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let grades = getGradesFromUI();
+        let csv = `Class,${cls.name}\nExam,${currentExam}\n\n`;
+        csv += "Roll No,Name,Mark,Grade,Status,Assignment,Growth (vs " + (compareExam || 'None') + ")\n";
+        let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
+        sortedRoster.forEach(s => {
+            let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+            let status = 'Pending'; let gradeText = 'N/A';
+            if (mark === 'AB') { status = 'Absent'; } 
+            else if (mark !== '') {
+                let markVal = parseFloat(mark);
+                status = markVal >= passThreshold ? 'Pass' : 'Fail';
+                let g = grades.find(gd => markVal >= gd.min);
+                if(g) gradeText = g.name;
+            }
+            let prevMark = (compareExam && s.marks && s.marks[compareExam]) ? s.marks[compareExam] : '';
+            let growthText = 'N/A';
+            if(mark !== '' && mark !== 'AB' && prevMark !== '' && prevMark !== 'AB' && compareExam !== currentExam) {
+                let diff = parseFloat(mark) - parseFloat(prevMark);
+                growthText = diff > 0 ? `+${diff}` : diff.toString();
+            }
+            let assign = (s.assignments && s.assignments[currentExam]) ? 'Submitted' : 'None';
+            let name = s.name ? s.name.replace(/,/g, '') : '';
+            csv += `${s.roll},${name},${mark},${gradeText},${status},${assign},${growthText}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Marks_${cls.name.replace(/ /g, '_')}_${currentExam}.csv`; link.click();
+    }
+
+    function sendExamToHM() {
+        if(!currentExam) return alert("Please select an exam first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        if(!appData.hmPhone || appData.hmPhone.trim() === "") return alert("Please set the Headmaster's WhatsApp number first in Settings > Edit Institution.");
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let failedList = []; let passed = 0; let failed = 0; let total = 0;
+        cls.roster.sort((a,b) => a.roll - b.roll).forEach(s => {
+            let mark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+            if(mark !== '') {
+                total++;
+                if(mark === 'AB') { failed++; failedList.push(`${s.roll}. ${s.name} - AB`); } 
+                else { let markVal = parseFloat(mark); if(markVal >= passThreshold) { passed++; } else { failed++; failedList.push(`${s.roll}. ${s.name} - ${mark}`); } }
+            }
+        });
+        if(total === 0) return alert("No marks entered for this exam yet.");
+        let msg = `*Exam Report: ${currentExam}*\n*Class:* ${cls.name}\n\n*Total Students Marked:* ${total}\n*Passed:* ${passed}\n*Failed:* ${failed}\n\n`;
+        if(failedList.length > 0) { msg += `*Failed Students List:*\n` + failedList.join('\n'); } 
+        else { msg += `*All students passed!* 🎉`; }
+        let ct = appData.hmPhone.replace(/\D/g, ''); if (ct.length === 10) ct = "91" + ct;
+        window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function toggleMarkReport() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const container = document.getElementById('mark-report-container');
+        if (container.classList.contains('hidden')) {
+            container.classList.remove('hidden');
+            const filter = document.getElementById('reportStudentFilter');
+            filter.innerHTML = '<option value="">All Students (Class Matrix)</option>';
+            [...cls.roster].sort((a,b) => a.roll - b.roll).forEach(s => { filter.innerHTML += `<option value="${s.roll}">${s.roll}. ${s.name}</option>`; });
+            renderMarkReport();
+        } else { container.classList.add('hidden'); }
+    }
+
+    function renderMarkReport() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        const wrapper = document.getElementById('mark-report-table-wrapper');
+        const studentFilter = document.getElementById('reportStudentFilter').value;
+        if (!cls || !cls.exams || cls.exams.length === 0) { wrapper.innerHTML = "<p style='text-align:center; font-size:12px;'>No exams added yet.</p>"; return; }
+        if (studentFilter) {
+            const s = cls.roster.find(st => st.roll == studentFilter);
+            if (!s) return;
+            let html = `<div class="print-only" style="text-align:center; margin-bottom:15px;"><h2 style="margin:0;">${appData.schoolName || 'Institution'}</h2><h3 style="margin:5px 0;">Class: ${cls.name}</h3><h4 style="margin:0;">Student: ${s.name} (Roll: ${s.roll})</h4></div><table class="marks-table"><thead><tr><th>Exam / Subject</th><th style="text-align:center;">Mark</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
+            let total = 0, count = 0;
+            let grades = getGradesFromUI();
+            cls.exams.forEach(ex => {
+                let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
+                let gradeText = '-';
+                if (mark === 'AB') { gradeText = 'AB'; } 
+                else if (mark !== '-' && !isNaN(parseFloat(mark))) { total += parseFloat(mark); count++; let g = grades.find(gd => parseFloat(mark) >= gd.min); if (g) gradeText = g.name; }
+                html += `<tr><td>${ex}</td><td style="text-align:center;">${mark}</td><td style="text-align:center; font-weight:bold;">${gradeText}</td></tr>`;
+            });
+            let avg = count > 0 ? (total/count).toFixed(1) : '-';
+            html += `<tr style="background:#e8f4fd; font-weight:bold;"><td>Overall Average</td><td style="text-align:center;">${avg}</td><td></td></tr></tbody></table>`;
+            html += `<button class="btn-success btn-full" style="margin-top:10px; font-size:13px; padding:10px;" onclick="window.print()">🖨️ Print Student Mark List</button>`;
+            wrapper.innerHTML = html;
+        } else {
+            let html = `<div class="print-only" style="text-align:center; margin-bottom:15px;"><h2 style="margin:0;">${appData.schoolName || 'Institution'}</h2><h3 style="margin:5px 0;">Class: ${cls.name}</h3><h4 style="margin:0;">Mark List</h4></div><table class="marks-table" style="min-width:400px;"><thead><tr><th width="8%">Roll</th><th width="22%">Name</th>`;
+            cls.exams.forEach(ex => { html += `<th style="text-align:center; color:var(--primary-blue);">${ex}</th>`; });
+            html += '<th style="text-align:center; background:#e8f4fd;">Avg</th></tr></thead><tbody>';
+            let sortedRoster = [...cls.roster].sort((a,b) => a.roll - b.roll);
+            let grades = getGradesFromUI();
+            sortedRoster.forEach(s => {
+                html += `<tr><td>${s.roll}</td><td><strong>${s.name}</strong></td>`;
+                let total = 0; let count = 0;
+                cls.exams.forEach(ex => {
+                    let mark = (s.marks && s.marks[ex]) ? s.marks[ex] : '-';
+                    let gradeStr = '';
+                    if (mark === 'AB') { html += `<td style="text-align:center; color:var(--danger-red); font-weight:bold;">AB</td>`; } 
+                    else if (mark !== '-' && !isNaN(parseFloat(mark))) { total += parseFloat(mark); count++; let g = grades.find(gd => parseFloat(mark) >= gd.min); if(g) gradeStr = ` <br><span style="font-size:9px; font-weight:bold; color:var(--primary-blue);">${g.name}</span>`; html += `<td style="text-align:center;">${mark}${gradeStr}</td>`; } 
+                    else { html += `<td style="text-align:center;">-</td>`; }
+                });
+                let avg = count > 0 ? (total/count).toFixed(1) : '-';
+                let avgGradeStr = '';
+                if (avg !== '-') { let ag = grades.find(gd => parseFloat(avg) >= gd.min); if(ag) avgGradeStr = ` <br><span style="font-size:9px; color:var(--primary-blue);">${ag.name}</span>`; }
+                html += `<td style="text-align:center; font-weight:bold; background:#e8f4fd;">${avg}${avgGradeStr}</td></tr>`;
+            });
+            html += `</tbody></table><button class="btn-success btn-full" style="margin-top:10px; font-size:13px; padding:10px;" onclick="window.print()">🖨️ Print Student Mark List</button>`;
+            wrapper.innerHTML = html;
+        }
+    }
+
+    function sendMarkWA(roll) {
+        if(!currentExam) return alert("Please select an exam first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const s = cls.roster.find(st => st.roll === roll);
+        let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+        if(currentMark === '') return alert("Please enter a mark before sending a message.");
+        if(!s.phone || s.phone.trim() === "") return alert("No phone number saved for this student!");
+        let total = document.getElementById("totalMarkInput").value;
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let statusText = "";
+        if (currentMark === 'AB') { statusText = "Absent"; } 
+        else { statusText = parseFloat(currentMark) >= passThreshold ? "Passed" : "Failed"; }
+        let template = appData.language === 'ml' ? appData.examMsgTemplateMl : appData.examMsgTemplateEn;
+        let text = template.replace(/{name}/g, s.name).replace(/{exam}/g, currentExam).replace(/{mark}/g, currentMark).replace(/{total}/g, total).replace(/{status}/g, statusText);
+        let ct = s.phone.replace(/\D/g, ''); if (ct.length === 10) ct = "91" + ct;
+        window.open(`https://wa.me/${ct}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function sendMarkEmail(roll) {
+        if(!currentExam) return alert("Please select an exam first.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const s = cls.roster.find(st => st.roll === roll);
+        let currentMark = (s.marks && s.marks[currentExam]) ? s.marks[currentExam] : '';
+        if(currentMark === '') return alert("Please enter a mark before sending a message.");
+        if(!s.email || s.email.trim() === "") return alert("No email saved for this student!");
+        let total = document.getElementById("totalMarkInput").value;
+        let passThreshold = parseFloat(document.getElementById("passMarkInput").value) || 0;
+        let statusText = "";
+        if (currentMark === 'AB') { statusText = "Absent"; } 
+        else { statusText = parseFloat(currentMark) >= passThreshold ? "Passed" : "Failed"; }
+        let template = appData.language === 'ml' ? appData.examMsgTemplateMl : appData.examMsgTemplateEn;
+        let body = template.replace(/{name}/g, s.name).replace(/{exam}/g, currentExam).replace(/{mark}/g, currentMark).replace(/{total}/g, total).replace(/{status}/g, statusText);
+        let subject = `Exam Result for ${s.name}: ${currentExam}`;
+        window.location.href = `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    function saveAttendanceData() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return alert("Please create a class first!");
+        const d = document.getElementById('attendance-date-input').value;
+        if (!d) return alert("Select Date!");
+        if (appData.history.find(h => h.classId == cls.id && h.date == d)) return alert("Attendance already saved for this date!");
+        const dayNum = new Date(d).getDay();
+        if (dayNum === 0 || dayNum === 6) {
+            if(!confirm(`Today is ${dayNum === 0 ? 'Sunday' : 'Saturday'}. Are you sure you want to save attendance for a weekend?`)) return;
+        }
+        let p = 0;
+        const recs = cls.roster.map((s, idx) => {
+            const st = document.getElementById(`status-val-${idx}`).value;
+            if (st === 'Present') p++; 
+            return { roll: s.roll, name: s.name, status: st, phone: s.phone, email: s.email };
+        });
+        appData.history.unshift({ id: Date.now(), date: d, className: cls.name, classId: cls.id, total: cls.roster.length, present: p, absent: cls.roster.length-p, students: recs });
+        persistData(); alert("Attendance Saved!");
+    }
+
+    function renderHistoryView() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        const cont = document.getElementById('history-display-container');
+        if(!cls) { cont.innerHTML = "No class selected."; return; }
+        const filtered = appData.history.filter(h => h.classId == cls.id);
+        cont.innerHTML = filtered.length ? filtered.map(h => {
+            const aL = h.students.filter(s => s.status === 'Absent');
+            const lL = h.students.filter(s => s.status === 'Leave');
+            const pL = h.students.filter(s => s.status === 'Present');
+            return `
+            <div class="history-card">
+                <b>📅 ${h.date}</b> - P: ${h.present} A/L: ${h.absent}
+                <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-primary" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; flex:1; justify-content:center;" onclick="bulkWhatsApp(${h.id})">${waIconHTML} Message All Absentees</button>
+                    <button class="btn-success" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; flex:1; justify-content:center;" onclick="exportDailyHistoryCSV(${h.id})">📥 Download CSV</button>
+                    <button class="btn-info" style="font-size:10px; padding:6px 10px; display:inline-flex; align-items:center; width:100%; justify-content:center; margin-top:4px;" onclick="openNoteModal(${h.id})">📝 Send Custom Note</button>
+                </div>
+                <details style="margin-top:10px; font-size:12px;">
+                    <summary style="cursor:pointer; color:var(--primary-blue)">View Full Details</summary>
+                    <div style="font-weight:bold; margin-top:10px; color:red;">Absents:</div>
+                    ${aL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><div><button class="msg-btn" style="background:#25D366" onclick="smartMessage(${s.roll},'${h.date}','wa')">${waIconHTML} WA</button><button class="msg-btn" style="background:#EA4335" onclick="smartMessage(${s.roll},'${h.date}','mail')">${mailIconHTML} Mail</button></div></div>`).join('')}
+                    ${lL.length > 0 ? `<div style="font-weight:bold; margin-top:10px; color:var(--warning-orange);">On Leave:</div>
+                    ${lL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>Leave</b></div>`).join('')}` : ''}
+                    <div style="font-weight:bold; margin-top:10px; color:green;">Present:</div>
+                    ${pL.map(s => `<div class="student-list-row"><span>${s.roll}. ${s.name}</span><b>${s.status}</b></div>`).join('')}
+                </details>
+            </div>`}).join('') : "No History.";
+    }
+
+    // --- Custom Note Logic ---
+    function openNoteModal(hId) {
+        const entry = appData.history.find(h => h.id === hId);
+        if (!entry) return;
+        const select = document.getElementById('note-student-select');
+        select.innerHTML = entry.students.map(s => `<option value="${s.roll}">${s.roll}. ${s.name}</option>`).join('');
+        document.getElementById('custom-note-modal').style.display = 'flex';
+    }
+    
+    function closeNoteModal() {
+        document.getElementById('custom-note-modal').style.display = 'none';
+    }
+    
+    function sendCustomNote() {
+        const roll = document.getElementById('note-student-select').value;
+        const msg = document.getElementById('note-message-text').value;
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const student = cls.roster.find(s => s.roll == roll);
+        if (!student || (!student.phone && !student.email)) return alert("No contact information saved for this student!");
+        
+        if (student.phone) {
+            let ct = student.phone.replace(/\D/g, ''); 
+            if (ct.length === 10) ct = "91" + ct;
+            window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+        } else {
+            window.location.href = `mailto:${student.email}?subject=Message from Teacher&body=${encodeURIComponent(msg)}`;
+        }
+        closeNoteModal();
+    }
+
+    function exportDailyHistoryCSV(hId) {
+        const entry = appData.history.find(h => h.id === hId);
+        if (!entry) return alert("History entry not found.");
+        
+        let csv = `Class,${entry.className}\nDate,${entry.date}\nTotal Students,${entry.total}\nPresent,${entry.present}\nAbsent/Leave,${entry.absent}\n\n`;
+        csv += "Roll No,Name,Status\n";
+        
+        let sortedStudents = [...entry.students].sort((a,b) => a.roll - b.roll);
+        
+        sortedStudents.forEach(s => {
+            let safeName = s.name ? s.name.replace(/,/g, ' ') : '';
+            csv += `${s.roll},${safeName},${s.status}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); 
+        link.href = URL.createObjectURL(blob); 
+        link.download = `Daily_Attendance_${entry.className.replace(/ /g, '_')}_${entry.date}.csv`; 
+        link.click();
+    }
+
+    function smartMessage(roll, date, type) {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        const student = cls.roster.find(s => s.roll == roll);
+        if (!student) return alert("Student not found in roster!");
+        let target = (type === 'wa') ? student.phone : student.email;
+        if (!target || target.trim() === "") return alert(`No ${type === 'wa' ? 'WhatsApp number' : 'email'} saved for Roll ${roll} in Settings!`);
+        let ct = target.replace(/\D/g, ''); if (type === 'wa' && ct.length === 10) ct = "91" + ct;
+        let template = appData.language === 'ml' ? appData.msgTemplateMl : appData.msgTemplateEn;
+        let msg = template.replace(/{name}/g, student.name).replace(/{roll}/g, roll).replace(/{date}/g, date).replace(/{school}/g, appData.schoolName);
+        if (type === 'wa') window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+        else window.location.href = `mailto:${target}?subject=Absence Notification&body=${encodeURIComponent(msg)}`;
+    }
+
+    function bulkWhatsApp(hId) {
+        const entry = appData.history.find(h => h.id === hId);
+        const absents = entry.students.filter(s => s.status === 'Absent');
+        if (!absents.length) return alert("No absentees found!");
+        absents.forEach((s, idx) => setTimeout(() => smartMessage(s.roll, entry.date, 'wa'), idx * 1200));
+    }
+
+    function setupMonthPicker() {
+        const p = document.getElementById('report-month-picker');
+        const dates = [...new Set(appData.history.map(h => h.date.substring(0, 7)))].sort().reverse();
+        p.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('') || "<option>No Data</option>";
+    }
+
+    function refreshReportsView() {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) { document.getElementById('reports-display-container').innerHTML = ""; document.getElementById('trend-analysis').innerText = "No class selected."; return; }
+        let stats = {}; cls.roster.forEach(st => stats[st.roll] = { name: st.name, present: 0, absent: 0, leave: 0, total: 0 });
+        const history = appData.history.filter(h => h.classId == cls.id);
+        history.forEach(day => { day.students.forEach(r => { if (stats[r.roll]) { stats[r.roll].total++; if (r.status === 'Present') stats[r.roll].present++; else if (r.status === 'Absent') stats[r.roll].absent++; else if (r.status === 'Leave') stats[r.roll].leave++; } }); });
+        const dayMap = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        let dayCounts = [0,0,0,0,0,0,0];
+        history.forEach(h => { dayCounts[new Date(h.date).getDay()] += h.absent; });
+        const peakDay = dayMap[dayCounts.indexOf(Math.max(...dayCounts))];
+        document.getElementById('trend-analysis').innerText = history.length ? `Trend: Most Absences on ${peakDay}s` : "No trends available.";
+        document.getElementById('reports-display-container').innerHTML = Object.keys(stats).map(roll => {
+            const s = stats[roll];
+            const activePresent = s.present; 
+            const per = s.total ? Math.round((activePresent / s.total) * 100) : 0;
+            const isDanger = per < 75 && s.total > 0;
+            return `<div class="report-card ${isDanger ? 'danger-zone' : ''}">
+                ${per === 100 && s.total > 0 ? '<span class="badge-100">🌟 TOP</span>' : ''}
+                <b>${roll}. ${s.name}</b>
+                <div class="report-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-box">P: ${activePresent}</div>
+                    <div class="stat-box">A/L: ${s.absent + s.leave}</div>
+                    <div class="stat-box" style="color:${isDanger?'red':''}">${per}%</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function sendAttendanceToHM() {
+        const m = document.getElementById('report-month-picker').value;
+        if(!m) return alert("No month selected or no data available.");
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if (!cls) return;
+        if (!appData.hmPhone || appData.hmPhone.trim() === "") return alert("Please set the Headmaster's WhatsApp number in Settings > Edit Institution.");
+        const stats = getStats(m);
+        let shortageList = [];
+        Object.keys(stats).sort((a,b)=>a-b).forEach(r => {
+            const s = stats[r];
+            if(s.t > 0) { const activePresent = s.p; const per = Math.round((activePresent / s.t) * 100); if (per < 75) shortageList.push(`${r}. ${s.name} - ${per}%`); }
+        });
+        let msg = `*Attendance Shortage Alert*\n*Class:* ${cls.name}\n*Month:* ${m}\n\n`;
+        if (shortageList.length > 0) { msg += `*Students below 75%:\n*` + shortageList.join('\n'); } 
+        else { msg += `*All students have 75% or above attendance!* ✅`; }
+        let ct = appData.hmPhone.replace(/\D/g, ''); if (ct.length === 10) ct = "91" + ct;
+        window.open(`https://wa.me/${ct}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function exportReportToCSV() {
+        const m = document.getElementById('report-month-picker').value, cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return;
+        let csv = `Class,${cls.name}\nMonth,${m}\n\n`;
+        csv += "Roll No,Name,Present,Absent,Leave,Total Days,Percentage\n";
+        const stats = getStats(m);
+        Object.keys(stats).sort((a,b)=>a-b).forEach(r => { const s = stats[r]; csv += `${r},${s.name},${s.p},${s.a},${s.l},${s.t},${s.t?Math.round((s.p/s.t)*100):0}%\n`; });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Attendance_${cls.name}_${m}.csv`; link.click();
+    }
+
+    function getStats(month) {
+        const cls = appData.classes.find(c => c.id == appData.activeClassId);
+        if(!cls) return {};
+        let s = {}; cls.roster.forEach(st => s[st.roll] = { name: st.name, p: 0, a:0, l:0, t: 0 });
+        appData.history.filter(h => h.classId == cls.id && h.date.startsWith(month)).forEach(day => { day.students.forEach(r => { if (s[r.roll]) { s[r.roll].t++; if (r.status === 'Present') s[r.roll].p++; else if (r.status === 'Absent') s[r.roll].a++; else if (r.status === 'Leave') s[r.roll].l++; } }); });
+        return s;
+    }
+
+    /* --- TRASH BIN LOGIC --- */
+    function removeStudent(idx) { 
+        if(confirm("Delete student? Don't worry, they will go to the Trash bin if you need them back.")) { 
+            const cls = appData.classes.find(c => c.id == appData.activeClassId); 
+            const deletedStudent = cls.roster.splice(idx,1)[0]; 
+            appData.trash.students.push({ classId: cls.id, className: cls.name, student: deletedStudent, deletedAt: new Date().toLocaleString() });
+            persistData(); 
+            refreshViews(); 
+        } 
+    }
+
+    function removeClass(id) { 
+        if(confirm("Delete class? Don't worry, it will go to the Trash bin if you need it back.")) { 
+            const clsToDelete = appData.classes.find(c => c.id == id);
+            if (clsToDelete) {
+                appData.trash.classes.push({ class: clsToDelete, deletedAt: new Date().toLocaleString() });
+            }
+            appData.history = appData.history.filter(h => h.classId != id); 
+            appData.classes = appData.classes.filter(c => c.id != id); 
+            appData.activeClassId = appData.classes.length > 0 ? appData.classes[0].id : null; 
+            persistData(); 
+            refreshViews(); 
+        } 
+    }
+
+    function wipeHistoryForCurrentClass() { if(!appData.activeClassId) return alert("No class selected!"); if(confirm("Delete all history for this class?")) { appData.history = appData.history.filter(h => h.classId != appData.activeClassId); persistData(); renderHistoryView(); } }
+
+    function renderTrashView() {
+        let html = '<h4 style="margin-top:0;">Deleted Classes</h4>';
+        if (appData.trash.classes.length === 0) html += '<p style="font-size:12px; color:var(--text-secondary);">No classes in trash.</p>';
+        appData.trash.classes.forEach((tc, idx) => {
+            html += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:8px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:8px;">
+                <div><b style="font-size:13px;">${tc.class.name}</b><br><span style="font-size:10px; color:var(--text-secondary);">${tc.deletedAt}</span></div>
+                <button class="btn-success" style="padding:4px 8px; font-size:11px;" onclick="restoreClass(${idx})">Restore</button>
+            </div>`;
+        });
+
+        html += '<h4 style="margin-top:15px;">Deleted Students</h4>';
+        if (appData.trash.students.length === 0) html += '<p style="font-size:12px; color:var(--text-secondary);">No students in trash.</p>';
+        appData.trash.students.forEach((ts, idx) => {
+            html += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:8px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:8px;">
+                <div><b style="font-size:13px;">${ts.student.name} (Roll: ${ts.student.roll})</b><br><span style="font-size:10px; color:var(--text-secondary);">From: ${ts.className} | ${ts.deletedAt}</span></div>
+                <button class="btn-success" style="padding:4px 8px; font-size:11px;" onclick="restoreStudent(${idx})">Restore</button>
+            </div>`;
+        });
+        document.getElementById('trash-list-management').innerHTML = html;
+    }
+
+    function restoreClass(idx) {
+        const tc = appData.trash.classes.splice(idx, 1)[0];
+        appData.classes.push(tc.class);
+        persistData(); refreshViews(); renderTrashView(); alert("Class restored!");
+    }
+
+    function restoreStudent(idx) {
+        const ts = appData.trash.students[idx];
+        const cls = appData.classes.find(c => c.id == ts.classId);
+        if (!cls) {
+            alert("Cannot restore. The class '" + ts.className + "' does not exist. Please restore the class first.");
+            return;
+        }
+        appData.trash.students.splice(idx, 1);
+        cls.roster.push(ts.student);
+        persistData(); refreshViews(); renderTrashView(); alert("Student restored!");
+    }
+
+    function factoryResetApp() {
+        const currentSchool = appData.schoolName;
+        const confirmation = prompt(`⚠️ WARNING: This will delete ALL classes, students, and history permanently.\n\nTo confirm, type your institution name exactly as shown:\n"${currentSchool}"`);
+        if (confirmation === currentSchool) {
+            localStorage.clear();
+            alert("App has been successfully reset to factory defaults."); location.reload();
+        } else if (confirmation !== null) { alert("Institution name did not match. Reset cancelled."); }
+    }
+
+    /* --- INTRO VIDEO LOGIC --- */
+    function closeVideoIntro() {
+        document.getElementById('video-intro-overlay').style.display = 'none';
+        localStorage.setItem('pro_video_seen', 'true');
+    }
+    if (!localStorage.getItem('pro_video_seen')) {
+        document.getElementById('video-intro-overlay').style.display = 'flex';
+    }
+
+    /* --- CLOUD SYNC (SMART MERGE) LOGIC --- */
+    async function performSmartSync(isAuto = false) {
+        const syncId = appData.syncId;
+        const syncPin = appData.syncPin;
+        const docRef = db.collection("persistent_sync").doc(syncId);
+        const btn = document.activeElement;
+        let originalText = "🔄 Sync Data Now";
+        
+        if (!isAuto && btn && btn.innerText.includes("Sync")) {
+            originalText = btn.innerText;
+            btn.innerText = "Syncing... Please wait";
+        }
+
+        try {
+            const docSnap = await docRef.get();
+            let localData = JSON.parse(localStorage.getItem("pro_attendance_data")) || appData; 
+
+            if (!localData.connectedDevices) localData.connectedDevices = [];
+            let myProf = (localData.userName || "Unknown") + (localData.userRole ? ` (${localData.userRole})` : "");
+            if (myProf.trim() && !localData.connectedDevices.includes(myProf)) {
+                localData.connectedDevices.push(myProf);
+            }
+
+            if (docSnap.exists) {
+                const cloudRecord = docSnap.data();
+                if (cloudRecord.pin !== syncPin) {
+                    if (!isAuto) alert("❌ Authentication Error: The PIN for this Sync ID does not match.");
+                    if (!isAuto && btn && btn.innerText.includes("Syncing")) btn.innerText = originalText;
+                    return;
+                }
+                
+                const cloudData = JSON.parse(cloudRecord.payload);
+                
+                if(cloudData.connectedDevices) {
+                    localData.connectedDevices = [...new Set([...localData.connectedDevices, ...cloudData.connectedDevices])];
+                }
+                
+                if(cloudData.classes) {
+                    cloudData.classes.forEach(cloudClass => {
+                        let localClass = localData.classes.find(c => c.name.toLowerCase().trim() === cloudClass.name.toLowerCase().trim());
+                        if (!localClass) {
+                            localData.classes.push(cloudClass);
+                        } else {
+                            if(cloudClass.exams) localClass.exams = [...new Set([...(localClass.exams||[]), ...cloudClass.exams])];
+                            cloudClass.roster.forEach(cloudStudent => {
+                                let localStudent = localClass.roster.find(s => s.roll === cloudStudent.roll || s.name.toLowerCase() === cloudStudent.name.toLowerCase());
+                                if (!localStudent) {
+                                    localClass.roster.push(cloudStudent);
+                                } else {
+                                    if (!localStudent.phone && cloudStudent.phone) localStudent.phone = cloudStudent.phone;
+                                    if (!localStudent.email && cloudStudent.email) localStudent.email = cloudStudent.email;
+                                    
+                                    if(!localStudent.marks) localStudent.marks = {};
+                                    Object.keys(localStudent.marks).forEach(k => { if(localStudent.marks[k] === "") delete localStudent.marks[k]; });
+                                    if(cloudStudent.marks) {
+                                        Object.keys(cloudStudent.marks).forEach(k => { if(cloudStudent.marks[k] === "") delete cloudStudent.marks[k]; });
+                                        localStudent.marks = { ...cloudStudent.marks, ...localStudent.marks };
+                                    }
+                                    
+                                    if(!localStudent.assignments) localStudent.assignments = {};
+                                    if(cloudStudent.assignments) {
+                                        localStudent.assignments = { ...cloudStudent.assignments, ...localStudent.assignments };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if(cloudData.history) {
+                    const combinedHistory = [...localData.history, ...cloudData.history];
+                    const uniqueHistory = [];
+                    const historyMap = new Set();
+                    combinedHistory.sort((a,b) => b.id - a.id).forEach(entry => {
+                        const className = entry.className || "";
+                        const key = className.toLowerCase() + "_" + entry.date;
+                        if (!historyMap.has(key)) {
+                            historyMap.add(key);
+                            uniqueHistory.push(entry);
+                        }
+                    });
+                    localData.history = uniqueHistory;
+                }
+                
+                if(cloudData.trash) {
+                    if(!localData.trash) localData.trash = {students:[], classes:[]};
+                    if(cloudData.trash.students) localData.trash.students = [...cloudData.trash.students];
+                    if(cloudData.trash.classes) localData.trash.classes = [...cloudData.trash.classes];
+                }
+            }
+
+            await docRef.set({
+                pin: syncPin,
+                userName: localData.userName || "",
+                userRole: localData.userRole || "",
+                payload: JSON.stringify(localData),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            localStorage.setItem("pro_attendance_data", JSON.stringify(localData));
+            appData = localData; 
+            
+            if (!isAuto) {
+                alert("✅ Smart Sync Complete! Classes, students, and marks have been securely merged.");
+                location.reload(); 
+            } else {
+                refreshViews(); 
+                if (document.getElementById('setup-tab-sync') && !document.getElementById('setup-tab-sync').classList.contains('hidden')) {
+                    updateConnectedDevicesUI();
+                }
+            }
+
+        } catch (error) {
+            console.error("Sync Error:", error);
+            if (!isAuto) alert("Failed to sync. Check your internet connection.");
+            if (!isAuto && btn && btn.innerText.includes("Syncing")) btn.innerText = originalText;
+        }
+    }
+
+    async function linkCoTeacherAccount() {
+        let idInput = document.getElementById('link-sync-id').value.replace(/[^0-9]/g, '');
+        let pinInput = document.getElementById('link-sync-pin').value.replace(/[^0-9]/g, '');
+
+        if (idInput.length !== 9) return alert("Please enter a valid 9-digit Sync ID.");
+        if (!pinInput) return alert("Please enter the PIN.");
+
+        if (!confirm("⚠️ This will permanently link your app to this Sync ID and perform a Smart Merge. Continue?")) return;
+
+        try {
+            const docRef = db.collection("persistent_sync").doc(idInput);
+            const docSnap = await docRef.get();
+
+            if (docSnap.exists) {
+                if (docSnap.data().pin !== pinInput) {
+                    return alert("❌ Incorrect PIN for this Sync ID.");
+                }
+            } else {
+                return alert("❌ Account not found. Ensure the original Master account has clicked 'Sync Data Now' at least once.");
+            }
+
+            appData.syncId = idInput;
+            appData.syncPin = pinInput;
+            
+            let masterName = docSnap.data().userName || "Co-Teacher";
+            let masterRole = docSnap.data().userRole || "";
+            appData.linkedToName = masterName + (masterRole ? ` (${masterRole})` : "");
+            
+            persistData();
+            await performSmartSync(false);
+
+        } catch (error) {
+            console.error(error);
+            alert("Failed to verify account. Check internet connection.");
+        }
+    }
+
+    /* --- SCROLL HINT ARROW MODULE --- */
+    (function() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes bounceDown { 0%, 100% { transform: translateY(0) translateX(-50%); } 50% { transform: translateY(10px) translateX(-50%); } }
+            #scroll-hint { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--primary-blue); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: bold; box-shadow: 0 8px 25px rgba(0,0,0,0.4); z-index: 10006; display: none; flex-direction: column; align-items: center; cursor: pointer; animation: bounceDown 1.5s infinite; border: 2px solid white; text-align: center; }
+        `;
+        document.head.appendChild(style);
+        const hintBtn = document.createElement('div');
+        hintBtn.id = 'scroll-hint';
+        hintBtn.innerHTML = 'Scroll down to enter marks <span style="font-size: 20px; margin-top: 5px;">⬇️</span>';
+        hintBtn.onclick = () => { stopCycle(); document.querySelector('.marks-table').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+        document.body.appendChild(hintBtn);
+        let cycleInterval = null, hideTimeout = null, isCycling = false;
+        function stopCycle() { isCycling = false; clearInterval(cycleInterval); clearTimeout(hideTimeout); hintBtn.style.display = 'none'; }
+        function startCycle() {
+            if (isCycling) return;
+            isCycling = true;
+            function runCycle() { hintBtn.style.display = 'flex'; hideTimeout = setTimeout(() => { hintBtn.style.display = 'none'; }, 3000); }
+            runCycle();
+            cycleInterval = setInterval(runCycle, 8000);
+        }
+        function checkScroll() {
+            const marksPage = document.getElementById('marks-page');
+            if (!marksPage || marksPage.classList.contains('hidden') || !currentExam) { stopCycle(); return; }
+            const cls = appData.classes.find(c => c.id == appData.activeClassId);
+            if (cls) { const hasMarks = cls.roster.some(s => s.marks && s.marks[currentExam] && s.marks[currentExam] !== ""); if (hasMarks) { stopCycle(); return; } }
+            if (window.scrollY > 60) { stopCycle(); return; }
+            const table = document.querySelector('.marks-table');
+            if (table) { const rect = table.getBoundingClientRect(); if (rect.top > window.innerHeight - 150) { startCycle(); } else { stopCycle(); } }
+        }
+        window.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+        window.addEventListener('click', () => setTimeout(checkScroll, 100));
+    })();
+
+   /* --- EXTENDED USER MANUAL GENERATOR --- */
+    function printUserManual() {
+        const manualContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Attendance Taker Pro - Comprehensive Manual</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 850px; margin: 0 auto; padding: 20px; padding-top: 80px; }
+                h1 { color: #0056b3; border-bottom: 3px solid #eee; padding-bottom: 10px; margin-bottom: 5px; }
+                h2 { color: #17a2b8; margin-top: 35px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                h3 { color: #1c1e21; margin-top: 25px; }
+                p { margin-bottom: 15px; }
+                .box { background: #e8f4fd; border-left: 4px solid #0056b3; padding: 15px; margin: 20px 0; border-radius: 4px; }
+                .box-warning { background: #fff8e5; border-left: 4px solid #f39c12; }
+                ul, ol { margin-top: 5px; margin-bottom: 20px; padding-left: 25px; }
+                li { margin-bottom: 8px; }
+                code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #d63384; }
+                
+                /* Fixed Navigation Header Actions */
+                .manual-actions-bar {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: #ffffff;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    padding: 12px 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    z-index: 10000;
+                }
+                .manual-btn {
+                    padding: 10px 18px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    transition: background 0.2s;
+                }
+                .btn-back { background: #606770; color: white; }
+                .btn-back:hover { background: #4a4f55; }
+                .btn-print { background: #0056b3; color: white; }
+                .btn-print:hover { background: #004085; }
+
+                /* Prevent action tools from printing on paper/PDF */
+                @media print {
+                    .manual-actions-bar { display: none !important; }
+                    body { padding-top: 0px !important; }
+                    .page-break { page-break-before: always; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="manual-actions-bar">
+                <button class="manual-btn btn-back" onclick="window.close();">⬅️ Close</button>
+                <button class="manual-btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 40px; padding-top: 20px;">
+                <h1 style="border: none; font-size: 2.8em; margin-bottom: 5px;">Attendance Taker Pro</h1>
+                <h3 style="color: #666; margin-top: 0; font-size: 1.4em;">Ultimate Teacher Edition - User Manual</h3>
+                <p style="color: #888; font-size: 0.9em;">Created by Madhav Krishna RS</p>
+            </div>
+            
+            <div class="box">
+                <strong>Welcome!</strong> This application is a fully offline-capable, highly secure tool designed to simplify attendance tracking, grading, and automated reporting for modern educators. Because it uses local storage, your data stays 100% private and secure on your device, with powerful Cloud Syncing available for team collaboration.
+            </div>
+
+            <h2>Table of Contents</h2>
+            <ol>
+                <li><a href="#setup">Initial Setup & Profile</a></li>
+                <li><a href="#managing">Managing Classes & Students (PDF/CSV Import)</a></li>
+                <li><a href="#attendance">Taking Daily Attendance</a></li>
+                <li><a href="#marks">Marks, Exams, Assignments & Grading</a></li>
+                <li><a href="#reports">Reports, History, Notes & Trash Recovery</a></li>
+                <li><a href="#sync">Co-Teacher Cloud Sync (Smart Merge)</a></li>
+            </ol>
+
+            <h2 id="setup" class="page-break">1. Initial Setup & Profile</h2>
+            <p>When you open the app for the first time, you must configure your primary details in the <b>Institution Setup</b> page.</p>
+            <ul>
+                <li><b>Profile & Role:</b> Enter your Name and select your Role (Teacher or Head/Principal). If you select "Head", the app automatically adjusts message signatures (changing "Class Teacher" to "Headmaster") and removes redundant phone number fields.</li>
+                <li><b>WhatsApp Integration:</b> Provide the Headmaster's WhatsApp number (including country code, e.g., <code>919876543210</code>). This allows you to send bulk, formatted reports with a single click.</li>
+                <li><b>Custom Templates:</b> The app supports English and Malayalam. You can customize the exact text sent to parents. The app uses "Smart Tags" to personalize messages. Use <code>{name}</code>, <code>{roll}</code>, <code>{date}</code>, and <code>{school}</code> in your templates, and the app will automatically inject the correct student data before sending!</li>
+            </ul>
+
+            <h2 id="managing">2. Managing Classes & Students</h2>
+            <p>Your digital gradebook is organized by Classes. You can navigate to <b>⚙️ Settings > Classes</b> to create as many classes as you need.</p>
+            
+            <h3>Adding Students</h3>
+            <p>Under the <b>Students</b> tab in Settings, you can add students one-by-one by entering their Roll Number, Name, Phone, and Parent Email. However, for large classes, the app includes powerful bulk import tools:</p>
+            
+            <ul>
+                <li><b>CSV Import:</b> Download the provided template, fill it using Excel or Google Sheets, and upload it. The app maps the columns automatically.</li>
+                <li><b>PDF Import Engine:</b> You can upload a standard text-based PDF containing your student list. The app scans the document, identifies rows starting with a Roll Number, extracts the student's name, and intelligently searches for phone numbers and email addresses in the text. <i>(Note: This requires a digital text PDF, not a photographed image of a piece of paper).</i></li>
+            </ul>
+
+            <h2 id="attendance" class="page-break">3. Taking Daily Attendance</h2>
+            <p>The Home screen is engineered for speed.</p>
+            <ol>
+                <li>Select your Class from the top dropdown and pick the current Date.</li>
+                <li>By default, all students are marked <b>P</b> (Present).</li>
+                <li>If a student is missing, tap <b>A</b> (Absent). This reveals a sub-menu allowing you to categorize the absence as an unexcused <b>Absent</b> or an approved <b>Leave</b>.</li>
+                <li>Click <b>Save Attendance Record</b>. The data is instantly written to your device's local database.</li>
+            </ol>
+
+            <h2 id="marks">4. Marks, Exams, Assignments & Grading</h2>
+            <p>Switching to the <b>📝 Marks</b> tab opens your digital grading book.</p>
+            
+            <h3>Creating Exams & Grading Scales</h3>
+            <p>Click <b>+ Create New Exam</b> to define an exam. You can set the Maximum Marks and Pass Mark threshold. You can also define your own Grading Scale (e.g., A = 90, B = 80). The app automatically calculates grades and Pass/Fail statuses as you type in student scores.</p>
+
+            <h3>Assignment Tracking</h3>
+            <p>Next to the exam grades, you will see an <b>"Assign."</b> column. Use this toggle to quickly mark whether a student has handed in the relevant assignment. It switches instantly between <i>Done</i> (Green) and <i>None</i> (Grey).</p>
+
+            <h3>Parent Communication & Batch Report Cards</h3>
+            <p>Every student row features a WhatsApp and Email button to instantly send individual result cards. However, if you need physical copies for a Parent-Teacher meeting, click the blue <b>🖨️ Print Batch Report Cards</b> button. This powerful tool instantly generates a beautifully formatted, half-page formal report card for every single student in the class, ready to print on A4 paper!</p>
+
+            <h2 id="reports" class="page-break">5. Reports, History, Notes & Trash Recovery</h2>
+            <p>The app keeps detailed analytics to help you monitor long-term trends.</p>
+
+            <h3>History Tab & Custom Notes</h3>
+            <p>Here you can view exactly who was present or absent on any historical date. A powerful <b>Message All Absentees</b> button allows you to queue up WhatsApp messages for every missing student from that day. <i>Note: Students marked as "Leave" are excluded from this automated message blast.</i></p>
+            <p>You can also click <b>📝 Send Custom Note</b> inside any history card to manually select a student and send an editable, direct message to their parents regarding their performance.</p>
+
+            <h3>Reports Tab</h3>
+            <p>This generates an All-Time Class Matrix. It calculates the overall attendance percentage for every student. Any student falling below 75% attendance is visually flagged in red. You can download monthly CSV summaries or send a "Shortage Alert" directly to the Headmaster.</p>
+
+            <h3>The Trash Bin</h3>
+            <p>Deleted a student or a class by accident? Don't panic. Under <b>⚙️ Settings > 🗑️ Trash</b>, the app maintains a secure recycle bin. You can restore deleted classes (and all their history) or deleted students with a single click.</p>
+
+            <h2 id="sync" class="page-break">6. Co-Teacher Cloud Sync (Smart Merge)</h2>
+            <p>While the app runs 100% offline, the Cloud Sync feature allows you to build a secure "Classroom Network" linking multiple phones, tablets, or laptops.</p>
+            
+            <div class="box">
+                <strong>How Smart Merge Works:</strong> Unlike basic cloud apps that overwrite data, Attendance Taker Pro uses "Smart Merge". It reads the names of your classes and students. If you take attendance for 10A, and your co-teacher grades an exam for 10B, clicking Sync will perfectly stitch both datasets together without deleting anyone's work!
+            </div>
+
+            <h3>How to Link Devices</h3>
+            <ol>
+                <li><b>The Master Device:</b> Go to <b>⚙️ Settings > ☁️ Sync</b> to find your permanent 9-Digit Account ID and PIN. <i>You must click <b>🔄 Sync Data Now</b> on this device first to establish the cloud locker.</i></li>
+                <li><b>Linking Others:</b> On a co-teacher's phone, navigate to the same menu, enter the Master ID and PIN, and click <b>🔗 Link & Merge Devices</b>.</li>
+                <li><b>Managing Network:</b> You will see a "Connected Devices" list showing everyone currently participating in your network. You can click <b>Remove</b> next to any device name to easily kick old devices off the network.</li>
+            </ol>
+
+            <h3>Syncing Data</h3>
+            <p>The app runs a silent <b>Auto-Sync every 30 minutes</b> in the background to ensure data isn't lost. However, if you want immediate updates (e.g., right after taking morning attendance), simply open Settings and click <b>🔄 Sync Data Now</b>. Tell your team: <i>"Click Sync before you work to get updates, and click Sync when you finish to share your work!"</i></p>
+
+        </body>
+        </html>`;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(manualContent);
+        printWindow.document.close();
+        printWindow.focus();
+    }
+    
+    // Ensure DOM is fully loaded before launching the view handlers
+    document.addEventListener("DOMContentLoaded", function() {
+        initApp();
+        
+        // --- AUTO SYNC TIMER (Every 30 Minutes) ---
+        setInterval(() => {
+            if (appData.isSetupComplete && appData.syncId) {
+                console.log("Running background auto-sync...");
+                performSmartSync(true); 
+            }
+        }, 30 * 60 * 1000); 
+    });
 </script>
 </body>
 </html>
