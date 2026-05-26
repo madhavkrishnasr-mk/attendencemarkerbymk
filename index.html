@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Make it Karnatic</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,50 +14,58 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
+      height: -webkit-fill-available;
       width: 100vw;
       overflow: hidden;
     }
 
+    html {
+      height: -webkit-fill-available;
+    }
+
     header {
       background-color: #1a1a1e;
-      padding: 12px 25px;
+      padding: 10px 15px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
       border-bottom: 1px solid #29292e;
-      height: 60px;
+      height: auto;
+      min-height: 60px;
       z-index: 10;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
-    .logo-container { display: flex; align-items: center; gap: 15px; }
-    .logo { font-size: 20px; font-weight: bold; color: #00adb5; }
+    .logo-container { display: flex; align-items: center; gap: 10px; }
+    .logo { font-size: 18px; font-weight: bold; color: #00adb5; white-space: nowrap; }
 
     .sidebar-toggle {
       background: #202024; border: 1px solid #29292e; color: #e1e1e6;
-      padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
     }
 
-    .search-bar { display: flex; gap: 10px; width: 35%; max-width: 450px; }
+    .search-bar { display: flex; gap: 8px; flex: 1; min-width: 200px; max-width: 450px; order: 3; width: 100%; }
     .search-bar input {
       flex: 1; background-color: #202024; border: 1px solid #29292e;
-      padding: 7px 12px; border-radius: 6px; color: #fff; font-size: 13px; outline: none;
+      padding: 7px 12px; border-radius: 6px; color: #fff; font-size: 13px; outline: none; min-width: 0;
     }
     .search-bar button {
       background-color: #00adb5; color: #fff; border: none;
-      padding: 7px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;
+      padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap;
     }
 
-    .header-controls { display: flex; align-items: center; gap: 15px; }
+    .header-controls { display: flex; align-items: center; gap: 10px; order: 2; }
 
     .mic-btn {
       background: #202024; border: 1px solid #ff4d4d; color: #ff4d4d;
       padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;
-      transition: all 0.2s ease;
+      transition: all 0.2s ease; white-space: nowrap;
     }
     .mic-btn.active { background: #ff4d4d; color: #fff; box-shadow: 0 0 10px rgba(255,77,77,0.4); }
 
-    /* === LAYOUT === */
+    /* === RESPONSIVE LAYOUT === */
     .workspace {
       flex: 1;
       display: grid;
@@ -66,7 +74,6 @@
       transition: grid-template-columns 0.3s cubic-bezier(0.4,0,0.2,1);
       min-height: 0;
     }
-    .workspace.sidebar-closed { grid-template-columns: 0px 1fr; }
 
     .left-panel {
       background-color: #16161a;
@@ -76,10 +83,9 @@
       gap: 10px;
       padding: 12px;
       overflow-y: auto;
-      transition: opacity 0.2s ease;
+      transition: transform 0.3s ease, opacity 0.2s ease;
       min-height: 0;
     }
-    .workspace.sidebar-closed .left-panel { opacity: 0; pointer-events: none; padding: 0; }
 
     .control-box {
       background: #1a1a1e; border-radius: 8px; border: 1px solid #29292e; padding: 12px;
@@ -94,7 +100,7 @@
     .raga-display-card {
       background: #202024; border: 1px solid #29292e; border-radius: 6px; padding: 10px; margin-top: 8px;
     }
-    .raga-notation-line { font-size: 13px; color: #cbd5e1; margin-top: 4px; }
+    .raga-notation-line { font-size: 13px; color: #cbd5e1; margin-top: 4px; word-break: break-all; }
 
     .skill-action-btn {
       background: #00adb5; color: #fff; border: none; padding: 6px 14px;
@@ -112,7 +118,9 @@
       background: #202024; border: 1px solid #29292e; padding: 7px 10px;
       border-radius: 4px; color: #fff; font-size: 13px; outline: none;
     }
-    .creator-buttons { display: flex; gap: 6px; }
+    .creator-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    .creator-buttons button { flex: 1; min-width: 70px; }
+    
     .add-note-btn {
       background: #202024; border: 1px solid #29292e; color: #e1e1e6;
       padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;
@@ -126,7 +134,7 @@
 
     .notes-feed {
       background: #1a1a1e; border-radius: 8px; border: 1px solid #29292e;
-      padding: 12px; display: flex; flex-direction: column; flex: 1; min-height: 120px; overflow: hidden;
+      padding: 12px; display: flex; flex-direction: column; flex: 1; min-height: 150px; overflow: hidden;
     }
     .notes-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; overflow-y: auto; flex: 1; }
     
@@ -136,11 +144,11 @@
       position: relative;
     }
     .note-row:hover { background: #2a2a30; }
-    .song-details-block { display: flex; flex-direction: column; flex: 1; padding-right: 10px; }
-    .song-row-title { font-size: 12px; color: #00adb5; font-weight: bold; margin-bottom: 2px; }
-    .carnatic-notation { font-size: 14px; color: #ffffff; margin-bottom: 3px; }
-    .song-meta-data { font-size: 10px; color: #a5a5b4; display: flex; gap: 8px; flex-wrap: wrap; }
-    .meta-tag { background: #16161a; padding: 2px 6px; border-radius: 3px; border: 1px solid #29292e; }
+    .song-details-block { display: flex; flex-direction: column; flex: 1; padding-right: 10px; min-width: 0; }
+    .song-row-title { font-size: 12px; color: #00adb5; font-weight: bold; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .carnatic-notation { font-size: 14px; color: #ffffff; margin-bottom: 3px; word-break: break-all; }
+    .song-meta-data { font-size: 10px; color: #a5a5b4; display: flex; gap: 6px; flex-wrap: wrap; }
+    .meta-tag { background: #16161a; padding: 2px 6px; border-radius: 3px; border: 1px solid #29292e; white-space: nowrap; }
     
     .remove-song-btn {
       background: transparent; border: none; color: #ff4d4d; font-size: 18px; cursor: pointer;
@@ -154,21 +162,21 @@
       display: flex; flex-direction: column; width: 100%; min-height: 0;
     }
     .visualizer-header {
-      padding: 8px 20px; background-color: #16161a; border-bottom: 1px solid #29292e;
+      padding: 8px 15px; background-color: #16161a; border-bottom: 1px solid #29292e;
       font-size: 13px; color: #e1e1e6; display: flex; justify-content: space-between; align-items: center;
       height: 42px; flex-shrink: 0;
     }
-    .controls-group { display: flex; align-items: center; gap: 12px; }
+    .controls-group { display: flex; align-items: center; gap: 8px; }
     .summary-btn {
       background: #202024; border: 1px solid #ff9f43; color: #ff9f43;
-      padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;
+      padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;
     }
 
     #visualizerCanvas { flex: 1; width: 100%; display: block; }
 
     .summary-overlay {
-      position: absolute; top: 52px; right: 20px; background: #1a1a1e;
-      border: 1px solid #ff9f43; border-radius: 8px; padding: 15px; width: 260px;
+      position: absolute; top: 52px; right: 15px; background: #1a1a1e;
+      border: 1px solid #ff9f43; border-radius: 8px; padding: 15px; width: 240px;
       z-index: 20; box-shadow: 0 4px 20px rgba(0,0,0,0.6); display: none;
     }
 
@@ -186,29 +194,31 @@
     }
     @keyframes spinRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* === PIANO (3 Octaves, widened) === */
+    /* === PIANO INTERFACE === */
     .keyboard-container {
-      height: 155px;
+      height: 145px;
       background: #09090a;
       display: flex;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: flex-start;
       border-top: 3px solid #29292e;
       position: relative;
       overflow-x: auto;
+      overflow-y: hidden;
       flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
     }
 
     .piano {
       display: flex;
       position: relative;
-      height: 145px;
+      height: 135px;
       flex-shrink: 0;
     }
 
     .white-key {
-      width: 40px;
-      height: 140px;
+      width: 45px; /* Increased slightly for better mobile thumb-targeting */
+      height: 130px;
       background: linear-gradient(to bottom, #fefefe 0%, #efefef 100%);
       border: 1px solid #aaa;
       border-radius: 0 0 5px 5px;
@@ -221,16 +231,17 @@
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 5px;
+      user-select: none;
     }
     .key-label { font-size: 9px; color: #666; pointer-events: none; }
 
-    .white-key.active { background: linear-gradient(to bottom, #ffd32a, #ffca28) !important; transform: translateY(1px); height: 139px; }
+    .white-key.active { background: linear-gradient(to bottom, #ffd32a, #ffca28) !important; transform: translateY(1px); height: 129px; }
     .white-key.wrong  { background: linear-gradient(to bottom, #ff4d4d, #ff3333) !important; }
     .white-key.hint   { background: linear-gradient(to bottom, #1e272e, #2f3640); border-bottom: 4px solid #00adb5; }
 
     .black-key {
-      width: 24px;
-      height: 90px;
+      width: 26px;
+      height: 82px;
       background: linear-gradient(to bottom, #2c3e50 0%, #000 100%);
       border: 1px solid #000;
       border-radius: 0 0 4px 4px;
@@ -239,15 +250,58 @@
       cursor: pointer;
       top: 0;
       transition: background 0.06s;
+      user-select: none;
     }
     .black-key.active { background: linear-gradient(to bottom, #ffd32a, #e5b810) !important; }
     .black-key.wrong  { background: linear-gradient(to bottom, #cc0000, #990000) !important; }
     .black-key.hint   { background: linear-gradient(to bottom, #000, #1e272e); border-bottom: 3px solid #00adb5; }
 
     #micNoteCapture {
-      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
       background: #1a1a1e; border: 1px solid #29292e; border-radius: 6px;
-      padding: 4px 14px; font-size: 12px; color: #00adb5; z-index: 10; white-space: nowrap;
+      padding: 4px 12px; font-size: 11px; color: #00adb5; z-index: 10; white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* === SCREEN ADAPTATION MEDIA QUERIES === */
+    @media (max-width: 868px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        position: relative;
+      }
+
+      .left-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 5;
+        transform: translateX(0);
+        opacity: 1;
+        border-right: none;
+      }
+
+      .workspace.sidebar-closed .left-panel {
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* When sidebar is closed on mobile, show visualizer panel full screen */
+      .visualizer-panel {
+        grid-row: 1;
+        grid-column: 1;
+      }
+      
+      header {
+        padding: 8px 12px;
+      }
+      
+      .search-bar {
+        max-width: none;
+      }
     }
   </style>
 </head>
@@ -260,22 +314,22 @@
 
 <header>
   <div class="logo-container">
-    <button class="sidebar-toggle" onclick="toggleSidebar()">☰ Toggle Sidebar</button>
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰ Menu</button>
     <div class="logo">Make it Karnatic</div>
   </div>
   <div class="search-bar">
     <input type="text" id="youtubeUrl" placeholder="Paste YouTube link...">
-    <button onclick="loadSong()">Load Link</button>
+    <button onclick="loadSong()">Load</button>
   </div>
   <div class="header-controls">
     <button id="micToggleBtn" class="mic-btn" onclick="toggleMicDetection()">🎙️ Mic: OFF</button>
-    <div style="font-size: 12px; color: #00adb5;" id="pitchDisplay">Pitch: Idle</div>
+    <div style="font-size: 12px; color: #00adb5;" id="pitchDisplay">Idle</div>
   </div>
 </header>
 
 <div class="workspace" id="mainWorkspace">
   <div class="left-panel">
-    <div class="control-box" id="videoContainer" style="min-height:140px; display:flex; align-items:center; justify-content:center; color:#555; font-size:13px;">
+    <div class="control-box" id="videoContainer" style="min-height:90px; display:flex; align-items:center; justify-content:center; color:#555; font-size:13px;">
       YouTube Media Panel
     </div>
 
@@ -287,32 +341,32 @@
         <div class="raga-notation-line"><strong>Aro:</strong> <span id="ragaAroText">സ രി ഗ മ പ ധ നി സ</span></div>
         <div class="raga-notation-line"><strong>Ava:</strong> <span id="ragaAvaText">സ നി ധ പ മ ഗ രി സ</span></div>
       </div>
-      <button class="skill-action-btn" style="width:100%; margin-top:8px; padding:7px;" onclick="playCurrentRagaLibrary()">▶ Launch Raga Stream</button>
+      <button class="skill-action-btn" style="width:100%; margin-top:8px; padding:7px;" onclick="playCurrentRagaLibraryMobile()">▶ Launch Raga Stream</button>
     </div>
 
     <div class="control-box">
       <h4>Composition Builder</h4>
       <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
         <span style="font-size:11px; color:#888;">Mic capture:</span>
-        <button id="captureModeBtn" class="capture-btn" onclick="toggleCaptureMode()">🎤 Capture to Song OFF</button>
+        <button id="captureModeBtn" class="capture-btn" onclick="toggleCaptureMode()">🎤 Capture OFF</button>
       </div>
       <div class="creator-input-group">
         <input type="text" id="customSongNameInput" placeholder="Song/Gitam Title..." value="Anandabhairavi Line">
         <input type="text" id="customNotesInput" placeholder="Notes (e.g. സ രി ഗ മ)..." value="സ രി ഗ മ പ ധ">
         <div class="creator-buttons">
-          <button class="add-note-btn" onclick="promptAddNote()">➕ Add Note</button>
+          <button class="add-note-btn" onclick="promptAddNote()">➕ Note</button>
           <button class="add-note-btn" onclick="clearNotesInput()">🗑 Clear</button>
-          <button class="skill-action-btn" style="flex:1;" onclick="addNewSongToFeed()">🎵 Save Song</button>
+          <button class="skill-action-btn" style="flex:1;" onclick="addNewSongToFeedMobile()">🎵 Save</button>
         </div>
       </div>
-      <button class="generator-accent-btn" onclick="generateNotesAutomatically()">🪄 Auto-Generate Composition</button>
+      <button class="generator-accent-btn" onclick="generateNotesAutomaticallyMobile()">🪄 Auto-Generate Composition</button>
     </div>
 
     <div class="notes-feed">
       <h3 style="font-size:13px; color:#e1e1e6; flex-shrink:0;">Saved Compositions</h3>
       <div class="notes-list" id="customSongsPlaylistContainer">
         <div class="note-row" id="default-song-row">
-          <div class="song-details-block" onclick="triggerLinePractice(['C4','D4','E4','F4','G4','A4','B4','C5'],['സ','രി','ഗ','മ','പ','ധ','നി','സ'])">
+          <div class="song-details-block" onclick="triggerLinePracticeMobile(['C4','D4','E4','F4','G4','A4','B4','C5'],['സ','രി','ഗ','മ','പ','ധ','നി','സ'])">
             <div class="song-row-title">Sarali Varisai Basic</div>
             <div class="carnatic-notation">സ &nbsp; രി &nbsp; ഗ &nbsp; മ &nbsp; പ &nbsp; ധ &nbsp; നി &nbsp; സ</div>
             <div class="song-meta-data">
@@ -330,9 +384,9 @@
     <div class="visualizer-header">
       <span id="streamTitle" style="font-weight:600; color:#00adb5;">Waterfall Stream</span>
       <div class="controls-group">
-        <button class="summary-btn" onclick="toggleSummaryPanel()">📊 Summary</button>
-        <label for="speedSlider" style="font-size:12px;">Speed:</label>
-        <input type="range" id="speedSlider" min="1" max="8" value="3" style="width:80px;">
+        <button class="summary-btn" onclick="toggleSummaryPanel()">📊 Stats</button>
+        <label for="speedSlider" style="font-size:11px;">Speed:</label>
+        <input type="range" id="speedSlider" min="1" max="8" value="3" style="width:60px;">
       </div>
     </div>
 
@@ -348,7 +402,7 @@
   </div>
 </div>
 
-<div class="keyboard-container">
+<div class="keyboard-container" id="kbContainer">
   <div id="micNoteCapture" style="display:none;">Detected: —</div>
   <div class="piano" id="pianoWrapper">
     </div>
@@ -394,13 +448,13 @@ const noteToSwara = {
 function getNoteBase(note) { return note.replace(/\d/,''); }
 
 // ==============================
-// PIANO BUILDER
+// PIANO BUILDER (Mobile-Friendly Metrics)
 // ==============================
 const whiteKeys = ['C','D','E','F','G','A','B'];
 const blackKeyMap = { 'C':'C#', 'D':'D#', 'F':'F#', 'G':'G#', 'A':'A#' };
-const WHITE_KEY_WIDTH = 40; 
-const BLACK_KEY_WIDTH = 24;
-const BLACK_KEY_OFFSETS = { 'C': 27, 'D': 55, 'F': 111, 'G': 139, 'A': 167 }; 
+const WHITE_KEY_WIDTH = 45; 
+const BLACK_KEY_WIDTH = 26;
+const BLACK_KEY_OFFSETS = { 'C': 31, 'D': 63, 'F': 125, 'G': 157, 'A': 189 }; 
 
 function buildPiano() {
   const wrapper = document.getElementById('pianoWrapper');
@@ -434,6 +488,7 @@ function buildPiano() {
       key.className = 'black-key';
       key.dataset.note = note;
       key.style.left = BLACK_KEY_OFFSETS[wn] + 'px';
+      key.style.width = BLACK_KEY_WIDTH + 'px';
       key.addEventListener('mousedown', () => handleKeyPress(note));
       key.addEventListener('touchstart', e => { e.preventDefault(); handleKeyPress(note); }, { passive: false });
       octaveDiv.appendChild(key);
@@ -446,12 +501,19 @@ function buildPiano() {
   const c6 = document.createElement('div');
   c6.className = 'white-key';
   c6.dataset.note = 'C6';
+  c6.style.width = WHITE_KEY_WIDTH + 'px';
   c6.innerHTML = `<span class="key-label">C6</span>`;
   c6.addEventListener('mousedown', () => handleKeyPress('C6'));
   c6.addEventListener('touchstart', e => { e.preventDefault(); handleKeyPress('C6'); }, { passive: false });
   wrapper.appendChild(c6);
 
   wrapper.style.width = (pianoWidth + WHITE_KEY_WIDTH) + 'px';
+  
+  // Center scroll to focus Middle C octave automatically on load
+  setTimeout(() => {
+    const container = document.getElementById('kbContainer');
+    container.scrollLeft = WHITE_KEY_WIDTH * 5;
+  }, 300);
 }
 
 // ==============================
@@ -522,28 +584,40 @@ function loadSelectedRaga() {
   document.getElementById('ragaAvaText').innerText = raga.avaLabels.join(" ");
 }
 
-function playCurrentRagaLibrary() {
+function closeMenuOnMobile() {
+  if (window.innerWidth <= 868) {
+    document.getElementById('mainWorkspace').classList.add('sidebar-closed');
+  }
+}
+
+function playCurrentRagaLibraryMobile() {
+  closeMenuOnMobile();
   const id = document.getElementById('ragaLibraryDropdown').value;
   const raga = ragaLibrary[id];
   startSkillPractice([...raga.aroNotes, ...raga.avaNotes], [...raga.aroLabels, ...raga.avaLabels]);
 }
 
 // ==============================
-// SIDEBAR
+// SIDEBAR TOGGLE
 // ==============================
 function toggleSidebar() {
   document.getElementById('mainWorkspace').classList.toggle('sidebar-closed');
   setTimeout(resizeCanvas, 350);
 }
 
+// Ensure clean startup responsive dimensions
+if (window.innerWidth <= 868) {
+  document.getElementById('mainWorkspace').classList.add('sidebar-closed');
+}
+
 // ==============================
-// COMPOSITION BUILDER & FIXES
+// COMPOSITION BUILDER & SAVES
 // ==============================
 function toggleCaptureMode() {
   captureMode = !captureMode;
   const btn = document.getElementById('captureModeBtn');
   btn.className = captureMode ? 'capture-btn active' : 'capture-btn';
-  btn.textContent = captureMode ? '🎤 Capture to Song ON' : '🎤 Capture to Song OFF';
+  btn.textContent = captureMode ? '🎤 Capture ON' : '🎤 Capture OFF';
   if (captureMode && !isMicActive) {
     startMic();
   }
@@ -554,7 +628,7 @@ function clearNotesInput() {
 }
 
 function promptAddNote() {
-  const note = prompt("Type a Swara (സ, രി, ഗ, മ, പ, ധ, നി) or Western note (e.g. C4, F#4):");
+  const note = prompt("Type a Swara (സ, രി, ഗ, മ, പ, ധ, നി) or Western note:");
   if (note) {
     const f = document.getElementById('customNotesInput');
     f.value = (f.value ? f.value + " " : "") + note.trim();
@@ -575,7 +649,7 @@ function appendNoteToComposer(note) {
   f.value = (f.value ? f.value + " " : "") + swara;
 }
 
-function addNewSongToFeed() {
+function addNewSongToFeedMobile() {
   const title = document.getElementById('customSongNameInput').value.trim();
   const rawNotes = document.getElementById('customNotesInput').value.trim();
   if (!title || !rawNotes) return alert("Please fill both title and notes.");
@@ -593,31 +667,28 @@ function addNewSongToFeed() {
     }
   });
 
-  if (notesArr.length === 0) return alert("Could not match any notes. Use swaras (സ, രി...) or Western notes.");
+  if (notesArr.length === 0) return alert("Could not match any notes.");
 
   const currentRagaId = document.getElementById('ragaLibraryDropdown').value;
   const ragaName = ragaLibrary[currentRagaId].name;
 
-  createSongRowUI(title, notesArr, labelsArr, 95, "Rupaka Thalam (3/4)", ragaName);
+  createSongRowUIMobile(title, notesArr, labelsArr, 95, "Rupaka Thalam (3/4)", ragaName);
   document.getElementById('customNotesInput').value = '';
 }
 
-// Automatic composition generator feature with loading indicator
-function generateNotesAutomatically() {
+function generateNotesAutomaticallyMobile() {
   const loader = document.getElementById('asyncLoaderOverlay');
   loader.classList.add('visible');
 
-  // simulated processing delay for structuring musical data strings
   setTimeout(() => {
     const currentRagaId = document.getElementById('ragaLibraryDropdown').value;
     const raga = ragaLibrary[currentRagaId];
     
-    // Create random melody structures combining arohana and avarohana segments
     const options = [...raga.aroLabels, ...raga.avaLabels];
     const notesArr = [];
     const labelsArr = [];
     
-    const length = 6 + Math.floor(Math.random() * 5); // 6 to 10 notes
+    const length = 6 + Math.floor(Math.random() * 4); 
     for(let i=0; i<length; i++) {
       const targetLabel = options[Math.floor(Math.random() * options.length)];
       const targetNote = swaraToNote[targetLabel];
@@ -625,51 +696,54 @@ function generateNotesAutomatically() {
       labelsArr.push(targetLabel);
     }
 
-    const randomBPM = 80 + Math.floor(Math.random() * 45);
+    const randomBPM = 85 + Math.floor(Math.random() * 40);
     const thalamOptions = ["Adi Thalam (8/4)", "Rupaka Thalam (3/4)", "Misra Chapu (7/8)"];
     const randomThalam = thalamOptions[Math.floor(Math.random() * thalamOptions.length)];
     const randomID = Math.floor(Math.random() * 900) + 100;
-    const generatedTitle = "Generated Geetham " + randomID;
+    const generatedTitle = "Geetham Variant " + randomID;
 
-    createSongRowUI(generatedTitle, notesArr, labelsArr, randomBPM, randomThalam, raga.name);
-    
+    createSongRowUIMobile(generatedTitle, notesArr, labelsArr, randomBPM, randomThalam, raga.name);
     loader.classList.remove('visible');
   }, 1500);
 }
 
-// UI Builder row module for lists with internal remove mechanisms
-function createSongRowUI(title, notesArr, labelsArr, tempo, timing, ragaName) {
+function createSongRowUIMobile(title, notesArr, labelsArr, tempo, timing, ragaName) {
   const container = document.getElementById('customSongsPlaylistContainer');
   const row = document.createElement('div');
   row.className = "note-row";
   
-  // Create clickable inner data content column
   const mainDataBlock = document.createElement('div');
   mainDataBlock.className = "song-details-block";
-  mainDataBlock.onclick = () => startSkillPractice(notesArr, labelsArr);
+  mainDataBlock.onclick = () => {
+    closeMenuOnMobile();
+    startSkillPractice(notesArr, labelsArr);
+  };
   mainDataBlock.innerHTML = `
     <div class="song-row-title">${title}</div>
     <div class="carnatic-notation">${labelsArr.join(' &nbsp; ')}</div>
     <div class="song-meta-data">
-      <span class="meta-tag">Tempo: ${tempo} BPM</span>
-      <span class="meta-tag">Timing: ${timing}</span>
-      <span class="meta-tag">Raga: ${ragaName}</span>
+      <span class="meta-tag">${tempo} BPM</span>
+      <span class="meta-tag">${timing.split(" ")[0]}</span>
+      <span class="meta-tag">${ragaName}</span>
     </div>
   `;
   
-  // Independent list item deletion anchor element
   const deleteBtn = document.createElement('button');
   deleteBtn.className = "remove-song-btn";
   deleteBtn.innerHTML = "&times;";
-  deleteBtn.title = "Delete Composition";
   deleteBtn.onclick = (e) => {
-    e.stopPropagation(); // prevent line practice activation
+    e.stopPropagation();
     row.remove();
   };
 
   row.appendChild(mainDataBlock);
   row.appendChild(deleteBtn);
   container.appendChild(row);
+}
+
+function triggerLinePracticeMobile(notesArray, labelsArray) {
+  closeMenuOnMobile();
+  startSkillPractice(notesArray, labelsArray);
 }
 
 // ==============================
@@ -717,11 +791,7 @@ function startSkillPractice(notesArray, labelsArray) {
   });
   
   setTimeout(() => setupWaterfallBlocks(notesArray, labelsArray), 100);
-  document.getElementById('streamTitle').textContent = `Streaming: ${notesArray.length} notes`;
-}
-
-function triggerLinePractice(notesArray, labelsArray) {
-  startSkillPractice(notesArray, labelsArray);
+  document.getElementById('streamTitle').textContent = `Stream: ${notesArray.length} Notes`;
 }
 
 function clearHints() {
@@ -732,7 +802,7 @@ function clearHints() {
 }
 
 // ==============================
-// KEY PRESS HANDLER
+// KEY PRESS ACTION CODES
 // ==============================
 function handleKeyPress(note) {
   initAudio();
@@ -777,7 +847,7 @@ function playTone(note) {
 }
 
 // ==============================
-// STATS
+// METRIC EVALUATIONS
 // ==============================
 function updateSummaryMetrics() {
   const acc = totalAttempts > 0 ? Math.round(((totalAttempts - mistakesCount) / totalAttempts) * 100) : 100;
@@ -804,14 +874,14 @@ function loadSong() {
   const m = url.match(/(?:youtu\.be\/|v=|embed\/)([^#&?]{11})/);
   if (m) {
     document.getElementById('videoContainer').innerHTML =
-      `<iframe width="100%" height="140px" src="https://www.youtube.com/embed/${m[1]}?enablejsapi=1" frameborder="0" allowfullscreen></iframe>`;
+      `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${m[1]}?enablejsapi=1" frameborder="0" allowfullscreen style="border-radius:6px;"></iframe>`;
   } else {
     alert("Invalid YouTube URL.");
   }
 }
 
 // ==============================
-// MIC DETECTION
+// MIC PROCESSING
 // ==============================
 function toggleMicDetection() {
   initAudio();
@@ -827,11 +897,11 @@ function startMic() {
     .then(stream => {
       isMicActive = true;
       document.getElementById('micToggleBtn').className = "mic-btn active";
-      document.getElementById('micToggleBtn').innerText = "🎙️ Mic: ON 🔊";
+      document.getElementById('micToggleBtn').innerText = "🎙️ Mic: ON";
       document.getElementById('micNoteCapture').style.display = 'block';
 
       const src = audioCtx.createMediaStreamSource(stream);
-      analyserNode = audioCtx.createMediaStreamSource(stream).context.createAnalyser ? audioCtx.createAnalyser() : audioCtx.createAnalyser();
+      analyserNode = audioCtx.createAnalyser();
       analyserNode.fftSize = 2048;
       src.connect(analyserNode);
       micBuffer = new Float32Array(analyserNode.fftSize);
@@ -844,7 +914,7 @@ function stopMic() {
   isMicActive = false;
   document.getElementById('micToggleBtn').className = "mic-btn";
   document.getElementById('micToggleBtn').innerText = "🎙️ Mic: OFF";
-  document.getElementById('pitchDisplay').innerText = "Pitch: Idle";
+  document.getElementById('pitchDisplay').innerText = "Idle";
   document.getElementById('micNoteCapture').style.display = 'none';
 }
 
@@ -861,7 +931,7 @@ function pitchLoop() {
       if (diff < minDiff) { minDiff = diff; closest = note; }
     }
     if (closest && minDiff < 12) {
-      document.getElementById('pitchDisplay').innerText = `Pitch: ${closest} (${Math.round(freq)}Hz)`;
+      document.getElementById('pitchDisplay').innerText = `${closest}`;
       document.getElementById('micNoteCapture').innerText = `Detected: ${closest}`;
 
       if (captureMode) {
@@ -903,7 +973,7 @@ function autoCorrelate(buf, sampleRate) {
 }
 
 // ==============================
-// CANVAS WATERFALL RENDERER
+// DYNAMIC WATERFALL ENGINE
 // ==============================
 const canvas = document.getElementById('visualizerCanvas');
 const ctx2d = canvas.getContext('2d');
@@ -913,7 +983,7 @@ function resizeCanvas() {
   canvas.width = panel.clientWidth;
   canvas.height = panel.clientHeight - 42; 
 }
-window.addEventListener('resize', () => { resizeCanvas(); });
+window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 function animate() {
@@ -929,6 +999,7 @@ function animate() {
   ctx2d.fillStyle = "rgba(0,173,181,0.07)";
   ctx2d.fillRect(0, canvas.height - 52, canvas.width, 52);
 
+  // Read current layout coordinates of physical keys dynamically to align blocks
   noteStreams.forEach(note => {
     let targetKey = document.querySelector(`[data-note="${note.note}"]`);
     if (targetKey) {
@@ -954,12 +1025,11 @@ function animate() {
   }
 
   noteStreams = noteStreams.filter(n => n.y < canvas.height + 60);
-
   requestAnimationFrame(animate);
 }
 
 // ==============================
-// INITIALIZATION
+// RUNTIMES
 // ==============================
 generateMelakartaLibrary();
 buildPiano();
